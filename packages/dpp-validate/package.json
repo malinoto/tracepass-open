@@ -1,0 +1,22 @@
+{
+  "name": "@tracepass/dpp-validate",
+  "version": "0.1.0",
+  "description": "Evaluate an EU Digital Product Passport against its category field-spec — a three-tier compliance verdict with regulation-cited findings. Pure functions, zero dependencies.",
+  "keywords": ["digital-product-passport", "dpp", "espr", "compliance", "eu-regulation", "battery-passport", "validation", "circular-economy"],
+  "license": "Apache-2.0",
+  "author": "TracePass LTD (https://tracepass.eu)",
+  "homepage": "https://github.com/malinoto/tracepass-open/tree/main/packages/dpp-validate#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/malinoto/tracepass-open.git", "directory": "packages/dpp-validate" },
+  "bugs": "https://github.com/malinoto/tracepass-open/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "publishConfig": { "access": "public" },
+  "scripts": { "build": "tsc -p tsconfig.build.json", "clean": "rm -rf dist" },
+  "dependencies": { "@tracepass/dpp-types": "^0.1.0" },
+  "devDependencies": { "typescript": "^5.6.3" },
+  "engines": { "node": ">=18" }
+}

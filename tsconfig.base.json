@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    // `noUncheckedIndexedAccess` is deliberately off. The index reads in this
+    // codebase are each guarded by a preceding check the compiler cannot see
+    // (a `hasValue()` call, a non-empty literal, a regex whose groups are
+    // known to have matched). Turning it on would only add non-null assertions
+    // that assert what the guard already established.
+    //
+    // `verbatimModuleSyntax` IS on, and matters: it turns a value-import that
+    // is only used as a type into a compile error, so no package here can
+    // acquire a runtime dependency through a type-only import.
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  }
+}

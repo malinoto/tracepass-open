@@ -1,0 +1,50 @@
+{
+  "name": "@tracepass/dpp-types",
+  "version": "0.1.0",
+  "description": "TypeScript types for EU Digital Product Passports (ESPR) — templates, passports, parties, and traceability events. Types only, zero runtime, zero dependencies.",
+  "keywords": [
+    "digital-product-passport",
+    "dpp",
+    "espr",
+    "eu-regulation",
+    "circular-economy",
+    "types"
+  ],
+  "license": "Apache-2.0",
+  "author": "TracePass LTD (https://tracepass.eu)",
+  "homepage": "https://github.com/malinoto/tracepass-open/tree/main/packages/dpp-types#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malinoto/tracepass-open.git",
+    "directory": "packages/dpp-types"
+  },
+  "bugs": "https://github.com/malinoto/tracepass-open/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
