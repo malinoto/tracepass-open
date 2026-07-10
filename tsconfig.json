@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@tracepass/dpp-types": ["./packages/dpp-types/src/index.ts"],
+      "@tracepass/gs1-utils": ["./packages/gs1-utils/src/index.ts"],
+      "@tracepass/gs1-utils/qr": ["./packages/gs1-utils/src/qr.ts"],
+      "@tracepass/dpp-epcis": ["./packages/dpp-epcis/src/index.ts"],
+      "@tracepass/dpp-validate": ["./packages/dpp-validate/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts", "packages/*/tests/**/*.ts", "vitest.config.ts"]
+}
