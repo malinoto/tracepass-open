@@ -1,5 +1,5 @@
 <div align="center">
-<a href="https://www.tracepass.eu"><img src="https://www.tracepass.eu/tracepass-logo.svg" alt="TracePass" height="48"></a>
+<a href="https://www.tracepass.eu"><img src="https://www.tracepass.eu/tracepass-logo.svg" alt="TracePass" height="72"></a>
 
 # @tracepass/gs1-utils
 
