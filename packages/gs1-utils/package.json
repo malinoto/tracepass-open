@@ -1,26 +1,66 @@
 {
   "name": "@tracepass/gs1-utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GS1 identifier utilities for Digital Product Passports — GTIN and GLN check-digit validation, GS1 Digital Link URI build/parse. Zero dependencies in the core; the optional QR subpath asks for qrcode as a peer.",
-  "keywords": ["gs1", "gtin", "gln", "digital-link", "digital-product-passport", "dpp", "barcode"],
+  "keywords": [
+    "gs1",
+    "gtin",
+    "gln",
+    "digital-link",
+    "digital-product-passport",
+    "dpp",
+    "barcode"
+  ],
   "license": "Apache-2.0",
   "author": "TracePass LTD (https://tracepass.eu)",
   "homepage": "https://github.com/malinoto/tracepass-open/tree/main/packages/gs1-utils#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/malinoto/tracepass-open.git", "directory": "packages/gs1-utils" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malinoto/tracepass-open.git",
+    "directory": "packages/gs1-utils"
+  },
   "bugs": "https://github.com/malinoto/tracepass-open/issues",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./qr": { "types": "./dist/qr.d.ts", "import": "./dist/qr.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./qr": {
+      "types": "./dist/qr.d.ts",
+      "import": "./dist/qr.js"
+    }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
-  "publishConfig": { "access": "public", "provenance": true },
-  "scripts": { "build": "tsc -p tsconfig.build.json", "clean": "rm -rf dist" },
-  "peerDependencies": { "qrcode": "^1.5.0" },
-  "peerDependenciesMeta": { "qrcode": { "optional": true } },
-  "devDependencies": { "typescript": "^5.6.3", "qrcode": "^1.5.4", "@types/qrcode": "^1.5.5" },
-  "engines": { "node": ">=18" }
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "qrcode": "^1.5.0"
+  },
+  "peerDependenciesMeta": {
+    "qrcode": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "qrcode": "^1.5.4",
+    "@types/qrcode": "^1.5.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

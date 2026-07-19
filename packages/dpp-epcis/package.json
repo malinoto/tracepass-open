@@ -1,22 +1,57 @@
 {
   "name": "@tracepass/dpp-epcis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Map Digital Product Passport data to GS1 EPCIS 2.0 events, with a CBV 2.0 vocabulary extended for steel production steps. Pure functions, no third-party runtime dependencies.",
-  "keywords": ["epcis", "epcis-2.0", "gs1", "cbv", "traceability", "digital-product-passport", "dpp", "supply-chain"],
+  "keywords": [
+    "epcis",
+    "epcis-2.0",
+    "gs1",
+    "cbv",
+    "traceability",
+    "digital-product-passport",
+    "dpp",
+    "supply-chain"
+  ],
   "license": "Apache-2.0",
   "author": "TracePass LTD (https://tracepass.eu)",
   "homepage": "https://github.com/malinoto/tracepass-open/tree/main/packages/dpp-epcis#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/malinoto/tracepass-open.git", "directory": "packages/dpp-epcis" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malinoto/tracepass-open.git",
+    "directory": "packages/dpp-epcis"
+  },
   "bugs": "https://github.com/malinoto/tracepass-open/issues",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist", "README.md", "LICENSE"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
-  "publishConfig": { "access": "public", "provenance": true },
-  "scripts": { "build": "tsc -p tsconfig.build.json", "clean": "rm -rf dist" },
-  "dependencies": { "@tracepass/dpp-types": "^0.1.0", "@tracepass/gs1-utils": "^0.1.0" },
-  "devDependencies": { "typescript": "^5.6.3" },
-  "engines": { "node": ">=18" }
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tracepass/dpp-types": "^0.1.1",
+    "@tracepass/gs1-utils": "^0.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }
