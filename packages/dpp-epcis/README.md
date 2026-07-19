@@ -3,10 +3,10 @@
 
 # @tracepass/dpp-epcis
 
-**Map Digital Product Passport events to GS1 EPCIS 2.0, with a CBV vocabulary extended for steel. Zero dependencies.**
+**Map Digital Product Passport events to GS1 EPCIS 2.0, with a CBV vocabulary extended for steel. No third-party runtime dependencies.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
-[![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)](#)
+[![Dependencies](https://img.shields.io/badge/third--party%20runtime%20deps-0-success)](#)
 
 Part of [**tracepass-open**](https://github.com/malinoto/tracepass-open) · Maintained by [TracePass](https://www.tracepass.eu)
 </div>

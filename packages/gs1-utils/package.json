@@ -1,7 +1,7 @@
 {
   "name": "@tracepass/gs1-utils",
   "version": "0.1.0",
-  "description": "GS1 identifier utilities for Digital Product Passports — GTIN and GLN check-digit validation, GS1 Digital Link URI build/parse. Zero dependencies.",
+  "description": "GS1 identifier utilities for Digital Product Passports — GTIN and GLN check-digit validation, GS1 Digital Link URI build/parse. Zero dependencies in the core; the optional QR subpath asks for qrcode as a peer.",
   "keywords": ["gs1", "gtin", "gln", "digital-link", "digital-product-passport", "dpp", "barcode"],
   "license": "Apache-2.0",
   "author": "TracePass LTD (https://tracepass.eu)",

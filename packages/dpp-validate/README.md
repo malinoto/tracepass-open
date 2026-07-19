@@ -3,10 +3,10 @@
 
 # @tracepass/dpp-validate
 
-**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, zero dependencies, 28 tests.**
+**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, no third-party runtime dependencies, 28 tests.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
-[![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)](#)
+[![Dependencies](https://img.shields.io/badge/third--party%20runtime%20deps-0-success)](#)
 
 Part of [**tracepass-open**](https://github.com/malinoto/tracepass-open) · Maintained by [TracePass](https://www.tracepass.eu)
 </div>

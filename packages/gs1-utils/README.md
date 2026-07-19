@@ -3,10 +3,10 @@
 
 # @tracepass/gs1-utils
 
-**GTIN and GLN check digits, GS1 Digital Link build and parse. Zero dependencies.**
+**GTIN and GLN check digits, GS1 Digital Link build and parse. Zero dependencies in the core; the optional `./qr` subpath asks for `qrcode` as a peer.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
-[![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)](#)
+[![Dependencies](https://img.shields.io/badge/core%20runtime%20deps-0-success)](#)
 
 Part of [**tracepass-open**](https://github.com/malinoto/tracepass-open) · Maintained by [TracePass](https://www.tracepass.eu)
 </div>

@@ -1,7 +1,7 @@
 {
   "name": "@tracepass/dpp-validate",
   "version": "0.1.0",
-  "description": "Evaluate an EU Digital Product Passport against its category field-spec — a three-tier compliance verdict with regulation-cited findings. Pure functions, zero dependencies.",
+  "description": "Evaluate an EU Digital Product Passport against its category field-spec — a three-tier compliance verdict with regulation-cited findings. Pure functions, no third-party runtime dependencies.",
   "keywords": ["digital-product-passport", "dpp", "espr", "compliance", "eu-regulation", "battery-passport", "validation", "circular-economy"],
   "license": "Apache-2.0",
   "author": "TracePass LTD (https://tracepass.eu)",
