@@ -1,6 +1,6 @@
 {
   "name": "@tracepass/dpp-types",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "TypeScript types for EU Digital Product Passports (ESPR) — templates, passports, parties, and traceability events. Types only, zero runtime, zero dependencies.",
   "keywords": [
     "digital-product-passport",

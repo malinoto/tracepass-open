@@ -68,15 +68,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build
+        # Build FIRST: every downstream step resolves the @tracepass/* siblings
+        # through their dist/ output. Typecheck (tsc across the workspace) and
+        # the cross-package tests (e.g. dpp-epcis imports @tracepass/gs1-utils)
+        # both fail with "Cannot find module @tracepass/..." if dist/ is absent.
+        # The root build script builds in dependency order (types + gs1-utils
+        # before epcis + validate) — plain --workspaces builds alphabetically,
+        # which puts dpp-epcis first and fails.
+        run: npm run build
+
       - name: Typecheck
         run: npm run typecheck
-
-      - name: Build
-        # Build before Test: the cross-package tests import sibling packages by
-        # their published name (e.g. dpp-epcis's test imports
-        # @tracepass/gs1-utils), which resolves via each package's dist/ output.
-        # Testing before build fails with "Failed to resolve entry for package".
-        run: npm run build
 
       - name: Test
         run: npm test
