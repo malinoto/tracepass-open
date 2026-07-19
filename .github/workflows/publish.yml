@@ -1,0 +1,86 @@
+# Publishes the four @tracepass/* packages in this workspace to npm on every
+# v*.*.* tag push, each with an npm provenance attestation. Provenance lets
+# anyone cryptographically verify a package was built by this exact workflow,
+# from this exact repository and commit —
+# see https://docs.npmjs.com/generating-provenance-statements.
+#
+# Packages: @tracepass/dpp-types, @tracepass/gs1-utils, @tracepass/dpp-epcis,
+# @tracepass/dpp-validate. They share a version; bump them together.
+#
+# ─── ONE-TIME SETUP ────────────────────────────────────────────────────────────
+#
+# OIDC Trusted Publishing (no long-lived secrets) must be registered for EACH
+# of the four packages (they already exist from the bootstrap publish):
+#
+#   For each of the 4 packages, at
+#   https://www.npmjs.com/package/<pkg>/access :
+#   1. Trusted Publishers → Add a publisher → GitHub Actions.
+#   2. Organization or user: malinoto
+#      Repository:           tracepass-open
+#      Workflow filename:    publish.yml   (filename only)
+#      Environment name:     (leave blank)
+#   3. Allowed actions: tick npm publish.
+#   4. Save. The repo must be PUBLIC for provenance to be accepted.
+#
+# ─── RELEASE FLOW ──────────────────────────────────────────────────────────────
+#
+#   # bump all four workspace packages to the same version, then tag:
+#   npm version patch --workspaces --include-workspace-root=false
+#   npm version patch --no-git-tag-version   # bump the root marker (optional)
+#   git commit -am "release: v0.1.1" && git tag v0.1.1
+#   git push && git push origin v0.1.1
+#
+# The workflow runs typecheck → test → build → publish (all workspaces).
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to mint an OIDC token for npm provenance attestation.
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          # Without registry-url, `npm publish` 404s before it can attempt the
+          # OIDC exchange.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm
+        # Trusted publishing via OIDC needs npm CLI >= 11.5.1.
+        run: npm install --global npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish all workspace packages to npm
+        # No NODE_AUTH_TOKEN: an empty token would make npm reject with
+        # ENEEDAUTH before attempting OIDC. Absent ⇒ OIDC engages cleanly.
+        # Provenance comes from publishConfig.provenance: true in each
+        # package.json. --workspaces publishes all four; a version already on
+        # the registry is skipped by npm with a non-fatal notice.
+        run: npm publish --workspaces
