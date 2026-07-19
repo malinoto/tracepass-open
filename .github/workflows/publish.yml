@@ -71,11 +71,15 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Build
+        # Build before Test: the cross-package tests import sibling packages by
+        # their published name (e.g. dpp-epcis's test imports
+        # @tracepass/gs1-utils), which resolves via each package's dist/ output.
+        # Testing before build fails with "Failed to resolve entry for package".
+        run: npm run build
+
       - name: Test
         run: npm test
-
-      - name: Build
-        run: npm run build
 
       - name: Publish all workspace packages to npm
         # No NODE_AUTH_TOKEN: an empty token would make npm reject with

@@ -1,6 +1,6 @@
 {
   "name": "@tracepass/dpp-validate",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Evaluate an EU Digital Product Passport against its category field-spec \u2014 a three-tier compliance verdict with regulation-cited findings. Pure functions, no third-party runtime dependencies.",
   "keywords": [
     "digital-product-passport",
@@ -45,7 +45,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tracepass/dpp-types": "^0.1.1"
+    "@tracepass/dpp-types": "^0.1.2"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
