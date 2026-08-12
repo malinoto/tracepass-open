@@ -203,8 +203,9 @@ npm test          # vitest
 ## Related
 
 - **[tracepass-dpp-schemas](https://github.com/malinoto/tracepass-dpp-schemas)** — the
-  field specifications these packages validate against. 12 categories, 910 fields, each
+  field specifications these packages validate against. 12 categories, each field
   traced to the article of EU law that mandates it. Pure JSON, any language.
+  (Field totals move as templates change; that repo's `index.json` is the count.)
 
 ## Provenance and limits
 
