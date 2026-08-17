@@ -27,10 +27,25 @@
 #   # bump all four workspace packages to the same version, then tag:
 #   npm version patch --workspaces --include-workspace-root=false
 #   npm version patch --no-git-tag-version   # bump the root marker (optional)
+#
+#   # ⚠️ THEN FIX THE CROSS-PACKAGE DEPS BY HAND — npm version does NOT.
+#   # dpp-validate depends on dpp-types; dpp-epcis depends on both. Those
+#   # ranges stay at the OLD version, and a caret range below 1.0.0 is
+#   # restrictive — "^0.1.4" does not match 0.2.0. Ship it and a fresh
+#   # `npm i @tracepass/dpp-validate` resolves the PREVIOUS dpp-types from the
+#   # registry, so whatever you just added appears missing. Local dev never
+#   # catches it: the workspace symlinks the sibling regardless of the range.
+#   sed -i 's/"\(@tracepass\/[a-z0-9-]*\)": "^OLD"/"\1": "^NEW"/' packages/*/package.json
+#   npm install --package-lock-only
+#   grep '"@tracepass/' packages/*/package.json   # verify before committing
+#
 #   git commit -am "release: v0.1.1" && git tag v0.1.1
 #   git push && git push origin v0.1.1
 #
 # The workflow runs typecheck → test → build → publish (all workspaces).
+# Green CI does NOT prove the deps are right — it builds from the workspace,
+# not the registry. Verify after publishing:
+#   npm view @tracepass/dpp-validate@X.Y.Z dependencies
 
 name: Publish
 
