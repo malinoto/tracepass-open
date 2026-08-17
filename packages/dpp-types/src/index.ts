@@ -108,15 +108,40 @@ export type TemplateSection =
   | string
   | { key: string; label?: LocalizedString; fieldCount?: number; sortOrder?: number };
 
+/**
+ * How much of a regulation date is real.
+ *
+ * `"day"` — a specific statutory date (e.g. battery, `2027-02-18`, ESPR Art. 77).
+ * `"year"` — only the year is known, because the governing delegated or
+ * implementing act is not yet adopted. The day and month are filler and must
+ * not be shown to end users as a deadline.
+ *
+ * Absent means `"day"`.
+ */
+export type DatePrecision = "day" | "year";
+
 /** The EU instrument that mandates a category's passport. */
 export interface Regulation {
   name: string;
   /** e.g. `"(EU) 2023/1542"` */
   number: string;
-  /** ISO 8601 date (`YYYY-MM-DD`). A string, not a timestamp. */
+  /**
+   * ISO 8601 date (`YYYY-MM-DD`). A string, not a timestamp.
+   *
+   * The date the DIGITAL PRODUCT PASSPORT obligation begins — NOT the date the
+   * instrument enters into force or starts applying. The two can differ by
+   * years: PPWR (EU) 2025/40 has applied since 2026-08-12, but its packaging
+   * DPP provisions phase in from 2027.
+   *
+   * Always read alongside {@link Regulation.datePrecision}.
+   */
   effectiveDate: string;
+  /** Precision of {@link Regulation.effectiveDate}. Absent means `"day"`. */
+  datePrecision?: DatePrecision;
   /** ISO 8601 date from which the passport is legally required. */
   mandatoryDate: string;
+  /** Precision of {@link Regulation.mandatoryDate}. Absent means `"day"`. */
+  mandatoryDatePrecision?: DatePrecision;
 }
 
 /**
