@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { evaluateCompliance } from "../src/verdict.js";
 import { isEuEeaCountry } from "../src/eu-countries.js";
+import { getPartyRoles, isRequiredRole, allRolesForCategory } from "../src/vendor/required-roles.js";
+import { CONDITIONAL_RULES } from "../src/rules.js";
 import type { Passport, Template, TemplateField, PassportField, Party } from "@tracepass/dpp-types";
 
 // ── Tiny builders ─────────────────────────────────────────────────
@@ -315,5 +317,44 @@ describe("evaluateCompliance — CON-1 DoP/DoC", () => {
     const p = passport({ parties: { manufacturer: party("DE") } });
     const r = evaluateCompliance(p, t(), "construction");
     expect(r.critical.some((c) => c.ruleId === "CON-1")).toBe(false);
+  });
+});
+
+// ── Category coverage ─────────────────────────────────────────────
+// Both category-keyed maps in this package (CONDITIONAL_RULES and
+// CATEGORY_PARTY_ROLES) fail SILENTLY on a renamed category: the lookup
+// misses, and a miss is a legitimate value (`static-only` / `null`). These
+// pin the category list itself so a rename breaks a test instead of quietly
+// disabling a rule or emptying a role list.
+describe("category coverage", () => {
+  // The 13 live categories — mirrors tracepass-dpp-schemas/templates/*.json.
+  const CATEGORIES = [
+    "battery", "construction", "detergents", "electronics", "fmcg",
+    "furniture", "jewelry", "packaging", "paints-coatings", "steel",
+    "textile", "toys", "tyres",
+  ] as const;
+
+  it("every live category has a party-role entry", () => {
+    const missing = CATEGORIES.filter((c) => getPartyRoles(c) === null);
+    expect(missing).toEqual([]);
+  });
+
+  it("every live category requires a manufacturer", () => {
+    const notRequired = CATEGORIES.filter((c) => !isRequiredRole(c, "manufacturer"));
+    expect(notRequired).toEqual([]);
+  });
+
+  it("retired category keys resolve to nothing", () => {
+    // `chemicals` was split into detergents + paints-coatings.
+    expect(getPartyRoles("chemicals")).toBeNull();
+    expect(allRolesForCategory("chemicals")).toEqual([]);
+    expect(CONDITIONAL_RULES["chemicals"]).toBeUndefined();
+  });
+
+  it("every conditional-rule key is a live category", () => {
+    const stale = Object.keys(CONDITIONAL_RULES).filter(
+      (k) => !(CATEGORIES as readonly string[]).includes(k),
+    );
+    expect(stale).toEqual([]);
   });
 });

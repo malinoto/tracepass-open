@@ -17,7 +17,7 @@
  *
  * v1 design calls (per Malin's confirmation):
  *   - Chemicals "downstream user" (REACH-specific role) → folded into
- *     `distributor` for now; revisit when a chemicals customer pulls.
+ *     `distributor` for now; revisit when a detergents or paints customer pulls.
  *   - Tyre "retreader" → ignored for v1; retreaded tyres treated as a
  *     separate passport whose `manufacturer` is the retreader.
  *
@@ -29,14 +29,15 @@
 import type { PartyRole } from "@tracepass/dpp-types";
 
 /**
- * The 12 categories the platform models. Mirrors the filenames in
+ * The 13 categories the platform models. Mirrors the filenames in
  * `templates/*.json`. We re-declare the union here rather than import
  * a CategoryKey from elsewhere so this module stays the canonical
- * place a future contributor looks when adding a 13th category.
+ * place a future contributor looks when adding a 14th category.
  */
 export type CategoryKey =
   | "battery"
-  | "chemicals"
+  | "detergents"
+  | "paints-coatings"
   | "construction"
   | "electronics"
   | "fmcg"
@@ -122,8 +123,17 @@ export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
 
   // REACH places obligations on manufacturer + importer + downstream
   // user. v1 maps "downstream user" to `distributor` per design call;
-  // revisit when a chemicals customer pulls.
-  chemicals: {
+  // revisit when a detergents or paints customer pulls.
+  detergents: {
+    required: ["manufacturer"],
+    optional: ["importer", "distributor", "authorisedRepresentative"],
+  },
+
+  // Same REACH shape as detergents — both are chemical mixtures. Split from
+  // the former combined `chemicals` entry when the category was divided;
+  // Reg (EU) 2026/405 gives detergents a passport, paints have none, but the
+  // economic-operator duties under REACH are identical.
+  "paints-coatings": {
     required: ["manufacturer"],
     optional: ["importer", "distributor", "authorisedRepresentative"],
   },
@@ -159,7 +169,7 @@ export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
 
 /**
  * Get the required + optional role lists for a category. Returns
- * `null` when the category isn't one of the 12 modeled categories,
+ * `null` when the category isn't one of the 13 modeled categories,
  * so callers can early-return rather than crash on legacy / unknown
  * category strings.
  */
