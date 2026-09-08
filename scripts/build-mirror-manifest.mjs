@@ -64,19 +64,21 @@ export const MIRRORS = [
   },
   { open: "packages/dpp-validate/src/vendor/counts.ts", platform: "src/lib/passports/counts.ts" },
 
-  // publish-gate is a KNOWN divergence, tracked so it cannot widen unnoticed.
-  // The platform resolves per-battery-category applicability (`requiredBy`) via
-  // effectiveRequired/effectiveRequiredForBattery; this copy reads
-  // `validation.required` directly. Until that is ported, the hashes differ on
-  // purpose — `allowDivergence` records that as a known state rather than
-  // letting it read as "in sync".
+  // publish-gate and the two pure helpers it needs. Previously a recorded
+  // divergence: this copy read `validation.required` directly while the
+  // platform resolved `requiredBy` per battery category, so it demanded Annex
+  // XIII fields from a battery that owes no passport. Now ported in full.
   {
     open: "packages/dpp-validate/src/vendor/publish-gate.ts",
     platform: "src/lib/passports/publish-gate.ts",
-    allowDivergence:
-      "Platform honours validation.requiredBy per battery category " +
-      "(effectiveRequired / effectiveRequiredForBattery); this copy uses " +
-      "validation.required directly. Porting it is tracked separately.",
+  },
+  {
+    open: "packages/dpp-validate/src/vendor/battery-scope.ts",
+    platform: "src/lib/compliance/battery-scope.ts",
+  },
+  {
+    open: "packages/dpp-validate/src/vendor/field-emptiness.ts",
+    platform: "src/lib/passports/field-emptiness.ts",
   },
 ];
 
@@ -92,11 +94,18 @@ function stripMirrorNotice(source) {
   );
 }
 
-/** Account for the two legitimate differences between the repos. See the header. */
+/** Account for the legitimate differences between the repos. See the header. */
 export function normalise(source) {
-  return stripMirrorNotice(source)
-    .replace(/from\s+"@\/types"/g, 'from "@tracepass/dpp-types"')
-    .replace(/\r\n/g, "\n");
+  return (
+    stripMirrorNotice(source)
+      .replace(/from\s+"@\/types"/g, 'from "@tracepass/dpp-types"')
+      // A vendored module importing a sibling: the platform resolves it through
+      // its `@/lib/...` alias, this repo through a relative ESM specifier. Both
+      // name the same file, so collapse each to its basename.
+      .replace(/from\s+"@\/lib\/[^"]*\/([\w-]+)"/g, 'from "./$1"')
+      .replace(/from\s+"\.\/([\w-]+)\.js"/g, 'from "./$1"')
+      .replace(/\r\n/g, "\n")
+  );
 }
 
 export function hash(source) {

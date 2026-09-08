@@ -65,7 +65,38 @@ export interface AiHints {
  * the absent case as an explicit `null` rather than omitting the key.
  */
 export interface FieldValidation {
+  /**
+   * An instrument **in force today** requires this data, so a passport cannot
+   * be published without it.
+   *
+   * When `requiredBy` is present this acts as the category-agnostic fallback,
+   * consulted only when no category is set or the category is not a key in
+   * `requiredBy`.
+   */
   required: boolean;
+  /**
+   * Per-battery-category applicability (the battery template only, today).
+   * Absent means the field is category-agnostic and `required` applies.
+   *
+   *   `"required"`      — this category's passport must provide the field.
+   *   `"conditional"`   — applicable in some cases; does not block publishing.
+   *   `"notApplicable"` — must NOT be provided for this category.
+   *
+   * Keys are `batteryCategory` values (`"EV"`, `"LMT"`, `"industrial_gt_2kwh"`).
+   * A field with a `requiredBy` map normally has `required: false`, so an unset
+   * category can never block publishing on a field the battery may not need.
+   */
+  requiredBy?: Partial<Record<string, "required" | "conditional" | "notApplicable">>;
+  /**
+   * A named future instrument is expected to require this data, but none does
+   * yet — typically an ESPR delegated act that has not been adopted. Does not
+   * block publishing: it is readiness, not compliance.
+   */
+  anticipated?: boolean;
+  /** CELEX of the instrument expected to impose it, e.g. `"32024R1781"`. */
+  anticipatedUnder?: string | null;
+  /** Why it is expected, in prose. */
+  anticipatedNote?: string | null;
   minLength?: number | null;
   maxLength?: number | null;
   min?: number | null;

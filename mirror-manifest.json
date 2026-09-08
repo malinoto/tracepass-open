@@ -39,9 +39,17 @@
     {
       "open": "packages/dpp-validate/src/vendor/publish-gate.ts",
       "platform": "src/lib/passports/publish-gate.ts",
-      "platformHash": "5576dd25e7e9a509",
-      "allowDivergence": "Platform honours validation.requiredBy per battery category (effectiveRequired / effectiveRequiredForBattery); this copy uses validation.required directly. Porting it is tracked separately.",
-      "openHash": "a98ebc9f42d88a9a"
+      "platformHash": "999d1c0070cd7cd4"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/battery-scope.ts",
+      "platform": "src/lib/compliance/battery-scope.ts",
+      "platformHash": "a012bef9a0c14266"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/field-emptiness.ts",
+      "platform": "src/lib/passports/field-emptiness.ts",
+      "platformHash": "6fb72034bf97a240"
     }
   ]
 }

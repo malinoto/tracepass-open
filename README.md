@@ -9,7 +9,7 @@
 **A compliance validator, an EPCIS 2.0 event mapper, and GS1 identifier utilities — pure functions over plain objects, with no database, no network, and no dependencies.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-66%20passing-success)](./packages/dpp-validate/tests)
+[![Tests](https://img.shields.io/badge/tests-75%20passing-success)](./packages/dpp-validate/tests)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)](#zero-dependencies-is-a-design-constraint)
 [![Types](https://img.shields.io/badge/TypeScript-strict-3178c6)](./tsconfig.base.json)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](https://nodejs.org)
@@ -216,10 +216,9 @@ what consumers actually get, rather than re-parsing the source.
 
 `check:mirrors` does the same for the files vendored from that platform verbatim
 — the GS1 helpers, the party-role map, the passport count helpers, the publish
-gate — hashing each against `mirror-manifest.json`. One divergence is recorded
-deliberately: this copy's publish gate reads `validation.required` directly,
-while the platform resolves per-battery-category applicability. Both sides of a
-recorded divergence are pinned, so an accepted gap cannot quietly widen.
+gate and its two pure helpers — hashing each against `mirror-manifest.json`. All
+ten are currently in sync. A divergence can be recorded deliberately, and pins
+both sides so an accepted gap cannot quietly widen.
 
 ## Related
 

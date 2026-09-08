@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { evaluateCompliance } from "../src/verdict.js";
 import { isEuEeaCountry } from "../src/eu-countries.js";
 import { getPartyRoles, isRequiredRole, allRolesForCategory } from "../src/vendor/required-roles.js";
+import { effectiveRequired, effectiveRequiredForBattery } from "../src/vendor/publish-gate.js";
 import { CONDITIONAL_RULES } from "../src/rules.js";
 import type { Passport, Template, TemplateField, PassportField, Party } from "@tracepass/dpp-types";
 
@@ -391,5 +392,47 @@ describe("category coverage", () => {
       (k) => !(CATEGORIES as readonly string[]).includes(k),
     );
     expect(stale).toEqual([]);
+  });
+});
+
+// ── Per-battery-category applicability (validation.requiredBy) ─────
+// Annex XIII fields do not all apply to every battery. A portable or SLI
+// battery owes NO passport at all (Art. 77(1)), so demanding its fields would
+// be inventing an obligation — the mirror image of the under-report failures.
+describe("effectiveRequired — requiredBy resolution", () => {
+  const gated = (map?: Record<string, "required" | "conditional" | "notApplicable">) =>
+    tf("stateOfHealth", { validation: { required: false, ...(map ? { requiredBy: map } : {}) } });
+  const MAP = { EV: "required", LMT: "required", industrial_gt_2kwh: "required" } as const;
+
+  it("falls back to `required` when there is no requiredBy map", () => {
+    expect(effectiveRequired(tf("x", { validation: { required: true } }), "EV")).toBe(true);
+    expect(effectiveRequired(tf("x", { validation: { required: false } }), "EV")).toBe(false);
+  });
+
+  it("resolves per category when the map lists it", () => {
+    expect(effectiveRequired(gated(MAP), "EV")).toBe(true);
+    expect(effectiveRequired(gated({ ...MAP, EV: "conditional" }), "EV")).toBe(false);
+    expect(effectiveRequired(gated({ ...MAP, EV: "notApplicable" }), "EV")).toBe(false);
+  });
+
+  it("falls back to `required` for a category absent from the map", () => {
+    // "portable" is not a key, so the base flag applies — false here.
+    expect(effectiveRequired(gated(MAP), "portable")).toBe(false);
+  });
+
+  it("does not demand Annex XIII fields from an out-of-scope battery", () => {
+    // The whole point: portable / SLI owe no passport, so no field is mandatory.
+    for (const cat of ["portable", "SLI", "industrial_lte_2kwh"]) {
+      expect(effectiveRequiredForBattery(gated(MAP), cat)).toBe(false);
+    }
+    expect(effectiveRequiredForBattery(gated(MAP), "EV")).toBe(true);
+  });
+
+  it("an UNSET category is not treated as exemption", () => {
+    // Absence of a category is not evidence of exemption, but a gated field
+    // whose base flag is false still cannot block — BAT-1 warns instead.
+    expect(effectiveRequiredForBattery(gated(MAP), undefined)).toBe(false);
+    const always = tf("x", { validation: { required: true } });
+    expect(effectiveRequiredForBattery(always, undefined)).toBe(true);
   });
 });

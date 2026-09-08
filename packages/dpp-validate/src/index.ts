@@ -37,6 +37,11 @@ export type { Applicability, FieldGate } from "./battery-applicability.js";
 // Re-exported because a passport's publish-readiness and required economic
 // operators are part of judging whether it is compliant, not separate concerns.
 export { checkPublishReady } from "./vendor/publish-gate.js";
+// Exported alongside the gate: a caller rendering a form needs the same
+// per-category answer the gate uses, or its asterisks disagree with its verdict.
+export { effectiveRequired, effectiveRequiredForBattery } from "./vendor/publish-gate.js";
+export { isInScopeBatteryCategory } from "./vendor/battery-scope.js";
+export { isFieldAbsent, isFieldValueAbsent } from "./vendor/field-emptiness.js";
 export { getPartyRoles, isRequiredRole, allRolesForCategory, CATEGORY_PARTY_ROLES } from "./vendor/required-roles.js";
 export type { CategoryKey } from "./vendor/required-roles.js";
 export { derivePassportCounts } from "./vendor/counts.js";
