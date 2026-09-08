@@ -36,7 +36,7 @@ Building one means answering three questions. *Which fields does my category req
 product as an interoperable supply-chain event?* These packages answer the second and
 third. The first is answered by
 [**tracepass-dpp-schemas**](https://github.com/malinoto/tracepass-dpp-schemas), which
-publishes the field specifications for 12 categories.
+publishes the field specifications for 13 categories.
 
 ## Packages
 
@@ -112,8 +112,9 @@ it:
 ```
 
 It also reports its own coverage, so silence is never mistaken for a compliance claim.
-Three categories carry binding conditional rules — battery, chemicals, construction —
-plus one cross-cutting rule that applies to every category. For the other nine,
+Four categories carry binding conditional rules — battery, detergents,
+paints-coatings, construction — plus one cross-cutting rule that applies to every
+category. For the other nine,
 `conditionalCoverage` is `"static-only"`: the template's required fields are the whole
 obligation, and the engine says so rather than implying it checked more.
 
@@ -203,7 +204,7 @@ npm test          # vitest
 ## Related
 
 - **[tracepass-dpp-schemas](https://github.com/malinoto/tracepass-dpp-schemas)** — the
-  field specifications these packages validate against. 12 categories, each field
+  field specifications these packages validate against. 13 categories, each field
   traced to the article of EU law that mandates it. Pure JSON, any language.
   (Field totals move as templates change; that repo's `index.json` is the count.)
 

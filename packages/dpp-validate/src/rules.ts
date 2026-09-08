@@ -2,10 +2,11 @@
  * Per-category CONDITIONAL compliance rules.
  *
  * These encode the conditional obligations that are binding and in force.
- * Three categories carry them — battery, chemicals, construction — plus one
- * cross-cutting rule (CC-1) that applies to every category. The remaining
- * categories have no rule entry here, so the engine reports them
- * `static-only`: their template's required fields are the whole obligation.
+ * Four categories carry them — battery, detergents, paints-coatings,
+ * construction — plus one cross-cutting rule (CC-1) that applies to every
+ * category. The remaining categories have no rule entry here, so the engine
+ * reports them `static-only`: their template's required fields are the whole
+ * obligation.
  *
  * Rules live in TypeScript rather than a JSON DSL in the templates.
  * Regulatory logic stays in code, reviewed in pull requests, and is
@@ -394,7 +395,11 @@ const CON1: ConditionalRule = {
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
   battery: [BAT1, BAT_APP, BAT_VAL],
-  chemicals: [CHEM1],
+  // CHEM-1 is REACH Art. 33, which binds by substance content, not by product
+  // category. `chemicals` was split into these two successors; both carry
+  // `svhcSubstances` and `svhcSubstanceName`, so both engage the rule.
+  detergents: [CHEM1],
+  "paints-coatings": [CHEM1],
   construction: [CON1],
 };
 

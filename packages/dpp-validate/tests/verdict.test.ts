@@ -253,36 +253,52 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
   });
 });
 
-// ── Chemicals CHEM-1 ──────────────────────────────────────────────
-describe("evaluateCompliance — CHEM-1 SVHC disclosure", () => {
-  const t = () => template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
+// ── CHEM-1 · REACH Art. 33 ────────────────────────────────────────
+// Runs for BOTH successors of the former `chemicals` category. REACH binds by
+// substance content, not product category, so the split must not drop the rule
+// — these cases are what catch a registry keyed to a category that no longer
+// exists (the rule then silently never fires).
+describe.each(["detergents", "paints-coatings"])(
+  "evaluateCompliance — CHEM-1 SVHC disclosure (%s)",
+  (category) => {
+    const t = () => template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
 
-  it("warns (unverifiable) when SVHC content isn't recorded", () => {
-    const r = evaluateCompliance(passport({ parties: { manufacturer: party("DE") } }), t(), "chemicals");
-    expect(r.warnings.some((w) => w.ruleId === "CHEM-1" && w.type === "unverifiable_conditional")).toBe(true);
-  });
-
-  it("no CHEM-1 finding when SVHC array is empty (declared none above threshold)", () => {
-    const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field([]) } });
-    const r = evaluateCompliance(p, t(), "chemicals");
-    expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
-    expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
-  });
-
-  it("critical when SVHC present but no safe-use disclosure name", () => {
-    const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field(["lead"]) } });
-    const r = evaluateCompliance(p, t(), "chemicals");
-    expect(r.critical.some((c) => c.ruleId === "CHEM-1" && c.target === "svhcSubstanceName")).toBe(true);
-  });
-
-  it("satisfied when SVHC present and disclosure name set", () => {
-    const p = passport({
-      parties: { manufacturer: party("DE") },
-      fields: { svhcSubstances: field(["lead"]), svhcSubstanceName: field("lead") },
+    it("warns (unverifiable) when SVHC content isn't recorded", () => {
+      const r = evaluateCompliance(passport({ parties: { manufacturer: party("DE") } }), t(), category);
+      expect(r.warnings.some((w) => w.ruleId === "CHEM-1" && w.type === "unverifiable_conditional")).toBe(true);
     });
-    const r = evaluateCompliance(p, t(), "chemicals");
-    expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
-  });
+
+    it("no CHEM-1 finding when SVHC array is empty (declared none above threshold)", () => {
+      const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field([]) } });
+      const r = evaluateCompliance(p, t(), category);
+      expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
+      expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
+    });
+
+    it("critical when SVHC present but no safe-use disclosure name", () => {
+      const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field(["lead"]) } });
+      const r = evaluateCompliance(p, t(), category);
+      expect(r.critical.some((c) => c.ruleId === "CHEM-1" && c.target === "svhcSubstanceName")).toBe(true);
+    });
+
+    it("satisfied when SVHC present and disclosure name set", () => {
+      const p = passport({
+        parties: { manufacturer: party("DE") },
+        fields: { svhcSubstances: field(["lead"]), svhcSubstanceName: field("lead") },
+      });
+      const r = evaluateCompliance(p, t(), category);
+      expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
+    });
+  },
+);
+
+// The dead key must NOT resurrect the rule: `chemicals` is not a category.
+it("reports chemicals as static-only — the category no longer exists", () => {
+  const t = template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
+  const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field(["lead"]) } });
+  const r = evaluateCompliance(p, t, "chemicals");
+  expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
+  expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
 });
 
 // ── Construction CON-1 ────────────────────────────────────────────
