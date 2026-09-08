@@ -1,0 +1,47 @@
+{
+  "$comment": "Hashes of tracepass-platform modules hand-mirrored into this repo. Regenerate with `node scripts/build-mirror-manifest.mjs`; gate with `npm run check:mirrors`. Do not hand-edit.",
+  "files": [
+    {
+      "open": "packages/gs1-utils/src/digital-link.ts",
+      "platform": "src/lib/gs1/digital-link.ts",
+      "platformHash": "9ea57d2b3f42f425"
+    },
+    {
+      "open": "packages/gs1-utils/src/gtin.ts",
+      "platform": "src/lib/gs1/gtin.ts",
+      "platformHash": "1328b0599f0e404f"
+    },
+    {
+      "open": "packages/gs1-utils/src/gln.ts",
+      "platform": "src/lib/gs1/gln.ts",
+      "platformHash": "69ad8cb48e13343d"
+    },
+    {
+      "open": "packages/gs1-utils/src/language.ts",
+      "platform": "src/lib/gs1/language.ts",
+      "platformHash": "9dc4eff5f4ccf0c5"
+    },
+    {
+      "open": "packages/gs1-utils/src/qr.ts",
+      "platform": "src/lib/gs1/qr.ts",
+      "platformHash": "f2754e53e3e604f5"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/required-roles.ts",
+      "platform": "src/lib/parties/required-roles.ts",
+      "platformHash": "9b939b3da81d42b6"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/counts.ts",
+      "platform": "src/lib/passports/counts.ts",
+      "platformHash": "449de6a2b461e528"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/publish-gate.ts",
+      "platform": "src/lib/passports/publish-gate.ts",
+      "platformHash": "5576dd25e7e9a509",
+      "allowDivergence": "Platform honours validation.requiredBy per battery category (effectiveRequired / effectiveRequiredForBattery); this copy uses validation.required directly. Porting it is tracked separately.",
+      "openHash": "a98ebc9f42d88a9a"
+    }
+  ]
+}

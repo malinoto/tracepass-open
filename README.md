@@ -214,6 +214,13 @@ because that has happened twice.
 It runs after `npm run build` because it imports the built registry — checking
 what consumers actually get, rather than re-parsing the source.
 
+`check:mirrors` does the same for the files vendored from that platform verbatim
+— the GS1 helpers, the party-role map, the passport count helpers, the publish
+gate — hashing each against `mirror-manifest.json`. One divergence is recorded
+deliberately: this copy's publish gate reads `validation.required` directly,
+while the platform resolves per-battery-category applicability. Both sides of a
+recorded divergence are pinned, so an accepted gap cannot quietly widen.
+
 ## Related
 
 - **[tracepass-dpp-schemas](https://github.com/malinoto/tracepass-dpp-schemas)** — the

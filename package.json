@@ -17,7 +17,9 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:rule-drift": "node scripts/check-rule-drift.mjs",
-    "build:rule-surface": "node scripts/build-rule-surface.mjs"
+    "build:rule-surface": "node scripts/build-rule-surface.mjs",
+    "check:mirrors": "node scripts/check-mirrors.mjs",
+    "build:mirror-manifest": "node scripts/build-mirror-manifest.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

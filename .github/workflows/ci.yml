@@ -49,3 +49,9 @@ jobs:
 
       - name: Check compliance-rule drift
         run: npm run check:rule-drift
+
+      - name: Check vendored-file drift
+        # Hashes the files hand-copied from the platform (GS1 helpers, party
+        # roles, passport counts, publish gate) against mirror-manifest.json.
+        # Source-level, so it does not need the build.
+        run: npm run check:mirrors
