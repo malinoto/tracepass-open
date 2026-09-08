@@ -15,7 +15,9 @@
     "build": "npm run build -w @tracepass/dpp-types -w @tracepass/gs1-utils && npm run build -w @tracepass/dpp-epcis -w @tracepass/dpp-validate",
     "clean": "npm run clean --workspaces --if-present",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:rule-drift": "node scripts/check-rule-drift.mjs",
+    "build:rule-surface": "node scripts/build-rule-surface.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

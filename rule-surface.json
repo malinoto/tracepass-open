@@ -1,0 +1,39 @@
+{
+  "$comment": "Snapshot of tracepass-platform src/lib/compliance/rules.ts. Regenerate with `node scripts/build-rule-surface.mjs`; gate with `npm run check:rule-drift`. Do not hand-edit.",
+  "ruleIds": [
+    "BAT-1",
+    "BAT-APP",
+    "BAT-VAL",
+    "CC-1",
+    "CE-1",
+    "CHEM-1",
+    "CON-1"
+  ],
+  "categories": {
+    "battery": [
+      "BAT-1",
+      "BAT-APP",
+      "BAT-VAL",
+      "CE-1"
+    ],
+    "construction": [
+      "CE-1",
+      "CON-1"
+    ],
+    "detergents": [
+      "CHEM-1"
+    ],
+    "electronics": [
+      "CE-1"
+    ],
+    "paints-coatings": [
+      "CHEM-1"
+    ],
+    "steel": [
+      "CE-1"
+    ],
+    "toys": [
+      "CE-1"
+    ]
+  }
+}

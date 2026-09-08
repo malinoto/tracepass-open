@@ -1,0 +1,51 @@
+# Build, typecheck, test, and gate on compliance-rule drift.
+#
+# The publish workflow already runs build/typecheck/test, but only on a
+# `v*.*.*` tag — by then the code is being released. This runs the same gate on
+# every push and pull request, so a break is visible before it ships.
+#
+# `check:rule-drift` compares the BUILT rule registry against
+# `rule-surface.json`, the committed snapshot of the platform's compliance
+# engine. It runs after the build for that reason. See the header of
+# `scripts/check-rule-drift.mjs` for why the snapshot exists rather than a
+# direct read: this repo is public and the platform is private, so CI here
+# cannot read it without putting a cross-repo token in a public workflow.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Build, test, rule-drift
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        # Build first: typecheck and the cross-package tests resolve the
+        # @tracepass/* siblings through their dist/ output, and the drift gate
+        # imports the built registry.
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Check compliance-rule drift
+        run: npm run check:rule-drift

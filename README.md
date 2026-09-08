@@ -198,9 +198,21 @@ Node ≥ 18. ESM only.
 
 ```bash
 npm install
-npm run build     # tsc, per package
-npm test          # vitest
+npm run build             # tsc, per package
+npm test                  # vitest
+npm run check:rule-drift  # compliance rules vs the platform snapshot
 ```
+
+`check:rule-drift` compares the built conditional-rule registry against
+`rule-surface.json`. The rules here are extracted by hand from TracePass's
+platform engine, and a category missing from the registry does not fail loudly —
+it reports `static-only`, which reads as "no conditional applies to this
+category". That is a legitimate value, so a dropped rule is indistinguishable
+from a category that genuinely has none, and the mistake ships. The gate exists
+because that has happened twice.
+
+It runs after `npm run build` because it imports the built registry — checking
+what consumers actually get, rather than re-parsing the source.
 
 ## Related
 
