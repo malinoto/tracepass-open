@@ -9,7 +9,7 @@
 **A compliance validator, an EPCIS 2.0 event mapper, and GS1 identifier utilities — pure functions over plain objects, with no database, no network, and no dependencies.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-28%20passing-success)](./packages/dpp-validate/tests)
+[![Tests](https://img.shields.io/badge/tests-66%20passing-success)](./packages/dpp-validate/tests)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)](#zero-dependencies-is-a-design-constraint)
 [![Types](https://img.shields.io/badge/TypeScript-strict-3178c6)](./tsconfig.base.json)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](https://nodejs.org)
@@ -66,7 +66,7 @@ const passport = {
   status: "draft",
   fields: {
     ratedCapacity: { value: 3.4, status: "approved" },
-    // ... the other 93 fields Annex XIII requires
+    // ... the other 118 fields in the battery template (54 are required)
   },
   parties: {
     manufacturer: { legalName: "Acme Cells GmbH", country: "DE" },
@@ -78,7 +78,8 @@ const result = evaluateCompliance(passport, battery, "battery");
 result.verdict;              // "incomplete"
 result.conditionalCoverage;  // "evaluated"
 result.checkedRules;         // ["static:required-fields", "static:required-parties",
-                             //  "static:format", "BAT-1", "BAT-APP", "BAT-VAL", "CC-1"]
+                             //  "static:format", "BAT-1", "BAT-APP", "BAT-VAL",
+                             //  "CE-1", "CC-1"]
 
 for (const f of result.critical) {
   console.log(`${f.target}: ${f.why}  [${f.article}]`);
@@ -112,9 +113,9 @@ it:
 ```
 
 It also reports its own coverage, so silence is never mistaken for a compliance claim.
-Four categories carry binding conditional rules — battery, detergents,
-paints-coatings, construction — plus one cross-cutting rule that applies to every
-category. For the other nine,
+Seven categories carry binding conditional rules — battery, detergents,
+paints-coatings, construction, electronics, steel and toys — plus one
+cross-cutting rule that applies to every category. For the other six,
 `conditionalCoverage` is `"static-only"`: the template's required fields are the whole
 obligation, and the engine says so rather than implying it checked more.
 

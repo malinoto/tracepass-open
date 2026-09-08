@@ -40,11 +40,12 @@ identified, values match their datatype, enum, pattern, and bounds.
 
 **Conditional** — obligations that only fire under a condition. Battery carbon-footprint
 fields apply only to rechargeable batteries; REACH Article 33 disclosure triggers above
-0.1% w/w of an SVHC. Four categories carry these rules — battery, detergents,
-paints-coatings, construction — plus one cross-cutting rule for every category.
+0.1% w/w of an SVHC. Seven categories carry these rules — battery, detergents, paints-coatings,
+construction, electronics, steel and toys — plus one cross-cutting rule for
+every category.
 
 **Coverage** — the engine reports whether it evaluated conditionals at all. For the other
-nine categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for
+six categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for
 a compliance claim.
 
 ## It will not pass what it could not check

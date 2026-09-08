@@ -320,6 +320,41 @@ describe("evaluateCompliance — CON-1 DoP/DoC", () => {
   });
 });
 
+// ── CE-1 · CE-marking coherence ───────────────────────────────────
+describe("evaluateCompliance — CE-1 CE-marking coherence", () => {
+  const t = () => template([tf("ceMarkingStatus", { dataType: "enum" }), tf("ceMarking", { dataType: "boolean" })]);
+  const p = (fields: Record<string, PassportField>) =>
+    passport({ parties: { manufacturer: party("DE") }, fields });
+
+  it("critical when the mark applies but whether it is borne is unrecorded", () => {
+    const r = evaluateCompliance(p({ ceMarkingStatus: field("marked") }), t(), "electronics");
+    expect(r.critical.some((c) => c.ruleId === "CE-1" && c.target === "ceMarking")).toBe(true);
+  });
+
+  it("critical when bearing the mark contradicts a not_applicable status", () => {
+    const r = evaluateCompliance(
+      p({ ceMarkingStatus: field("not_applicable"), ceMarking: field(true) }),
+      t(),
+      "toys",
+    );
+    expect(r.critical.some((c) => c.ruleId === "CE-1")).toBe(true);
+  });
+
+  it("coherent status+mark produces no CE-1 finding", () => {
+    const r = evaluateCompliance(
+      p({ ceMarkingStatus: field("marked"), ceMarking: field(true) }),
+      t(),
+      "steel",
+    );
+    expect(r.critical.some((c) => c.ruleId === "CE-1")).toBe(false);
+  });
+
+  it("does not run for a category outside the CE regime", () => {
+    const r = evaluateCompliance(p({ ceMarkingStatus: field("marked") }), t(), "textile");
+    expect(r.critical.some((c) => c.ruleId === "CE-1")).toBe(false);
+  });
+});
+
 // ── Category coverage ─────────────────────────────────────────────
 // Both category-keyed maps in this package (CONDITIONAL_RULES and
 // CATEGORY_PARTY_ROLES) fail SILENTLY on a renamed category: the lookup

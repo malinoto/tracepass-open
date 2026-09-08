@@ -2,11 +2,11 @@
  * Per-category CONDITIONAL compliance rules.
  *
  * These encode the conditional obligations that are binding and in force.
- * Four categories carry them — battery, detergents, paints-coatings,
- * construction — plus one cross-cutting rule (CC-1) that applies to every
- * category. The remaining categories have no rule entry here, so the engine
- * reports them `static-only`: their template's required fields are the whole
- * obligation.
+ * Seven categories carry them — battery, detergents, paints-coatings,
+ * construction, electronics, steel and toys — plus one cross-cutting rule
+ * (CC-1) that applies to every category. The remaining categories have no rule
+ * entry here, so the engine reports them `static-only`: their template's
+ * required fields are the whole obligation.
  *
  * Rules live in TypeScript rather than a JSON DSL in the templates.
  * Regulatory logic stays in code, reviewed in pull requests, and is
@@ -387,6 +387,80 @@ const CON1: ConditionalRule = {
   },
 };
 
+// ── CE-1 · cross-category CE-marking coherence ──────────────────────
+// Two fields describe CE marking: `ceMarking` (does the article bear the
+// mark?) and `ceMarkingStatus` (what state is the conformity assessment
+// in?). They must agree.
+//
+// A CE marking never *expires* — the mark is a permanent legal assertion
+// about a product model. What expires is the certificate or Declaration of
+// Performance behind it, which is why `expired` is not one of the states.
+//
+// Where the regulation mandates the mark unconditionally (battery Art. 20,
+// electronics LVD/EMC Arts. 16-17, toys 2009/48/EC Art. 17) both fields are
+// statically required and this rule only checks coherence. Where
+// applicability is itself conditional on coverage by a harmonised technical
+// specification (construction and steel under CPR), `ceMarking` is not
+// statically required — this rule demands it once the status says the mark
+// applies.
+const CE1: ConditionalRule = {
+  id: "CE-1",
+  run(passport) {
+    const status = valueOf(passport, "ceMarkingStatus");
+    if (status === undefined) return []; // static tier already requires it
+
+    const bears = valueOf(passport, "ceMarking");
+
+    // The mark applies → the article must say whether it bears it.
+    if ((status === "marked" || status === "pending") && bears === undefined) {
+      return [
+        {
+          type: "conditional_missing",
+          severity: "critical",
+          target: "ceMarking",
+          article: "CE marking",
+          ruleId: "CE-1",
+          why: `CE marking status is "${String(status)}", so whether the product bears the CE mark must be recorded.`,
+          fix: "Set ceMarking to true or false.",
+        },
+      ];
+    }
+
+    // `not_applicable` means the product is outside every CE regime.
+    // Claiming the mark is affixed contradicts that.
+    if (status === "not_applicable" && bears === true) {
+      return [
+        {
+          type: "invalid_format",
+          severity: "critical",
+          target: "ceMarking",
+          article: "CE marking",
+          ruleId: "CE-1",
+          why: "The product is marked as bearing the CE mark while its CE marking status is 'not_applicable'. A product outside every CE regime cannot lawfully bear the mark.",
+          fix: "Either set ceMarking to false, or correct ceMarkingStatus to `marked`.",
+        },
+      ];
+    }
+
+    // Declared `marked` but the article does not bear it.
+    if (status === "marked" && bears === false) {
+      return [
+        {
+          type: "invalid_format",
+          severity: "warning",
+          target: "ceMarking",
+          article: "CE marking",
+          ruleId: "CE-1",
+          why: "CE marking status is 'marked' but the product is recorded as not bearing the CE mark.",
+          fix: "Set ceMarking to true, or change ceMarkingStatus to `pending` if the assessment is not complete.",
+        },
+      ];
+    }
+
+    return [];
+  },
+};
+
 /**
  * Conditional-rule registry. Categories ABSENT from this map have no
  * binding conditionals in force → the engine reports them `static-only`.
@@ -394,13 +468,16 @@ const CON1: ConditionalRule = {
  * is NOT listed per-category here.
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
-  battery: [BAT1, BAT_APP, BAT_VAL],
+  battery: [BAT1, BAT_APP, BAT_VAL, CE1],
   // CHEM-1 is REACH Art. 33, which binds by substance content, not by product
   // category. `chemicals` was split into these two successors; both carry
   // `svhcSubstances` and `svhcSubstanceName`, so both engage the rule.
   detergents: [CHEM1],
   "paints-coatings": [CHEM1],
-  construction: [CON1],
+  construction: [CON1, CE1],
+  electronics: [CE1],
+  steel: [CE1],
+  toys: [CE1],
 };
 
 /** The cross-cutting rule the engine runs for every category. */
