@@ -10,9 +10,11 @@
  *   2. CONDITIONAL — per-category rules that only fire under a condition
  *                    (e.g. battery passport required IF category is EV/LMT/
  *                    industrial>2kWh; EU operator required IF manufacturer
- *                    non-EU). Four categories carry binding conditionals —
- *                    battery, detergents, paints-coatings, construction — plus
- *                    one cross-cutting rule that applies to every category.
+ *                    non-EU). Seven categories carry binding conditionals —
+ *                    battery, construction, detergents, electronics,
+ *                    paints-coatings, steel and toys — plus one cross-cutting
+ *                    rule that applies to every category. `rule-surface.json`
+ *                    is the source; count it rather than trusting this list.
  *   3. COVERAGE    — the engine self-reports whether conditionals were
  *                    evaluated or the category is static-only, so an agent
  *                    NEVER reads silence as "compliant".

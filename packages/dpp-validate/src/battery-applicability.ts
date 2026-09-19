@@ -24,8 +24,9 @@
  *                        | portable). Read from `passport.fields`.
  *   - hasBMS, rechargeable, externalStorageOnly — tri-state booleans on
  *                        `passport.batteryProfile` (a separate block, NOT
- *                        template fields — keeps the "91 fields" count
- *                        intact). Absent ⇒ the dependent gate resolves to
+ *                        template fields — deliberately outside the template
+ *                        field set, so they do not inflate its count).
+ *                        Absent ⇒ the dependent gate resolves to
  *                        "unknown" (show + warn), not a guess.
  *
  * Pure + IO-free → unit-tested in tests/compliance/battery-applicability.test.ts.
