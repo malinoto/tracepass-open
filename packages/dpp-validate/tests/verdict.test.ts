@@ -238,6 +238,34 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     expect(r.verdict).toBe("incomplete");
   });
 
+  // Guards a CLASS of defect, not one string: remediation text must not name an
+  // identifier scheme that the rule never checks. BAT-1 tests PRESENCE of
+  // batteryUniqueIdentifier and nothing more, yet its `fix` read "(GS1 Digital
+  // Link)" — asserting a constraint it did not verify, and one EN 18219 does not
+  // impose: that standard is scheme-plural (a GS1 Digital Link URI is one
+  // permitted product-identifier route among several). A passport could satisfy
+  // BAT-1 with any non-empty value while being told it needed GS1, which could
+  // push an implementer off a scheme that was already conformant.
+  //
+  // Asserted over EVERY rule's findings rather than BAT-1's alone, so a new rule
+  // reintroducing the pattern elsewhere fails here too.
+  it("no rule's remediation text names an identifier scheme it does not verify", () => {
+    const p = passport({ parties, fields: { batteryCategory: field("EV") } });
+    const r = evaluateCompliance(p, t(), "battery");
+    const findings = [...r.critical, ...(r.warnings ?? [])];
+    // Sanity: the fixture must actually produce the BAT-1 finding, or this test
+    // would pass vacuously against an empty list.
+    expect(findings.some((f) => f.ruleId === "BAT-1")).toBe(true);
+
+    const SCHEME_NAMES = /GS1|Digital Link|GTIN|\bGLN\b|\bLEI\b|IEC 61406|\bDOI\b/i;
+    for (const f of findings) {
+      expect(
+        SCHEME_NAMES.test(f.fix ?? ""),
+        `${f.ruleId} remediation names an identifier scheme but the rule only checks presence: ${f.fix}`,
+      ).toBe(false);
+    }
+  });
+
   it("no BAT-1 finding for an out-of-scope portable battery", () => {
     const p = passport({ parties, fields: { batteryCategory: field("portable"), batteryUniqueIdentifier: field("x") } });
     const r = evaluateCompliance(p, t(), "battery");

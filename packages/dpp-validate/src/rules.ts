@@ -137,7 +137,14 @@ const BAT1: ConditionalRule = {
           article: "Art. 77",
           ruleId: "BAT-1",
           why: `This is an in-scope battery (${String(cat)}); a battery passport with its unique identifier is mandatory.`,
-          fix: `Provide ${key} — the battery passport's unique identifier (GS1 Digital Link).`,
+          // Deliberately does NOT name a scheme. EN 18219 (unique identifiers)
+          // is scheme-plural: a web-resolvable structured path such as a GS1
+          // Digital Link URI is one permitted route among several, not the
+          // mandated one. This rule also only checks PRESENCE — naming GS1 here
+          // asserted a constraint the rule never verified and the standard does
+          // not impose, which could push an implementer onto GS1 when their
+          // scheme was already conformant.
+          fix: `Provide ${key} — the battery passport's unique identifier, in one of the schemes EN 18219 permits for a product identifier.`,
         });
       }
     }
