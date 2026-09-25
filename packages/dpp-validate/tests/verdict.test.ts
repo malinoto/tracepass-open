@@ -479,3 +479,26 @@ describe("effectiveRequired — requiredBy resolution", () => {
     expect(effectiveRequiredForBattery(always, undefined)).toBe(true);
   });
 });
+
+// requiredBy is resolved from each category's own sub-category field, not only
+// batteryCategory (vendor/subcategory.ts, mirrored from the platform).
+describe("evaluateCompliance — requiredBy outside batteries", () => {
+  const t = () => ({
+    ...template([
+      tf("detergentUserType"),
+      tf("ingredients", { dataType: "array", validation: { required: false, requiredBy: { consumer: "required", industrial_institutional: "conditional" } } } as Partial<TemplateField>),
+    ]),
+    category: "detergents",
+  }) as unknown as Template;
+  const missing = (r: ReturnType<typeof evaluateCompliance>) => r.critical.some((c) => c.target === "ingredients");
+
+  it("a consumer detergent must carry its substance list", () => {
+    const r = evaluateCompliance(passport({ fields: { detergentUserType: field("consumer") } }), t(), "detergents");
+    expect(missing(r)).toBe(true);
+  });
+
+  it("an industrial and institutional detergent need not", () => {
+    const r = evaluateCompliance(passport({ fields: { detergentUserType: field("industrial_institutional") } }), t(), "detergents");
+    expect(missing(r)).toBe(false);
+  });
+});

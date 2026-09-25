@@ -80,6 +80,12 @@ export const MIRRORS = [
     open: "packages/dpp-validate/src/vendor/field-emptiness.ts",
     platform: "src/lib/passports/field-emptiness.ts",
   },
+  // The sub-category field map the gate resolves requiredBy with (battery,
+  // fmcg, detergents). Before, the gate read batteryCategory only.
+  {
+    open: "packages/dpp-validate/src/vendor/subcategory.ts",
+    platform: "src/lib/passports/subcategory.ts",
+  },
 ];
 
 /**

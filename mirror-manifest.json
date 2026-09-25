@@ -39,7 +39,7 @@
     {
       "open": "packages/dpp-validate/src/vendor/publish-gate.ts",
       "platform": "src/lib/passports/publish-gate.ts",
-      "platformHash": "999d1c0070cd7cd4"
+      "platformHash": "548db0417dfb7e58"
     },
     {
       "open": "packages/dpp-validate/src/vendor/battery-scope.ts",
@@ -50,6 +50,11 @@
       "open": "packages/dpp-validate/src/vendor/field-emptiness.ts",
       "platform": "src/lib/passports/field-emptiness.ts",
       "platformHash": "6fb72034bf97a240"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/subcategory.ts",
+      "platform": "src/lib/passports/subcategory.ts",
+      "platformHash": "aa7793a2ec95759c"
     }
   ]
 }

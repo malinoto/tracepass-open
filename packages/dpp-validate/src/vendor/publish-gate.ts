@@ -19,6 +19,7 @@
  * and commit `mirror-manifest.json` with the code.
  */
 
+import { passportSubcategory } from "./subcategory.js";
 import type { Passport, Template, TemplateField } from "@tracepass/dpp-types";
 import { isInScopeBatteryCategory } from "./battery-scope.js";
 import { isFieldAbsent } from "./field-emptiness.js";
@@ -113,6 +114,21 @@ export function effectiveRequiredForBattery(
 }
 
 /**
+ * `effectiveRequired` for any template: the battery scope rule
+ * (`effectiveRequiredForBattery`) applies to battery templates only, since a
+ * non-battery sub-category such as "laundry" is not an out-of-scope battery.
+ */
+export function effectiveRequiredFor(
+  templateCategory: string,
+  tf: Pick<TemplateField, "validation">,
+  subcategory: string | undefined,
+): boolean {
+  return templateCategory === "battery"
+    ? effectiveRequiredForBattery(tf, subcategory)
+    : effectiveRequired(tf, subcategory);
+}
+
+/**
  * True when the template EXPLICITLY marks this field `notApplicable` for the
  * given category — i.e. the Regulation says it must not be filled or displayed.
  *
@@ -181,15 +197,11 @@ export function checkPublishReady(
     };
   }
 
-  // Read the passport's battery category so effectiveRequired can resolve
-  // per-category applicability. For non-battery passports (no batteryCategory
-  // field) this is always undefined and effectiveRequired falls back to the
-  // plain `required` boolean — no behaviour change for other templates.
-  const categoryField = passport.fields["batteryCategory"];
-  const category =
-    categoryField && categoryField.value != null && categoryField.value !== ""
-      ? String(categoryField.value)
-      : undefined;
+  // The passport's sub-category, read from the field the template category
+  // names (battery: batteryCategory, fmcg: productSubcategory, detergents:
+  // detergentUserType; core SUBCATEGORY_FIELD), so effectiveRequired can
+  // resolve `requiredBy`. Unset → undefined → the plain `required` flag.
+  const category = passportSubcategory(template.category, passport.fields);
 
   const missingFields: string[] = [];
   const unapprovedFields: string[] = [];
@@ -200,7 +212,7 @@ export function checkPublishReady(
     // publication. Skip them before the required check.
     if (tf.validation.anticipated) continue;
 
-    if (!effectiveRequiredForBattery(tf, category)) continue;
+    if (!effectiveRequiredFor(template.category, tf, category)) continue;
     const f = passport.fields[tf.key];
     // Shared helper: `[]` stays a valid answer ("none apply"), while a
     // whitespace-only string now counts as missing — the inline `=== ""` it
