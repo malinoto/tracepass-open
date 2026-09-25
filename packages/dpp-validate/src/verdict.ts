@@ -104,6 +104,8 @@ export function evaluateCompliance(
   passport: Passport,
   template: Template | undefined,
   category: string,
+  /** Evaluation time for date-gated rules (BAT-2). Defaults to the current time. */
+  now: Date = new Date(),
 ): ComplianceResult {
   const { completionPercentage } = derivePassportCounts(passport.fields);
 
@@ -190,7 +192,7 @@ export function evaluateCompliance(
 
   for (const rule of [...categoryRules, ...CROSS_CUTTING_RULES]) {
     checkedRules.push(rule.id);
-    for (const finding of rule.run(passport, template)) {
+    for (const finding of rule.run(passport, template, { now })) {
       (finding.severity === "critical" ? critical : warnings).push(finding);
     }
   }

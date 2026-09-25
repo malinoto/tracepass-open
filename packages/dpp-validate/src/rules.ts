@@ -38,10 +38,16 @@ function valueOf(passport: Passport, key: string): unknown {
   return hasValue(passport, key) ? passport.fields[key].value : undefined;
 }
 
+/** What a rule may know besides the passport: the evaluation time, passed in
+ *  by the caller so date-gated rules are testable and flip without a release. */
+export interface RuleContext {
+  now: Date;
+}
+
 /** A conditional rule: given passport+template, produce zero or more findings. */
 export interface ConditionalRule {
   id: string;
-  run(passport: Passport, template: Template): ComplianceFinding[];
+  run(passport: Passport, template: Template, ctx?: RuleContext): ComplianceFinding[];
 }
 
 // ── CC-1 · cross-cutting EU economic-operator rule ──────────────────
@@ -104,9 +110,20 @@ const IN_SCOPE_BATTERY = new Set(["LMT", "EV", "industrial_gt_2kwh"]);
 // completeness is the static tier's job.
 const BATTERY_PASSPORT_FIELDS = ["batteryUniqueIdentifier"] as const;
 
+// BAT-2 · date gate, Art. 77(1): "From 18 February 2027 each LMT battery, each
+// industrial battery with a capacity greater than 2 kWh and each electric vehicle
+// battery … shall have an electronic record". Before that day the passport is
+// recommended, not mandatory, so BAT-1's finding is a warning; from that day it is
+// critical. Implemented inside BAT-1 because it changes BAT-1's severity and has
+// no finding of its own. Midnight UTC is the flip.
+export const BATTERY_PASSPORT_MANDATORY_FROM = "2027-02-18";
+export function batteryPassportMandatory(now: Date): boolean {
+  return now.getTime() >= Date.parse(`${BATTERY_PASSPORT_MANDATORY_FROM}T00:00:00Z`);
+}
+
 const BAT1: ConditionalRule = {
   id: "BAT-1",
-  run(passport) {
+  run(passport, _template, ctx) {
     const cat = valueOf(passport, "batteryCategory");
     if (cat === undefined) {
       return [
@@ -125,17 +142,20 @@ const BAT1: ConditionalRule = {
     // Out-of-scope categories (portable, SLI, industrial_lte_2kwh) → no obligation.
     if (!IN_SCOPE_BATTERY.has(String(cat))) return [];
 
+    const mandatory = batteryPassportMandatory(ctx?.now ?? new Date());
     const findings: ComplianceFinding[] = [];
     for (const key of BATTERY_PASSPORT_FIELDS) {
       if (!hasValue(passport, key)) {
         findings.push({
           type: "conditional_missing",
-          severity: "critical",
+          severity: mandatory ? "critical" : "warning",
           target: key,
           regulation: "(EU) 2023/1542",
-          article: "Art. 77",
+          article: "Art. 77(1)",
           ruleId: "BAT-1",
-          why: `This is an in-scope battery (${String(cat)}); a battery passport with its unique identifier is mandatory.`,
+          why: mandatory
+            ? `This is an in-scope battery (${String(cat)}); a battery passport with its unique identifier is mandatory.`
+            : `This is an in-scope battery (${String(cat)}); the battery passport becomes mandatory on 18 February 2027 (Art. 77(1)), and its unique identifier is not set yet.`,
           // Deliberately does NOT name a scheme. EN 18219 (unique identifiers)
           // is scheme-plural: a web-resolvable structured path such as a GS1
           // Digital Link URI is one permitted route among several, not the

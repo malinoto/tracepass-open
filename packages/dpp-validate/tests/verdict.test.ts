@@ -231,11 +231,26 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     expect(r.conditionalCoverage).toBe("evaluated");
   });
 
-  it("critical when an in-scope EV battery lacks its unique identifier", () => {
+  // BAT-2: Art. 77(1) applies from 18 February 2027, so the same gap is a
+  // warning before that day and critical from it.
+  const BEFORE = new Date("2027-02-17T23:59:59Z");
+  const FROM = new Date("2027-02-18T00:00:00Z");
+
+  it("critical when an in-scope EV battery lacks its unique identifier, from 18 Feb 2027", () => {
     const p = passport({ parties, fields: { batteryCategory: field("EV") } });
-    const r = evaluateCompliance(p, t(), "battery");
+    const r = evaluateCompliance(p, t(), "battery", FROM);
     expect(r.critical.some((c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier")).toBe(true);
     expect(r.verdict).toBe("incomplete");
+  });
+
+  it("warning, not critical, for the same gap before 18 Feb 2027 (BAT-2 date gate)", () => {
+    const p = passport({ parties, fields: { batteryCategory: field("EV") } });
+    const r = evaluateCompliance(p, t(), "battery", BEFORE);
+    expect(r.critical.some((c) => c.ruleId === "BAT-1")).toBe(false);
+    const w = r.warnings.find((c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier");
+    expect(w?.severity).toBe("warning");
+    expect(w?.why).toContain("18 February 2027");
+    expect(r.verdict).toBe("compliant_with_warnings");
   });
 
   // Guards a CLASS of defect, not one string: remediation text must not name an

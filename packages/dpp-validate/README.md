@@ -43,6 +43,15 @@ fields apply only to rechargeable batteries; CE-marking coherence triggers when 
 conformity status is recorded. Five categories carry these rules — battery, construction,
 electronics, steel and toys — plus one cross-cutting rule for every category.
 
+Some obligations start on a date. The battery passport is mandatory from 18 February 2027
+(Regulation (EU) 2023/1542 Art. 77(1)), so a missing passport identifier is a warning
+before that day and critical from it. The engine reads the date from an optional fourth
+argument, which defaults to now; pass one to evaluate as of a given day:
+
+```ts
+evaluateCompliance(passport, batteryTemplate, "battery", new Date("2027-02-18"));
+```
+
 **Coverage** — the engine reports whether it evaluated conditionals at all. For the other
 six categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for
 a compliance claim.
