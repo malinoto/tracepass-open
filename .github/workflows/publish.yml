@@ -103,6 +103,8 @@ jobs:
         # No NODE_AUTH_TOKEN: an empty token would make npm reject with
         # ENEEDAUTH before attempting OIDC. Absent ⇒ OIDC engages cleanly.
         # Provenance comes from publishConfig.provenance: true in each
-        # package.json. --workspaces publishes all four; a version already on
-        # the registry is skipped by npm with a non-fatal notice.
+        # package.json. --workspaces publishes all four, and a version already
+        # on the registry is FATAL: npm errors and the run stops. So every
+        # release bumps all four packages together, as the release flow above
+        # says, even when only one of them changed.
         run: npm publish --workspaces
