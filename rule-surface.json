@@ -6,7 +6,6 @@
     "BAT-VAL",
     "CC-1",
     "CE-1",
-    "CHEM-1",
     "CON-1"
   ],
   "categories": {
@@ -20,14 +19,8 @@
       "CE-1",
       "CON-1"
     ],
-    "detergents": [
-      "CHEM-1"
-    ],
     "electronics": [
       "CE-1"
-    ],
-    "paints-coatings": [
-      "CHEM-1"
     ],
     "steel": [
       "CE-1"

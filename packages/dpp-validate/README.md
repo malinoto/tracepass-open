@@ -3,7 +3,7 @@
 
 # @tracepass/dpp-validate
 
-**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, no third-party runtime dependencies, 28 tests.**
+**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, no third-party runtime dependencies, 43 tests.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
 [![Dependencies](https://img.shields.io/badge/third--party%20runtime%20deps-0-success)](#)
@@ -39,10 +39,9 @@ result.checkedRules;          // ["static:required-fields", ..., "BAT-1", "CC-1"
 identified, values match their datatype, enum, pattern, and bounds.
 
 **Conditional** — obligations that only fire under a condition. Battery carbon-footprint
-fields apply only to rechargeable batteries; REACH Article 33 disclosure triggers above
-0.1% w/w of an SVHC. Seven categories carry these rules — battery, detergents, paints-coatings,
-construction, electronics, steel and toys — plus one cross-cutting rule for
-every category.
+fields apply only to rechargeable batteries; CE-marking coherence triggers when a
+conformity status is recorded. Five categories carry these rules — battery, construction,
+electronics, steel and toys — plus one cross-cutting rule for every category.
 
 **Coverage** — the engine reports whether it evaluated conditionals at all. For the other
 six categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for

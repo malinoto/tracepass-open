@@ -131,9 +131,9 @@ describe("evaluateCompliance — static tier", () => {
       parties: { manufacturer: party("DE") },
     });
     const r = evaluateCompliance(p, t, "chemicals");
-    // Only the enum is under test — chemicals also raises an
-    // unverifiable_conditional for unrecorded SVHC content (CHEM-1),
-    // so assert on the format findings rather than the rolled-up verdict.
+    // The test isolates the enum shape — asserting on format findings directly
+    // rather than the rolled-up verdict so a future static-field addition to
+    // the chemicals template can't change this result.
     expect(r.warnings.filter((w) => w.type === "invalid_format")).toHaveLength(0);
   });
 
@@ -284,38 +284,38 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
   });
 });
 
-// ── CHEM-1 · REACH Art. 33 ────────────────────────────────────────
-// Runs for BOTH successors of the former `chemicals` category. REACH binds by
-// substance content, not product category, so the split must not drop the rule
-// — these cases are what catch a registry keyed to a category that no longer
-// exists (the rule then silently never fires).
+// ── CHEM-1 does NOT apply to detergents or paints-coatings ──────────
+// REACH Art. 33 addresses ARTICLES — physical objects that contain a
+// substance but do not intentionally release it during normal use.
+// Detergents and paints are MIXTURES; their SVHC disclosure obligation
+// is the safety data sheet under REACH Art. 31, not Art. 33. Annex VI
+// Part A of (EU) 2026/405 has no SVHC point for either category.
+//
+// These tests are the regression guard: they must FAIL if CHEM-1 is
+// reinstated for either category. Specifically, the strongest trigger is
+// tested — svhcSubstances populated with items AND svhcSubstanceName
+// absent — because that is the exact path the old rule used to produce
+// a `critical` finding. If it passes without a CHEM-1 finding, the rule
+// is absent; if someone adds it back, these fail loudly.
 describe.each(["detergents", "paints-coatings"])(
-  "evaluateCompliance — CHEM-1 SVHC disclosure (%s)",
+  "evaluateCompliance — no CHEM-1 for %s (REACH Art. 33 binds articles, not mixtures)",
   (category) => {
     const t = () => template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
 
-    it("warns (unverifiable) when SVHC content isn't recorded", () => {
+    it("no CHEM-1 warning when svhcSubstances is absent", () => {
       const r = evaluateCompliance(passport({ parties: { manufacturer: party("DE") } }), t(), category);
-      expect(r.warnings.some((w) => w.ruleId === "CHEM-1" && w.type === "unverifiable_conditional")).toBe(true);
-    });
-
-    it("no CHEM-1 finding when SVHC array is empty (declared none above threshold)", () => {
-      const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field([]) } });
-      const r = evaluateCompliance(p, t(), category);
-      expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
       expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
+      expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
     });
 
-    it("critical when SVHC present but no safe-use disclosure name", () => {
-      const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field(["lead"]) } });
-      const r = evaluateCompliance(p, t(), category);
-      expect(r.critical.some((c) => c.ruleId === "CHEM-1" && c.target === "svhcSubstanceName")).toBe(true);
-    });
-
-    it("satisfied when SVHC present and disclosure name set", () => {
+    it("no CHEM-1 critical even when SVHC present and svhcSubstanceName absent", () => {
+      // This is the exact condition that formerly triggered the critical finding.
+      // It must not fire: the obligation is on the safety data sheet, not the
+      // DPP. A passive pass here means the rule is gone; a failure means it
+      // was reintroduced.
       const p = passport({
         parties: { manufacturer: party("DE") },
-        fields: { svhcSubstances: field(["lead"]), svhcSubstanceName: field("lead") },
+        fields: { svhcSubstances: field(["lead"]) },
       });
       const r = evaluateCompliance(p, t(), category);
       expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);

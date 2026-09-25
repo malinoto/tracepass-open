@@ -2,11 +2,10 @@
  * Per-category CONDITIONAL compliance rules.
  *
  * These encode the conditional obligations that are binding and in force.
- * Seven categories carry them — battery, detergents, paints-coatings,
- * construction, electronics, steel and toys — plus one cross-cutting rule
- * (CC-1) that applies to every category. The remaining categories have no rule
- * entry here, so the engine reports them `static-only`: their template's
- * required fields are the whole obligation.
+ * Five categories carry them — battery, construction, electronics, steel and
+ * toys — plus one cross-cutting rule (CC-1) that applies to every category.
+ * The remaining categories have no rule entry here, so the engine reports them
+ * `static-only`: their template's required fields are the whole obligation.
  *
  * Rules live in TypeScript rather than a JSON DSL in the templates.
  * Regulatory logic stays in code, reviewed in pull requests, and is
@@ -314,54 +313,6 @@ const BAT_VAL: ConditionalRule = {
   },
 };
 
-// ── Chemicals · REACH Art. 33 + SCIP (WFD Art. 9(1)(i)) ─────────────
-// CHEM-1: SVHC disclosure required IF any Candidate-List SVHC present
-// >0.1% w/w. The trigger is composition data the passport may not carry
-// machine-readably — when `svhcSubstances` is absent we cannot tell
-// whether the threshold is crossed, so we WARN (verify manually) rather
-// than assert compliance. When the array is present and non-empty, the
-// disclosure obligation is engaged → require the safe-use disclosure.
-const CHEM1: ConditionalRule = {
-  id: "CHEM-1",
-  run(passport) {
-    const svhc = valueOf(passport, "svhcSubstances");
-    if (svhc === undefined) {
-      return [
-        {
-          type: "unverifiable_conditional",
-          severity: "warning",
-          target: "svhcSubstances",
-          regulation: "(EC) 1907/2006",
-          article: "Art. 33",
-          ruleId: "CHEM-1",
-          why: "SVHC content isn't recorded, so REACH Art. 33 / SCIP disclosure (triggered above 0.1% w/w) couldn't be evaluated.",
-          fix: "Record svhcSubstances. If any Candidate-List substance exceeds 0.1% w/w, safe-use info and a SCIP notification are required.",
-        },
-      ];
-    }
-    // Empty array → declared no SVHC above threshold → obligation not engaged.
-    const list = Array.isArray(svhc) ? svhc : [svhc];
-    if (list.length === 0) return [];
-
-    // SVHC present → the safe-use disclosure (substance name min.) must be set.
-    if (!hasValue(passport, "svhcSubstanceName")) {
-      return [
-        {
-          type: "conditional_missing",
-          severity: "critical",
-          target: "svhcSubstanceName",
-          regulation: "(EC) 1907/2006",
-          article: "Art. 33(1)",
-          ruleId: "CHEM-1",
-          why: "A Candidate-List SVHC is recorded; Art. 33 requires safe-use information including, as a minimum, the substance name.",
-          fix: "Provide svhcSubstanceName and ensure a SCIP notification reference (WFD Art. 9(1)(i)) is recorded.",
-        },
-      ];
-    }
-    return [];
-  },
-};
-
 // ── Construction · Reg (EU) 2024/3110 (new CPR) ─────────────────────
 // CON-1: a Declaration of Performance & Conformity is required IF the
 // product is covered by a harmonised technical specification. The
@@ -476,11 +427,6 @@ const CE1: ConditionalRule = {
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
   battery: [BAT1, BAT_APP, BAT_VAL, CE1],
-  // CHEM-1 is REACH Art. 33, which binds by substance content, not by product
-  // category. `chemicals` was split into these two successors; both carry
-  // `svhcSubstances` and `svhcSubstanceName`, so both engage the rule.
-  detergents: [CHEM1],
-  "paints-coatings": [CHEM1],
   construction: [CON1, CE1],
   electronics: [CE1],
   steel: [CE1],
