@@ -83,6 +83,13 @@ A `compliant` verdict means *this passport satisfies the rules encoded here* —
 product may be placed on the market*. Delegated acts are still landing. Verify against
 [EUR-Lex](https://eur-lex.europa.eu).
 
+Plain-language background on the rules encoded here:
+
+- [Holding data is not compliance](https://www.tracepass.eu/regulatory/holding-data-is-not-compliance)
+  — where DPP duties are actually discharged, and why the verdict is narrower than market placement.
+- [Article 77 battery passport — Regulation (EU) 2023/1542](https://www.tracepass.eu/regulatory/battery-articles/article-77)
+  — the article behind the battery checks and applicability gates.
+
 ## License
 
 [Apache-2.0](../../LICENSE)

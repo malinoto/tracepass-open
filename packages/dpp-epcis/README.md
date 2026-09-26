@@ -60,6 +60,9 @@ https://tracepass.eu/voc/cbv/bizstep/rolling
 Standard steps are used wherever one exists. `validateEpcisDocument` is a structural
 check — envelope, event type, event time — not a full JSON Schema validation.
 
+Background: [What is EPCIS 2.0?](https://www.tracepass.eu/glossary/epcis) — the GS1
+supply-chain event standard this package emits.
+
 ## License
 
 [Apache-2.0](../../LICENSE)
