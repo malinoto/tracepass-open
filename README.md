@@ -227,6 +227,16 @@ both sides so an accepted gap cannot quietly widen.
   traced to the article of EU law that mandates it. Pure JSON, any language.
   (Field totals move as templates change; that repo's `index.json` is the count.)
 
+Plain-language explainers of what the validator checks and why:
+
+- [Holding data is not compliance](https://www.tracepass.eu/regulatory/holding-data-is-not-compliance)
+  — where DPP duties are actually discharged, and why a `compliant` verdict is narrower than market placement.
+- [Article 77 battery passport — Regulation (EU) 2023/1542](https://www.tracepass.eu/regulatory/battery-articles/article-77)
+  — the rules behind the battery checks.
+- [ESPR delegated acts, category by category](https://www.tracepass.eu/regulatory/delegated-acts)
+  — which categories have an adopted act yet.
+- [What is EPCIS 2.0?](https://www.tracepass.eu/glossary/epcis) — the GS1 event standard `dpp-epcis` emits.
+
 ## Provenance and limits
 
 These packages are extracted from the platform that
