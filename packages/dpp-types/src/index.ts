@@ -250,6 +250,11 @@ export interface Party {
   country?: string;
   /** Fallback identifier (VAT, EORI, national tax id) for entities lacking a GLN. */
   legacyOperatorId?: string;
+  /**
+   * Scheme-tagged operator identifiers per EN 18219 (ISO/IEC 6523, GLN, DID, DOI).
+   * Additive alongside the existing `gln` field; new integrations should prefer this.
+   */
+  identifiers?: OperatorIdentifier[];
   url?: string;
   status?: PartyStatus;
 }
@@ -292,7 +297,139 @@ export interface BatteryProfile {
   isStationaryBess?: BatteryProfileFlag;
 }
 
+// ─── Scheme-tagged product identifiers (EN 18219) ──────────────────────────
+
+/**
+ * GS1 product identifier — EN 18219 scheme 1 using GS1 Application Identifiers
+ * (GS1 Digital Link). The GTIN is always stored as 14 digits; GTIN-8/12/13
+ * inputs must be left-padded before use here.
+ */
+export interface Gs1Identifier {
+  scheme: "gs1";
+  /** GTIN-14 (14 numeric digits). GTIN-8/12/13 normalised by left-padding with zeros. */
+  gtin: string;
+  serialNumber: string;
+  /** GS1 Digital Link URI, e.g. `"https://id.example.com/01/…/21/…"`. */
+  digitalLinkUri?: string;
+}
+
+/**
+ * ISO/IEC 15459 product identifier — EN 18219 scheme 1, non-GS1 issuing agency.
+ * The issuingAgencyCode is a code registered under ISO/IEC 15459-2.
+ *
+ * Battery Regulation Art. 77(3) requires ISO/IEC 15459, so battery passports
+ * may only carry `gs1` or `iso15459` product identifiers.
+ */
+export interface Iso15459Identifier {
+  scheme: "iso15459";
+  /**
+   * Registered issuing agency code — 1–3 upper-case alphanumeric characters.
+   * The first character is always a letter: GS1 holds the all-digit code range.
+   */
+  issuingAgencyCode: string;
+  primaryId: string;
+  /** Instance-level serial, when present. */
+  serial?: string;
+  /** The identifier in the issuing agency's canonical string form. */
+  raw: string;
+  /** The URI form of this identifier, when the agency provides one. */
+  uri?: string;
+}
+
+/** IEC 61406 Identification Link (EN 18219 scheme 2). An https URL. */
+export interface Iec61406Identifier {
+  scheme: "iec61406";
+  /** The Identification Link URI (an https URL, RFC 3986-valid, ASCII-only). */
+  uri: string;
+}
+
+/**
+ * W3C DID Core identifier (EN 18219 scheme 3).
+ * did:web, did:ethr and did:ebsi are examples in EN 18219 5.4.1, not a closed
+ * list — any DID Core syntax is accepted. No method allow-list is enforced.
+ */
+export interface DidIdentifier {
+  scheme: "did";
+  /** The full DID string, e.g. `"did:web:example.com"`. */
+  did: string;
+  /** The DID method, e.g. `"web"`, `"ethr"`, `"ebsi"`. */
+  method: string;
+}
+
+/**
+ * DOI (EN 18219 scheme 5; ISO 26324).
+ * Stored in bare form: `10.<registrant>/<suffix>`. Accepts `doi:` and
+ * `https://doi.org/` prefixes on input; always normalised to bare form here.
+ */
+export interface DoiIdentifier {
+  scheme: "doi";
+  /** The DOI in bare form, e.g. `"10.1234/example-suffix"`. Case-insensitive; stored as lower-case. */
+  doi: string;
+}
+
+/**
+ * A scheme-tagged product identifier per EN 18219.
+ *
+ * Discriminated on `scheme`. EN 18219 scheme 4 ("identification for products
+ * and product groups") is not yet modelled — clause 5.4.2 onward is unread.
+ *
+ * **Battery passports** accept only `gs1` and `iso15459`; Battery Regulation
+ * Art. 77(3) requires ISO/IEC 15459 until a delegated act replaces it with
+ * EN 18219.
+ */
+export type ProductIdentifier =
+  | Gs1Identifier
+  | Iso15459Identifier
+  | Iec61406Identifier
+  | DidIdentifier
+  | DoiIdentifier;
+
+// ─── Scheme-tagged operator and facility identifiers (EN 18219) ─────────────
+
+/**
+ * ISO/IEC 6523 economic-operator identifier (EN 18219 scheme 6).
+ * Common ICD values: `"0199"` = LEI (ISO 17442), `"0088"` = GLN, `"0060"` = DUNS.
+ */
+export interface Iso6523Identifier {
+  scheme: "iso6523";
+  /** 4-digit International Code Designator, e.g. `"0199"` for LEI. */
+  icd: string;
+  value: string;
+}
+
+/**
+ * Scheme-tagged economic-operator identifier per EN 18219.
+ * Schemes 6 (ISO/IEC 6523), 7 (GLN via ISO/IEC 15418), 8 (DID), 9 (DOI).
+ *
+ * **LEI** is carried as `{scheme: "iso6523", icd: "0199", value: "<20-char LEI>"}`.
+ * LEI is not a product identifier (EN 18219 clause 5.1 limits products to
+ * schemes 1–5, none of which is LEI).
+ */
+export type OperatorIdentifier =
+  | Iso6523Identifier
+  | { scheme: "gln"; gln: string }
+  | { scheme: "did"; did: string }
+  | { scheme: "doi"; doi: string };
+
+/**
+ * Facility identifier per EN 18219.
+ * EN 18219 scheme 7 names GLN (via ISO/IEC 15418) as the facility scheme.
+ * No other heading names facilities.
+ */
+export type FacilityIdentifier = { scheme: "gln"; gln: string; extension?: string };
+
 export interface Passport {
+  /**
+   * Scheme-tagged product identifier per EN 18219.
+   *
+   * New code should set this field. `gs1` is kept as a deprecated alias for an
+   * existing GS1 identifier and is read by the platform's legacy path.
+   */
+  identifier?: ProductIdentifier;
+  /**
+   * @deprecated Use `identifier` with `scheme: "gs1"` instead. Kept
+   * indefinitely as a read alias; the platform's v1 API accepts both.
+   */
   gs1?: {
     gtin: string;
     serialNumber: string;

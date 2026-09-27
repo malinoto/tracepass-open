@@ -30,8 +30,11 @@ import { validateGln } from "@tracepass/gs1-utils";
  */
 const GS1_CANONICAL_HOST = "https://id.gs1.org";
 
-/** GS1 Application Identifier for a location / party (GLN). */
+/** GS1 Application Identifier for a physical location (SGLN). */
 const AI_LOCATION = "414";
+
+/** GS1 Application Identifier for an economic operator / party (PGLN). */
+const AI_PARTY = "417";
 
 /**
  * Build the EPC URI ("what") for a passport. We use the passport's
@@ -74,6 +77,23 @@ export function locationRef(
 ): { id: string } | null {
   const uri = locationUri(gln);
   return uri ? { id: uri } : null;
+}
+
+/**
+ * Build a GS1 PGLN URI for an economic operator's GLN using AI 417.
+ *
+ * AI 414 identifies a physical location; AI 417 identifies the party
+ * that owns or operates it. Use this alongside {@link locationUri} when
+ * the event needs to name the operator separately from the physical site —
+ * e.g. in a `sourceList` / `destinationList` entry.
+ *
+ * Returns null when the GLN is absent or fails the mod-10 check — an
+ * invalid GLN must not produce a malformed party URI.
+ */
+export function partyUri(gln: string | undefined | null): string | null {
+  if (typeof gln !== "string") return null;
+  if (!validateGln(gln)) return null;
+  return `${GS1_CANONICAL_HOST}/${AI_PARTY}/${gln}`;
 }
 
 /**

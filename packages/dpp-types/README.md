@@ -31,6 +31,38 @@ import type { Template, Passport, TemplateField } from "@tracepass/dpp-types";
 MongoDB, Postgres, or a JSON file works unchanged. Storage engines disagree about what an
 id is; the passport logic doesn't need to care.
 
+## Product and operator identifiers (EN 18219)
+
+`Passport.identifier` carries a `ProductIdentifier` — a discriminated union over the five
+schemes EN 18219 defines for Digital Product Passports:
+
+```ts
+import type { ProductIdentifier, OperatorIdentifier, FacilityIdentifier } from "@tracepass/dpp-types";
+
+// GS1 Digital Link (scheme 1)
+const gs1: ProductIdentifier = { scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-001" };
+
+// ISO/IEC 15459 — any issuing agency (scheme 1)
+const iso: ProductIdentifier = { scheme: "iso15459", issuingAgencyCode: "MH", primaryId: "BAT-001", raw: "MHBAT-001" };
+
+// IEC 61406 digital nameplate URL (scheme 2)
+const iec: ProductIdentifier = { scheme: "iec61406", uri: "https://id.example.com/asset/42" };
+
+// W3C Decentralised Identifier (scheme 3)
+const did: ProductIdentifier = { scheme: "did", method: "web", did: "did:web:example.com" };
+
+// DOI (scheme 5)
+const doi: ProductIdentifier = { scheme: "doi", doi: "10.1234/my-passport" };
+```
+
+`Party.identifiers` carries `OperatorIdentifier[]` — ISO 6523 (GLN, LEI, DUNS), standalone
+GLN, DID, or DOI. `FacilityIdentifier` is GLN-only (EN 18219 scheme 7).
+
+The legacy `Passport.gs1` field is still present but **`@deprecated`** — use
+`identifier: { scheme: "gs1", ... }` instead.
+
+Validation is in [`@tracepass/dpp-identifiers`](../dpp-identifiers).
+
 ## Types model the file, not the database
 
 `Template` describes the shape of a published template JSON file. It deliberately has no
@@ -45,6 +77,7 @@ care not to coerce it to `0`.
 ## Related
 
 - [`@tracepass/dpp-validate`](../dpp-validate) — compliance verdicts over these types
+- [`@tracepass/dpp-identifiers`](../dpp-identifiers) — validate/parse identifiers per EN 18219
 - [`tracepass-dpp-schemas`](https://github.com/malinoto/tracepass-dpp-schemas) — the field specs themselves
 
 ## License

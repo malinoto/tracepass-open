@@ -30,8 +30,9 @@ import {
   mapServiceEventType,
   mapOwnershipReasonDisposition,
   CBV_BIZSTEP_URI,
+  CBV_SOURCE_DEST_TYPE_URI,
 } from "./cbv.js";
-import { locationRef, buildEventId } from "./identifiers.js";
+import { locationRef, buildEventId, partyUri } from "./identifiers.js";
 
 /** EPCIS `eventTimeZoneOffset` for our UTC-stored timestamps. */
 const UTC_OFFSET = "+00:00";
@@ -42,6 +43,11 @@ const UTC_OFFSET = "+00:00";
  * `{eventType, timestamp, location, country, operator, epcisEventId}`.
  * Every field is optional in practice — supplier-provided data is
  * uneven — so the builder must tolerate partial entries.
+ *
+ * **Migration note (v0.9.0 BREAKING):** `gln` has been split into two fields.
+ * Replace `gln` with `facilityGln` (AI 414, readPoint/bizLocation) and add
+ * `operatorGln` (AI 417, sourceList possessing_party) if the event should
+ * also name the economic operator.
  */
 export interface SupplyChainEventInput {
   eventType?: string;
@@ -52,8 +58,10 @@ export interface SupplyChainEventInput {
   /** A pre-existing EPCIS event id, if the source system already had
    *  one. When present we reuse it instead of minting our own. */
   epcisEventId?: string;
-  /** GLN of the operating site, when the source provided one. */
-  gln?: string;
+  /** GLN of the physical facility — emitted as AI 414 readPoint/bizLocation. */
+  facilityGln?: string;
+  /** GLN of the economic operator — emitted as AI 417 party in sourceList. */
+  operatorGln?: string;
 }
 
 /**
@@ -100,9 +108,16 @@ export function buildTransformationEvent(
     bizStep,
   };
 
-  const where = locationRef(entry.gln);
+  const where = locationRef(entry.facilityGln);
   if (where) {
     event.bizLocation = where;
+  }
+
+  // If the economic operator's GLN is known, emit it as AI 417 in sourceList
+  // (CBV possessing_party — the operator possesses the production facility).
+  const opUri = partyUri(entry.operatorGln);
+  if (opUri) {
+    event.sourceList = [{ type: CBV_SOURCE_DEST_TYPE_URI.possessing_party, source: opUri }];
   }
 
   // Preserve human-readable provenance that has no native EPCIS slot
@@ -211,6 +226,13 @@ export function buildOwnershipObjectEvent(
  * gets exactly one; it anchors the event timeline even when the
  * passport has no supply-chain or service events at all.
  *
+ * **Migration note (v0.9.0 BREAKING):** the fourth argument has changed from
+ * `manufacturerGln?: string | null` to `glns?: { facilityGln?, operatorGln? }`.
+ * Replace `buildCommissioningEvent(at, epc, id, gln)` with
+ * `buildCommissioningEvent(at, epc, id, { facilityGln: gln })`.
+ * If the manufacturer's operator GLN (AI 417) should also appear in
+ * `destinationList`, pass `operatorGln` in addition.
+ *
  * Returns null when there is no publish timestamp (an unpublished
  * passport shouldn't be EPCIS-exported in the first place).
  */
@@ -218,7 +240,7 @@ export function buildCommissioningEvent(
   publishedAt: Date | string | undefined | null,
   productEpc: string,
   passportId: string,
-  manufacturerGln?: string | null,
+  glns?: { facilityGln?: string | null; operatorGln?: string | null } | null,
 ): Record<string, unknown> | null {
   const eventTime = toEventTime(publishedAt);
   if (!eventTime) return null;
@@ -233,8 +255,16 @@ export function buildCommissioningEvent(
     bizStep: CBV_BIZSTEP_URI.commissioning,
   };
 
-  const where = locationRef(manufacturerGln);
+  const where = locationRef(glns?.facilityGln);
   if (where) event.bizLocation = where;
+
+  // If the economic operator's GLN (AI 417) is supplied, name them as the
+  // owning party in destinationList — the manufacturer becomes the initial
+  // owner when the passport is commissioned.
+  const opUri = partyUri(glns?.operatorGln);
+  if (opUri) {
+    event.destinationList = [{ type: CBV_SOURCE_DEST_TYPE_URI.owning_party, destination: opUri }];
+  }
 
   return event;
 }
@@ -243,13 +273,20 @@ export function buildCommissioningEvent(
  * One supply-chain event a supplier reports through the portal — the
  * plain shape collected from the supplier-facing form (mirrors the
  * Zod `supplierSupplyChainEventSchema`).
+ *
+ * **Migration note (v0.9.0 BREAKING):** `gln` has been split.
+ * Replace `gln` with `facilityGln` (AI 414, readPoint/bizLocation) and
+ * optionally add `operatorGln` (AI 417, sourceList possessing_party).
  */
 export interface SupplierReportedEvent {
   eventType: string;
   timestamp: string;
   location?: string;
   country?: string;
-  gln?: string;
+  /** GLN of the physical facility — emitted as AI 414 readPoint/bizLocation. */
+  facilityGln?: string;
+  /** GLN of the economic operator — emitted as AI 417 party in sourceList. */
+  operatorGln?: string;
 }
 
 /**
@@ -290,8 +327,15 @@ export function buildSupplierObjectEvent(
     bizStep,
   };
 
-  const where = locationRef(report.gln);
+  const where = locationRef(report.facilityGln);
   if (where) event.bizLocation = where;
+
+  // If the economic operator's GLN is known, emit it as AI 417 in sourceList
+  // (CBV possessing_party — the supplier possesses the item being reported).
+  const opUri = partyUri(report.operatorGln);
+  if (opUri) {
+    event.sourceList = [{ type: CBV_SOURCE_DEST_TYPE_URI.possessing_party, source: opUri }];
+  }
 
   // Human-readable provenance the supplier gave — no native EPCIS
   // slot, kept under the tracepass: namespace (a strict consumer

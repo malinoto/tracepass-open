@@ -22,6 +22,8 @@ export {
 
 export {
   validateGtin,
+  normalizeGtin,
+  toGtin14,
   calculateCheckDigit as calculateGtinCheckDigit,
 } from "./gtin.js";
 

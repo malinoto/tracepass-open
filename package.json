@@ -12,7 +12,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "npm run build -w @tracepass/dpp-types -w @tracepass/gs1-utils && npm run build -w @tracepass/dpp-epcis -w @tracepass/dpp-validate",
+    "build": "npm run build -w @tracepass/dpp-types -w @tracepass/gs1-utils && npm run build -w @tracepass/dpp-epcis -w @tracepass/dpp-validate -w @tracepass/dpp-identifiers",
     "clean": "npm run clean --workspaces --if-present",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",

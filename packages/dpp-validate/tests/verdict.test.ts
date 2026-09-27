@@ -253,29 +253,37 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     expect(r.verdict).toBe("compliant_with_warnings");
   });
 
-  // Guards a CLASS of defect, not one string: remediation text must not name an
-  // identifier scheme that the rule never checks. BAT-1 tests PRESENCE of
-  // batteryUniqueIdentifier and nothing more, yet its `fix` read "(GS1 Digital
-  // Link)" — asserting a constraint it did not verify, and one EN 18219 does not
-  // impose: that standard is scheme-plural (a GS1 Digital Link URI is one
-  // permitted product-identifier route among several). A passport could satisfy
-  // BAT-1 with any non-empty value while being told it needed GS1, which could
-  // push an implementer off a scheme that was already conformant.
+  // Guards the BAT-1 fix text: it must cite ISO/IEC 15459 (Battery Regulation
+  // Art. 77(3) requires it until a delegated act replaces it with EN 18219), and
+  // must name GS1 only as an *example*, not as the sole required scheme. The
+  // previous text said "(GS1 Digital Link)" without "e.g." — asserting a
+  // constraint BAT-1 never verified and EN 18219 does not impose. Batteries are
+  // a special case: Art. 77(3) does constrain the scheme (to 15459), so the fix
+  // text is intentionally specific about 15459 while keeping GS1 as an example.
   //
-  // Asserted over EVERY rule's findings rather than BAT-1's alone, so a new rule
-  // reintroducing the pattern elsewhere fails here too.
-  it("no rule's remediation text names an identifier scheme it does not verify", () => {
+  // The non-battery cross-cutting rule (CC-1) and other rules must still not name
+  // schemes they don't verify.
+  it("BAT-1 remediation text cites ISO/IEC 15459 and Art. 77(3), naming GS1 only as an example", () => {
     const p = passport({ parties, fields: { batteryCategory: field("EV") } });
     const r = evaluateCompliance(p, t(), "battery");
     const findings = [...r.critical, ...(r.warnings ?? [])];
-    // Sanity: the fixture must actually produce the BAT-1 finding, or this test
-    // would pass vacuously against an empty list.
-    expect(findings.some((f) => f.ruleId === "BAT-1")).toBe(true);
+    // Sanity: the fixture must produce the BAT-1 finding.
+    const bat1 = findings.find((f) => f.ruleId === "BAT-1");
+    expect(bat1).toBeDefined();
+    // Must cite the legal basis for the scheme restriction.
+    expect(bat1?.fix).toMatch(/ISO\/IEC 15459/);
+    expect(bat1?.fix).toMatch(/Art\. 77\(3\)/);
+    // GS1 must appear only as an example (preceded by "e.g.").
+    if (bat1?.fix && /GS1/.test(bat1.fix)) {
+      expect(bat1.fix).toMatch(/e\.g\.\s+a GS1/i);
+    }
 
-    const SCHEME_NAMES = /GS1|Digital Link|GTIN|\bGLN\b|\bLEI\b|IEC 61406|\bDOI\b/i;
-    for (const f of findings) {
+    // Other rules (CC-1, BAT-APP, BAT-VAL, CE-1) must still not assert a
+    // scheme they do not check.
+    const NON_BAT1_SCHEME_NAMES = /GS1|Digital Link|GTIN|\bGLN\b|\bLEI\b|IEC 61406|\bDOI\b/i;
+    for (const f of findings.filter((f) => f.ruleId !== "BAT-1")) {
       expect(
-        SCHEME_NAMES.test(f.fix ?? ""),
+        NON_BAT1_SCHEME_NAMES.test(f.fix ?? ""),
         `${f.ruleId} remediation names an identifier scheme but the rule only checks presence: ${f.fix}`,
       ).toBe(false);
     }

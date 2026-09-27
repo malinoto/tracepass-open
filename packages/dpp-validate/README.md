@@ -3,7 +3,7 @@
 
 # @tracepass/dpp-validate
 
-**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, no third-party runtime dependencies, 43 tests.**
+**Evaluate an EU Digital Product Passport against its category field spec. Pure functions, no third-party runtime dependencies, 46 tests.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
 [![Dependencies](https://img.shields.io/badge/third--party%20runtime%20deps-0-success)](#)
@@ -82,6 +82,21 @@ legally-required field.
 A `compliant` verdict means *this passport satisfies the rules encoded here* — not *this
 product may be placed on the market*. Delegated acts are still landing. Verify against
 [EUR-Lex](https://eur-lex.europa.eu).
+
+## Battery identifier requirement (BAT-1)
+
+The battery passport must carry a unique product identifier. Battery Regulation Art. 77(3)
+requires ISO/IEC 15459 until a delegated act replaces it with EN 18219. A GS1 Digital Link
+URI satisfies that requirement because GS1 is an ISO/IEC 15459 issuing agency. The BAT-1
+fix text in findings explains this:
+
+```jsonc
+{
+  "fix": "Provide identifier — an ISO/IEC 15459 unique identifier, e.g. a GS1 Digital Link URI
+          (Battery Regulation Art. 77(3) requires ISO/IEC 15459 until a delegated act replaces
+          it with EN 18219)."
+}
+```
 
 Plain-language background on the rules encoded here:
 

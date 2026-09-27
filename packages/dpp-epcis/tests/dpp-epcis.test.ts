@@ -6,7 +6,9 @@ import {
   normalizeStepToken,
   validateEpcisDocument,
   CBV_BIZSTEP_URI,
+  CBV_SOURCE_DEST_TYPE_URI,
   EPCIS_CONTEXT_URL,
+  partyUri,
 } from "../src/index.js";
 
 // A well-formed EPCIS 2.0 document wrapper around one or more events.
@@ -48,24 +50,54 @@ describe("buildCommissioningEvent", () => {
     expect(ev.eventID).toBe("urn:tracepass:epcis:p-123:commissioning");
     expect(ev.bizStep).toBe(CBV_BIZSTEP_URI.commissioning);
     expect(ev.epcList).toEqual(["urn:epc:id:sgtin:demo"]);
-    // no manufacturer GLN passed → no bizLocation
+    // no GLNs passed → no bizLocation, no destinationList
     expect(ev.bizLocation).toBeUndefined();
+    expect(ev.destinationList).toBeUndefined();
   });
 
-  it("adds a bizLocation when a manufacturer GLN is supplied", () => {
+  it("adds a bizLocation when a facilityGln is supplied", () => {
     const ev = buildCommissioningEvent(
       "2026-07-19T10:00:00Z",
       "urn:epc:id:sgtin:demo",
       "p-123",
-      "5412345000013",
+      { facilityGln: "5412345000013" },
     ) as Record<string, unknown>;
     expect(ev.bizLocation).toBeDefined();
+    // no operatorGln → no destinationList
+    expect(ev.destinationList).toBeUndefined();
+  });
+
+  it("adds a destinationList owning_party entry when operatorGln is supplied", () => {
+    const ev = buildCommissioningEvent(
+      "2026-07-19T10:00:00Z",
+      "urn:epc:id:sgtin:demo",
+      "p-123",
+      { facilityGln: "5412345000013", operatorGln: "5412345000013" },
+    ) as Record<string, unknown>;
+    expect(ev.bizLocation).toBeDefined();
+    expect(ev.destinationList).toBeDefined();
+    const dest = ev.destinationList as Array<Record<string, string>>;
+    expect(dest).toHaveLength(1);
+    expect(dest[0].type).toBe(CBV_SOURCE_DEST_TYPE_URI.owning_party);
+    expect(dest[0].destination).toContain("id.gs1.org/417/");
   });
 
   it("returns null when the timestamp is missing", () => {
     expect(
       buildCommissioningEvent(null, "urn:epc:id:sgtin:demo", "p-123"),
     ).toBeNull();
+  });
+});
+
+describe("partyUri", () => {
+  it("builds an AI 417 PGLN URI for a valid GLN", () => {
+    expect(partyUri("5412345000013")).toBe("https://id.gs1.org/417/5412345000013");
+  });
+
+  it("returns null for an invalid GLN", () => {
+    expect(partyUri("5412345000014")).toBeNull();
+    expect(partyUri(null)).toBeNull();
+    expect(partyUri(undefined)).toBeNull();
   });
 });
 

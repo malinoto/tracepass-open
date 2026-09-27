@@ -23,6 +23,7 @@ export type {
 export {
   CBV_BIZSTEP_URI,
   CBV_DISPOSITION_URI,
+  CBV_SOURCE_DEST_TYPE_URI,
   TRACEPASS_BIZSTEP_URI,
   normalizeStepToken,
   mapEventTypeToBizStep,
@@ -37,7 +38,7 @@ export type {
   EpcisValidationResult,
 } from "./validate.js";
 
-export { passportEpc, locationUri, locationRef, buildEventId } from "./identifiers.js";
+export { passportEpc, locationUri, locationRef, partyUri, buildEventId } from "./identifiers.js";
 
 export {
   EPCIS_CONTEXT_URL,

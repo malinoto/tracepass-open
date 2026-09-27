@@ -47,6 +47,25 @@ const CBV_DISP = "https://ref.gs1.org/cbv/Disp-";
 const TP_BIZSTEP = `${TRACEPASS_VOC_BASE}cbv/bizstep/`;
 
 /**
+ * Standard CBV 2.0 source/destination type URI prefix.
+ * Used in `sourceList` and `destinationList` entries to name the party type.
+ */
+const CBV_SDT = "https://ref.gs1.org/cbv/SDT-";
+
+/**
+ * Standard CBV 2.0 source/destination type URIs used by TracePass events.
+ *
+ * - `owning_party`    — the GLN identifies who holds legal title.
+ * - `possessing_party`— the GLN identifies who has physical custody.
+ * - `location`        — the GLN identifies a physical place.
+ */
+export const CBV_SOURCE_DEST_TYPE_URI = {
+  owning_party: `${CBV_SDT}owning_party`,
+  possessing_party: `${CBV_SDT}possessing_party`,
+  location: `${CBV_SDT}location`,
+} as const;
+
+/**
  * The subset of standard CBV bizSteps TracePass actually emits. Kept
  * as a typed record so a typo surfaces at compile time, not as a
  * silently-wrong URI in a customer's EPCIS feed.

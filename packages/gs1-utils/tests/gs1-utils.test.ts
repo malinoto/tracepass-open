@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   validateGtin,
+  normalizeGtin,
+  toGtin14,
   calculateGtinCheckDigit,
   validateGln,
   calculateGlnCheckDigit,
@@ -63,10 +65,71 @@ describe("GLN", () => {
   });
 });
 
+describe("normalizeGtin / toGtin14", () => {
+  it("returns a valid GTIN-14 unchanged", () => {
+    expect(normalizeGtin("05449000000996")).toBe("05449000000996");
+  });
+
+  it("normalises a valid GTIN-13 to 14 digits", () => {
+    // EAN-13 5449000000996 → GTIN-14 05449000000996
+    expect(normalizeGtin("5449000000996")).toBe("05449000000996");
+  });
+
+  it("normalises a valid GTIN-12 (UPC-A) to 14 digits", () => {
+    // 012345678905 is a valid UPC-A; as GTIN-14: 00012345678905
+    expect(normalizeGtin("012345678905")).toBe("00012345678905");
+  });
+
+  it("normalises a valid GTIN-8 to 14 digits", () => {
+    // 96385074 is a valid GTIN-8 (check digit: 4); as GTIN-14: 00000096385074
+    expect(normalizeGtin("96385074")).toBe("00000096385074");
+  });
+
+  it("returns null for a bad check digit after padding", () => {
+    // Flip the last digit of a valid GTIN-13
+    expect(normalizeGtin("5449000000997")).toBeNull();
+  });
+
+  it("returns null for an invalid length (e.g. 11 digits)", () => {
+    expect(normalizeGtin("05449000009")).toBeNull();
+  });
+
+  it("returns null for non-numeric input", () => {
+    expect(normalizeGtin("054490000009X")).toBeNull();
+    expect(normalizeGtin("")).toBeNull();
+  });
+
+  it("toGtin14 is an alias for normalizeGtin", () => {
+    expect(toGtin14("5449000000996")).toBe(normalizeGtin("5449000000996"));
+    expect(toGtin14("05449000000997")).toBeNull();
+  });
+});
+
 describe("Digital Link", () => {
   it("builds a /01/{gtin}/21/{serial} URI and strips a trailing slash on the domain", () => {
     const uri = buildDigitalLinkUri("id.tracepass.eu/", "05449000000996", "SN-123");
     expect(uri).toBe("https://id.tracepass.eu/01/05449000000996/21/SN-123");
+  });
+
+  it("normalises a GTIN-13 input to 14 digits in the URI", () => {
+    const uri = buildDigitalLinkUri("id.tracepass.eu", "5449000000996", "SN-1");
+    expect(uri).toBe("https://id.tracepass.eu/01/05449000000996/21/SN-1");
+  });
+
+  it("normalises a GTIN-12 input to 14 digits in the URI", () => {
+    const uri = buildDigitalLinkUri("id.tracepass.eu", "012345678905", "SN-1");
+    expect(uri).toBe("https://id.tracepass.eu/01/00012345678905/21/SN-1");
+  });
+
+  it("normalises a GTIN-8 input to 14 digits in the URI", () => {
+    const uri = buildDigitalLinkUri("id.tracepass.eu", "40700719", "SN-1");
+    expect(uri).toBe("https://id.tracepass.eu/01/00000040700719/21/SN-1");
+  });
+
+  it("parses a URI with GTIN-13 in the path and normalises to 14 digits", () => {
+    const parsed = parseDigitalLinkUri("https://id.example.com/01/5449000000996/21/SN-1");
+    expect(parsed?.gtin).toBe("05449000000996");
+    expect(parsed?.serialNumber).toBe("SN-1");
   });
 
   it("round-trips gtin + serial through build then parse", () => {

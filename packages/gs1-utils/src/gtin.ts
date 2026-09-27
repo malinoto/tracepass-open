@@ -40,3 +40,35 @@ export function validateGtin(gtin: string): boolean {
   const expected = calculateCheckDigit(gtin.slice(0, 13));
   return gtin[13] === expected;
 }
+
+/**
+ * Normalise a GTIN of any standard length (8, 12, 13, or 14 digits) to 14 digits
+ * by left-padding with zeros.
+ *
+ * GS1 guarantees that any GTIN format becomes a valid GTIN-14 when left-padded
+ * to 14 digits — the mod-10 check digit is preserved. Returns null when:
+ *   - the input is not a string or not all digits
+ *   - the length is not one of 8, 12, 13, or 14
+ *   - the mod-10 check digit does not match after padding
+ */
+export function normalizeGtin(input: string): string | null {
+  if (typeof input !== "string") return null;
+  if (!/^\d+$/.test(input)) return null;
+
+  let gtin14: string;
+  switch (input.length) {
+    case 8:  gtin14 = "000000" + input; break;
+    case 12: gtin14 = "00"     + input; break;
+    case 13: gtin14 = "0"      + input; break;
+    case 14: gtin14 = input;            break;
+    default: return null;
+  }
+
+  return validateGtin(gtin14) ? gtin14 : null;
+}
+
+/**
+ * Alias for {@link normalizeGtin}. Returns the GTIN-14 form or null on invalid
+ * length or bad check digit.
+ */
+export const toGtin14 = normalizeGtin;

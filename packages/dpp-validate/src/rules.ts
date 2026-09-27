@@ -165,14 +165,11 @@ const BAT1: ConditionalRule = {
           why: mandatory
             ? `This is an in-scope battery (${String(cat)}); a battery passport with its unique identifier is mandatory.`
             : `This is an in-scope battery (${String(cat)}); the battery passport becomes mandatory on 18 February 2027 (Art. 77(1)), and its unique identifier is not set yet.`,
-          // Deliberately does NOT name a scheme. EN 18219 (unique identifiers)
-          // is scheme-plural: a web-resolvable structured path such as a GS1
-          // Digital Link URI is one permitted route among several, not the
-          // mandated one. This rule also only checks PRESENCE — naming GS1 here
-          // asserted a constraint the rule never verified and the standard does
-          // not impose, which could push an implementer onto GS1 when their
-          // scheme was already conformant.
-          fix: `Provide ${key} — the battery passport's unique identifier, in one of the schemes EN 18219 permits for a product identifier.`,
+          // Battery Regulation Art. 77(3) requires ISO/IEC 15459; a GS1 Digital
+          // Link URI is one conformant form. DID, DOI and IEC 61406 are not
+          // 15459 identifiers, so they are not valid here until a delegated act
+          // replaces Art. 77(3)'s 15459 reference with EN 18219.
+          fix: `Provide ${key} — an ISO/IEC 15459 unique identifier, e.g. a GS1 Digital Link URI (Battery Regulation Art. 77(3) requires ISO/IEC 15459 until a delegated act replaces it with EN 18219).`,
         });
       }
     }

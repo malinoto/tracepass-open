@@ -18,21 +18,36 @@ npm install @tracepass/gs1-utils
 ```
 
 ```ts
-import { validateGtin, validateGln, buildDigitalLinkUri, parseDigitalLinkUri } from "@tracepass/gs1-utils";
+import {
+  validateGtin, normalizeGtin, toGtin14,
+  validateGln, normalizeGln,
+  buildDigitalLinkUri, parseDigitalLinkUri,
+} from "@tracepass/gs1-utils";
 
-validateGtin("09520123456788");   // true — mod-10 check digit
+validateGtin("09520123456788");   // true — mod-10 check digit, must be 14 digits
 validateGtin("09520123456780");   // false
+
 validateGln("5012345678900");     // true — 13 digits, mod-10
 
-buildDigitalLinkUri("id.example.com", "09520123456788", "SN-1");
-// "https://id.example.com/01/09520123456788/21/SN-1"
+// Normalise any GTIN length to 14 digits (left-pad then check check digit)
+normalizeGtin("5449000000996");   // "05449000000996" — GTIN-13 → GTIN-14
+normalizeGtin("012345678905");    // "00012345678905" — GTIN-12 → GTIN-14
+normalizeGtin("96385074");        // "00000096385074" — GTIN-8 → GTIN-14
+normalizeGtin("05449000000997");  // null — bad check digit
 
-parseDigitalLinkUri("https://id.example.com/01/09520123456788/21/SN-1");
-// { gtin: "09520123456788", serialNumber: "SN-1" }
+toGtin14("5449000000996");        // alias for normalizeGtin
+
+buildDigitalLinkUri("id.example.com", "5449000000996", "SN-1");
+// "https://id.example.com/01/05449000000996/21/SN-1"  — GTIN-13 auto-normalised to 14
+
+parseDigitalLinkUri("https://id.example.com/01/5449000000996/21/SN-1");
+// { gtin: "05449000000996", serialNumber: "SN-1" }  — GTIN-13 in path normalised
 ```
 
 `buildDigitalLinkUri` takes a **bare domain** — `id.example.com`, not
-`https://id.example.com`.
+`https://id.example.com`. GTINs of any valid length (8/12/13/14) are accepted and
+always emitted as 14 digits. `parseDigitalLinkUri` normalises shorter GTINs found
+in paths to 14 digits on the way out.
 
 ## QR codes are a separate subpath
 
