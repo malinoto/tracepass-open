@@ -50,6 +50,15 @@ export interface ConditionalRule {
   run(passport: Passport, template: Template, ctx?: RuleContext): ComplianceFinding[];
 }
 
+/** English label for `key` from the template, with the raw key in parentheses for
+ *  traceability. Falls back to the raw key alone when the template has no matching
+ *  field or no English label — so the message is always actionable. */
+function fieldLabel(key: string, template: Template): string {
+  const field = template.fields.find((f) => f.key === key);
+  const en = field?.label?.en;
+  return en ? `${en} (${key})` : key;
+}
+
 // ── CC-1 · cross-cutting EU economic-operator rule ──────────────────
 // Reg (EU) 2019/1020 Art. 4(1)+(2): a product may be placed on the
 // market only if there is an EU-established operator. When the
@@ -187,7 +196,7 @@ const BAT1: ConditionalRule = {
 // applicability, so it stays additive and can't double-count.
 const BAT_APP: ConditionalRule = {
   id: "BAT-APP",
-  run(passport) {
+  run(passport, template) {
     const findings: ComplianceFinding[] = [];
     // Reuse the shared predicate so the verdict + editor read applicability
     // through ONE path (incl. the "pending AI flag = unknown" safety rule).
@@ -202,6 +211,7 @@ const BAT_APP: ConditionalRule = {
         // value) is not the user's entry: telling them to remove it, or to
         // classify the battery to justify it, points at data they never gave.
         const filled = hasValue(passport, key) && passport.fields[key].source !== "system";
+        const label = fieldLabel(key, template);
         if (verdict === "not_applicable" && filled) {
           findings.push({
             type: "invalid_format",
@@ -210,8 +220,8 @@ const BAT_APP: ConditionalRule = {
             regulation: "(EU) 2023/1542",
             article: gate.article,
             ruleId: "BAT-APP",
-            why: `${key} is filled but doesn't apply to this battery — ${gate.reason}`,
-            fix: `Remove ${key}, or correct the battery classification (batteryCategory / battery profile).${gate.fixHint ? ` ${gate.fixHint}` : ""}`,
+            why: `${label} is filled but doesn't apply to this battery — ${gate.reason}`,
+            fix: `Remove ${label}, or correct the battery classification (batteryCategory / battery profile).${gate.fixHint ? ` ${gate.fixHint}` : ""}`,
           });
         } else if (verdict === "unknown" && filled) {
           findings.push({
@@ -221,7 +231,7 @@ const BAT_APP: ConditionalRule = {
             regulation: "(EU) 2023/1542",
             article: gate.article,
             ruleId: "BAT-APP",
-            why: `${key} is filled, but whether it applies couldn't be confirmed — ${gate.reason}`,
+            why: `${label} is filled, but whether it applies couldn't be confirmed — ${gate.reason}`,
             fix: `Set the battery classification (has-BMS / rechargeable / external-storage / stationary-BESS) so applicability can be confirmed.${gate.fixHint ? ` ${gate.fixHint}` : ""}`,
           });
         }
@@ -273,13 +283,14 @@ const BATTERY_NONNEGATIVE_FIELDS = [
 
 const BAT_VAL: ConditionalRule = {
   id: "BAT-VAL",
-  run(passport) {
+  run(passport, template) {
     const findings: ComplianceFinding[] = [];
 
     // (1a) percentages in [0, 100].
     for (const key of BATTERY_PERCENT_FIELDS) {
       const n = numberOf(passport, key);
       if (n !== undefined && (n < 0 || n > 100)) {
+        const label = fieldLabel(key, template);
         findings.push({
           type: "invalid_format",
           severity: "warning",
@@ -287,8 +298,8 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Annex XIII",
           ruleId: "BAT-VAL",
-          why: `${key} is ${n}, outside the valid 0–100% range.`,
-          fix: `Correct ${key} to a percentage between 0 and 100.`,
+          why: `${label} is ${n}, outside the valid 0–100% range.`,
+          fix: `Correct ${label} to a percentage between 0 and 100.`,
         });
       }
     }
@@ -297,6 +308,7 @@ const BAT_VAL: ConditionalRule = {
     for (const key of BATTERY_NONNEGATIVE_FIELDS) {
       const n = numberOf(passport, key);
       if (n !== undefined && n < 0) {
+        const label = fieldLabel(key, template);
         findings.push({
           type: "invalid_format",
           severity: "warning",
@@ -304,8 +316,8 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Art. 7",
           ruleId: "BAT-VAL",
-          why: `${key} is ${n}; a carbon-footprint value cannot be negative.`,
-          fix: `Correct ${key} to a non-negative value (kg CO2e/kWh).`,
+          why: `${label} is ${n}; a carbon-footprint value cannot be negative.`,
+          fix: `Correct ${label} to a non-negative value (kg CO2e/kWh).`,
         });
       }
     }
