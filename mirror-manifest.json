@@ -4,12 +4,12 @@
     {
       "open": "packages/gs1-utils/src/digital-link.ts",
       "platform": "src/lib/gs1/digital-link.ts",
-      "platformHash": "9ea57d2b3f42f425"
+      "platformHash": "142708eda3775424"
     },
     {
       "open": "packages/gs1-utils/src/gtin.ts",
       "platform": "src/lib/gs1/gtin.ts",
-      "platformHash": "1328b0599f0e404f"
+      "platformHash": "68e142af9d237323"
     },
     {
       "open": "packages/gs1-utils/src/gln.ts",
@@ -55,6 +55,30 @@
       "open": "packages/dpp-validate/src/vendor/subcategory.ts",
       "platform": "src/lib/passports/subcategory.ts",
       "platformHash": "aa7793a2ec95759c"
+    },
+    {
+      "open": "packages/dpp-identifiers/src/uri.ts",
+      "platform": "src/lib/identifiers/uri.ts",
+      "platformHash": "29493ff4391016df"
+    },
+    {
+      "open": "packages/dpp-identifiers/src/passport.ts",
+      "platform": "src/lib/identifiers/passport.ts",
+      "platformHash": "8e8768a0f798bf70"
+    },
+    {
+      "open": "packages/dpp-identifiers/src/product.ts",
+      "platform": "src/lib/identifiers/product.ts",
+      "platformHash": "9a866cd06fa3a488",
+      "allowDivergence": "platform uses relative ./gtin import; open uses @tracepass/gs1-utils",
+      "openHash": "daabf64467fdb302"
+    },
+    {
+      "open": "packages/dpp-identifiers/src/operator.ts",
+      "platform": "src/lib/identifiers/operator.ts",
+      "platformHash": "85caf50ef12ba708",
+      "allowDivergence": "platform uses relative ./gln import; open uses @tracepass/gs1-utils",
+      "openHash": "986c3b6bd6f5b12a"
     }
   ]
 }

@@ -13,6 +13,17 @@
  * versions.
  *
  * See: https://www.gs1.org/standards/gs1-digital-link
+ *
+ * ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE @tracepass/gs1-utils.
+ * `tracepass-open/packages/gs1-utils/src/digital-link.ts` is a hand-copy of this
+ * file — nothing generates one from the other, and a stale copy fails silently
+ * (it still compiles and still returns a plausible answer). tracepass-open
+ * gates on a hash of this file in CI, so after changing it:
+ *
+ *   cd ../tracepass-open && node scripts/build-mirror-manifest.mjs \
+ *     && npm run check:mirrors
+ *
+ * and commit `mirror-manifest.json` with the code.
  */
 
 /** GS1 Application Identifier for GTIN */

@@ -86,6 +86,27 @@ export const MIRRORS = [
     open: "packages/dpp-validate/src/vendor/subcategory.ts",
     platform: "src/lib/passports/subcategory.ts",
   },
+
+  // dpp-identifiers — EN 18219 identifier types, builders, resolver paths.
+  // uri.ts and passport.ts are normalized to identical (import-path change only).
+  { open: "packages/dpp-identifiers/src/uri.ts", platform: "src/lib/identifiers/uri.ts" },
+  { open: "packages/dpp-identifiers/src/passport.ts", platform: "src/lib/identifiers/passport.ts" },
+  // product.ts and operator.ts have a remaining import-style difference:
+  // the platform imports relative siblings (./gtin, ./gln) while the open
+  // package imports the published @tracepass/gs1-utils. The normaliser handles
+  // the @/lib/... alias but not bare relative imports that refer to a sibling
+  // package. Recorded as allowDivergence until either the normaliser is extended
+  // or the open package re-exports the functions locally.
+  {
+    open: "packages/dpp-identifiers/src/product.ts",
+    platform: "src/lib/identifiers/product.ts",
+    allowDivergence: "platform uses relative ./gtin import; open uses @tracepass/gs1-utils",
+  },
+  {
+    open: "packages/dpp-identifiers/src/operator.ts",
+    platform: "src/lib/identifiers/operator.ts",
+    allowDivergence: "platform uses relative ./gln import; open uses @tracepass/gs1-utils",
+  },
 ];
 
 /**

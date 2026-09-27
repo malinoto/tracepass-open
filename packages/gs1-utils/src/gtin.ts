@@ -3,6 +3,17 @@
  *
  * A GTIN-14 is a 14-digit string. The last digit is a check digit computed
  * using the GS1 modulo-10 algorithm (alternating ×3/×1 from the right).
+ *
+ * ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE @tracepass/gs1-utils.
+ * `tracepass-open/packages/gs1-utils/src/gtin.ts` is a hand-copy of this
+ * file — nothing generates one from the other, and a stale copy fails silently
+ * (it still compiles and still returns a plausible answer). tracepass-open
+ * gates on a hash of this file in CI, so after changing it:
+ *
+ *   cd ../tracepass-open && node scripts/build-mirror-manifest.mjs \
+ *     && npm run check:mirrors
+ *
+ * and commit `mirror-manifest.json` with the code.
  */
 
 /**
