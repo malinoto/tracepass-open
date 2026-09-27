@@ -502,3 +502,49 @@ describe("evaluateCompliance — requiredBy outside batteries", () => {
     expect(missing(r)).toBe(false);
   });
 });
+
+describe("BAT-APP — platform-written values and remediation text", () => {
+  const BAT_APP = CONDITIONAL_RULES.battery.find((r) => r.id === "BAT-APP")!;
+  const tmpl = { category: "battery", fields: [] } as unknown as Template;
+  function battery(
+    category: string,
+    fields: Record<string, PassportField>,
+    profile: Record<string, boolean> = {},
+  ): Passport {
+    const batteryProfile = Object.fromEntries(
+      Object.entries(profile).map(([k, v]) => [k, { value: v, status: "approved" }]),
+    );
+    return {
+      status: "draft",
+      fields: { batteryCategory: field(category), ...fields },
+      batteryProfile,
+    } as unknown as Passport;
+  }
+
+  it("does not flag a system default the user never entered", () => {
+    const p = battery(
+      "industrial_gt_2kwh",
+      { stateOfHealth: { value: 100, status: "approved", source: "system" } as PassportField },
+      { hasBMS: true, isStationaryBess: false },
+    );
+    expect(BAT_APP.run(p, tmpl).find((f) => f.target === "stateOfHealth")).toBeUndefined();
+  });
+
+  it("flags the same value once a user entered it", () => {
+    const p = battery(
+      "industrial_gt_2kwh",
+      { stateOfHealth: { value: 100, status: "approved", source: "manual" } as PassportField },
+      { hasBMS: true, isStationaryBess: false },
+    );
+    expect(BAT_APP.run(p, tmpl).find((f) => f.target === "stateOfHealth")?.fix).toMatch(
+      /stationary battery energy storage system/,
+    );
+  });
+
+  it("keeps the stationary-storage hint off unrelated gates", () => {
+    const p = battery("LMT", { capacityThresholdForExhaustion: field(80) });
+    const f = BAT_APP.run(p, tmpl).find((x) => x.target === "capacityThresholdForExhaustion");
+    expect(f?.fix).toBeDefined();
+    expect(f?.fix).not.toMatch(/stationary/);
+  });
+});

@@ -198,7 +198,10 @@ const BAT_APP: ConditionalRule = {
       if (verdict === "applies") continue;
 
       for (const key of gate.keys) {
-        const filled = hasValue(passport, key);
+        // A value the platform wrote (a template or product default, a derived
+        // value) is not the user's entry: telling them to remove it, or to
+        // classify the battery to justify it, points at data they never gave.
+        const filled = hasValue(passport, key) && passport.fields[key].source !== "system";
         if (verdict === "not_applicable" && filled) {
           findings.push({
             type: "invalid_format",
@@ -208,7 +211,7 @@ const BAT_APP: ConditionalRule = {
             article: gate.article,
             ruleId: "BAT-APP",
             why: `${key} is filled but doesn't apply to this battery — ${gate.reason}`,
-            fix: `Remove ${key}, or correct the battery classification (batteryCategory / battery profile) if this field should apply.`,
+            fix: `Remove ${key}, or correct the battery classification (batteryCategory / battery profile).${gate.fixHint ? ` ${gate.fixHint}` : ""}`,
           });
         } else if (verdict === "unknown" && filled) {
           findings.push({
@@ -219,7 +222,7 @@ const BAT_APP: ConditionalRule = {
             article: gate.article,
             ruleId: "BAT-APP",
             why: `${key} is filled, but whether it applies couldn't be confirmed — ${gate.reason}`,
-            fix: "Set the battery classification (has-BMS / rechargeable / external-storage) so applicability can be confirmed.",
+            fix: `Set the battery classification (has-BMS / rechargeable / external-storage / stationary-BESS) so applicability can be confirmed.${gate.fixHint ? ` ${gate.fixHint}` : ""}`,
           });
         }
       }

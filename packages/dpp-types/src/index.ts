@@ -279,6 +279,17 @@ export interface BatteryProfile {
   rechargeable?: BatteryProfileFlag;
   /** External storage only. Gates the recycled-content fields. */
   externalStorageOnly?: BatteryProfileFlag;
+  /**
+   * Stationary battery energy storage system (BESS).
+   *
+   * Art. 14(1) of Reg. (EU) 2023/1542 scopes state-of-health and expected-
+   * lifetime data (Annex VII Parts A and B) to stationary battery energy
+   * storage systems, LMT batteries and electric vehicle batteries. A plain
+   * industrial (>2 kWh) battery that is NOT a stationary ESS does not owe
+   * this data. Confirming this flag `true` opens the Annex VII Part A and
+   * Part B applicability gates for industrial batteries.
+   */
+  isStationaryBess?: BatteryProfileFlag;
 }
 
 export interface Passport {
