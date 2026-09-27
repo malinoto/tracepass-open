@@ -196,8 +196,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "postConsumerRecycledLithiumShare",
     ],
     article: "Annex XIII 1(e) / Art. 8",
-    reason: "Recycled-content information does not apply to batteries with external storage only.",
+    reason: "Recycled-content information does not apply to industrial batteries with exclusively external storage.",
     decide: (t) => {
+      // Art. 8(1) exempts only "industrial batteries … except those with
+      // exclusively external storage"; EV and LMT batteries owe it regardless.
+      if (t.category !== undefined && t.category !== "industrial_gt_2kwh") return "applies";
       if (t.externalStorageOnly === undefined) return "unknown";
       return t.externalStorageOnly ? "not_applicable" : "applies";
     },

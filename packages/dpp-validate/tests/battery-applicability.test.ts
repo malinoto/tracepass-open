@@ -203,3 +203,17 @@ it("pending_review isStationaryBess never hard-gates the Part A cluster", () => 
   expect(map["remainingCapacity"]).toBe("unknown");
   expect(map["capacityThroughput"]).toBe("unknown");
 });
+
+describe("recycled content — Art. 8(1) external-storage exemption is industrial-only", () => {
+  it("exempts an industrial battery with exclusively external storage", () => {
+    const m = batteryFieldApplicability(batteryPassport("industrial_gt_2kwh", { externalStorageOnly: true }), "battery");
+    expect(m.preConsumerRecycledCobaltShare).toBe("not_applicable");
+  });
+  it("never exempts EV or LMT batteries", () => {
+    for (const cat of ["EV", "LMT"]) {
+      const m = batteryFieldApplicability(batteryPassport(cat, { externalStorageOnly: true }), "battery");
+      expect(m.recycledContentCobalt).toBe("applies");
+      expect(m.postConsumerRecycledLithiumShare).toBe("applies");
+    }
+  });
+});
