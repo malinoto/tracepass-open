@@ -62,6 +62,12 @@ buildCommissioningEvent(date, epc, passportId, "5012345678900");
 buildCommissioningEvent(date, epc, passportId, { facilityGln: "5012345678900" });
 ```
 
+**Which GLN goes where:** `facilityGln` is for a **physical site** (a factory, warehouse,
+or other location — GS1 AI 414 SGLN). If the GLN you previously passed identified the
+**manufacturer as a legal entity** (not a specific site), it belongs in `operatorGln`
+(GS1 AI 417 PGLN), not `facilityGln`. If you only have an operator GLN and no site GLN,
+pass `{ operatorGln: "5012345000000" }` and omit `facilityGln`.
+
 **New exports:**
 - `partyUri(gln)` — builds a GS1 AI 417 PGLN URI (`https://id.gs1.org/417/<gln>`) for
   the economic operator; returns `null` for invalid or absent GLN

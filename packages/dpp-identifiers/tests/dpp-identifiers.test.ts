@@ -8,8 +8,9 @@ import {
   parseResolverPath,
   identifierKey,
   normalizeDoi,
+  resolveProductIdentifier,
 } from "../src/index.js";
-import type { ProductIdentifier, OperatorIdentifier } from "@tracepass/dpp-types";
+import type { ProductIdentifier, OperatorIdentifier, Passport } from "@tracepass/dpp-types";
 
 // ── GS1 product identifier ────────────────────────────────────────────────────
 
@@ -613,13 +614,141 @@ describe("normalizeDoi", () => {
     expect(normalizeDoi("https://doi.org/10.1234/test")).toBe("10.1234/test");
   });
 
+  it("strips http://doi.org/ prefix (legacy http)", () => {
+    expect(normalizeDoi("http://doi.org/10.1234/test")).toBe("10.1234/test");
+  });
+
+  it("strips https://dx.doi.org/ prefix (legacy dx proxy)", () => {
+    expect(normalizeDoi("https://dx.doi.org/10.1234/test")).toBe("10.1234/test");
+  });
+
+  it("strips http://dx.doi.org/ prefix (legacy dx proxy, http)", () => {
+    expect(normalizeDoi("http://dx.doi.org/10.1234/test")).toBe("10.1234/test");
+  });
+
+  it("strips doi: prefix case-insensitively", () => {
+    expect(normalizeDoi("DOI:10.1234/test")).toBe("10.1234/test");
+  });
+
   it("lower-cases the result", () => {
     expect(normalizeDoi("10.1234/TEST")).toBe("10.1234/test");
+  });
+
+  it("returns null for non-ASCII input (ISO/IEC 646 requirement)", () => {
+    // Non-ASCII suffix violates EN 18219 clause 4.3.2; normalizeDoi rejects it
+    // so both product and operator DOI validators inherit the check.
+    expect(normalizeDoi("10.1000/café")).toBeNull();
   });
 
   it("returns null for invalid syntax", () => {
     expect(normalizeDoi("not-a-doi")).toBeNull();
     expect(normalizeDoi("10.12/short")).toBeNull(); // < 4 digit registrant
     expect(normalizeDoi("10.1234/")).toBeNull(); // empty suffix
+  });
+});
+
+// ── validateOperatorIdentifier — doi (ASCII check inherited from normalizeDoi) ─
+
+describe("validateOperatorIdentifier — doi non-ASCII rejection", () => {
+  it("rejects a doi with a non-ASCII character (café)", () => {
+    // Previously normalizeDoi did not check ASCII, so this returned ok: true.
+    // The fix moves the ISO/IEC 646 check into normalizeDoi itself.
+    const id: OperatorIdentifier = { scheme: "doi", doi: "10.1000/café" };
+    const r = validateOperatorIdentifier(id);
+    expect(r.ok).toBe(false);
+  });
+
+  it("still accepts a valid ASCII operator doi", () => {
+    const id: OperatorIdentifier = { scheme: "doi", doi: "10.1000/valid-suffix" };
+    expect(validateOperatorIdentifier(id).ok).toBe(true);
+  });
+});
+
+// ── parseResolverPath — agency-shape enforcement ──────────────────────────────
+
+describe("parseResolverPath — agency-shape enforcement", () => {
+  it("returns null for a long first segment like '/about/team'", () => {
+    // "about" is 5 chars — exceeds the 3-char ISO/IEC 15459 agency code limit.
+    expect(parseResolverPath("/about/team")).toBeNull();
+  });
+
+  it("returns null for a lowercase first segment ('/mh/ABC' → null)", () => {
+    // identifierToUri always emits uppercase agency codes; lowercase input is
+    // rejected. The caller may uppercase and retry if needed.
+    expect(parseResolverPath("/mh/ABC")).toBeNull();
+    expect(parseResolverPath("/mh/abc")).toBeNull();
+  });
+
+  it("still parses '/P/x' — a 1-char uppercase route requires consumer pre-emption", () => {
+    // After the agency-shape fix, '/P/x' still parses: 'P' is a valid 1-char
+    // uppercase agency code. A consumer serving an app route at /P/ MUST match
+    // that route BEFORE calling parseResolverPath, because the function cannot
+    // distinguish it from a real passport path.
+    const r = parseResolverPath("/P/x");
+    expect(r).not.toBeNull();
+    expect(r?.scheme).toBe("iso15459");
+    if (r?.scheme === "iso15459") {
+      expect(r.issuingAgencyCode).toBe("P");
+      expect(r.primaryId).toBe("x");
+    }
+  });
+});
+
+// ── resolveProductIdentifier ──────────────────────────────────────────────────
+
+describe("resolveProductIdentifier", () => {
+  const minPassport = (overrides: Partial<Passport> = {}): Passport => ({
+    status: "draft",
+    fields: {},
+    ...overrides,
+  });
+
+  it("returns identifier when present", () => {
+    const id: ProductIdentifier = { scheme: "gs1", gtin: "05449000000996", serialNumber: "S1" };
+    const p = minPassport({ identifier: id });
+    expect(resolveProductIdentifier(p)).toEqual(id);
+  });
+
+  it("lifts gs1 into a Gs1Identifier when identifier is absent", () => {
+    const p = minPassport({
+      gs1: { gtin: "05449000000996", serialNumber: "S1" },
+    });
+    const result = resolveProductIdentifier(p);
+    expect(result).not.toBeUndefined();
+    expect(result?.scheme).toBe("gs1");
+    if (result?.scheme === "gs1") {
+      expect(result.gtin).toBe("05449000000996");
+      expect(result.serialNumber).toBe("S1");
+    }
+  });
+
+  it("preserves digitalLinkUri when lifting gs1", () => {
+    const p = minPassport({
+      gs1: { gtin: "05449000000996", serialNumber: "S1", digitalLinkUri: "https://id.x.com/01/..." },
+    });
+    const result = resolveProductIdentifier(p);
+    if (result?.scheme === "gs1") {
+      expect(result.digitalLinkUri).toBe("https://id.x.com/01/...");
+    }
+  });
+
+  it("identifier wins when both identifier and gs1 are present", () => {
+    const id: ProductIdentifier = {
+      scheme: "iso15459",
+      issuingAgencyCode: "MH",
+      primaryId: "BATT-001",
+      raw: "MHBATT-001",
+    };
+    const p = minPassport({
+      identifier: id,
+      gs1: { gtin: "05449000000996", serialNumber: "OLD" },
+    });
+    const result = resolveProductIdentifier(p);
+    expect(result?.scheme).toBe("iso15459");
+  });
+
+  it("returns undefined when neither identifier nor gs1 is set", () => {
+    const p = minPassport();
+    expect(resolveProductIdentifier(p)).toBeUndefined();
   });
 });

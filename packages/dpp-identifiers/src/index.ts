@@ -25,8 +25,11 @@
  *
  *   identifierKey(id)  — a stable string key for deduplication.
  *
- *   normalizeDoi(input)  — strip doi:/https://doi.org/ prefixes; returns null
- *     on invalid syntax.
+ *   normalizeDoi(input)  — strip doi:/https://doi.org//(dx.)doi.org/ prefixes;
+ *     enforces printable-ASCII (ISO/IEC 646); returns null on invalid syntax.
+ *
+ *   resolveProductIdentifier(passport)  — read the canonical ProductIdentifier,
+ *     preferring `identifier` over the deprecated `gs1` field.
  */
 
 export { validateProductIdentifier } from "./product.js";
@@ -41,3 +44,5 @@ export {
   parseResolverPath,
   identifierKey,
 } from "./uri.js";
+
+export { resolveProductIdentifier } from "./passport.js";

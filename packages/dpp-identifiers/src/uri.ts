@@ -14,8 +14,14 @@
  *
  * parseResolverPath — inverse of identifierToUri, for gs1 and iso15459 only.
  *   Leading digits in the first path segment → GS1 AI path (AI 01 + AI 21).
- *   Leading letter in the first path segment → ISO/IEC 15459 agency path.
- *   Otherwise → null.
+ *   A 1–3 char uppercase `[A-Z][A-Z0-9]{0,2}` first segment → ISO/IEC 15459 agency.
+ *   Otherwise → null (e.g. "/about/team", "/api/v1", lowercase-agency paths).
+ *
+ *   ⚠️  Consumers MUST match their own reserved app routes (/p, /api, /docs, …)
+ *   BEFORE delegating to parseResolverPath. A 1–3 char uppercase route (e.g. /P)
+ *   is indistinguishable from a 1-char ISO/IEC 15459 agency code — the function
+ *   cannot tell them apart and will return a spurious iso15459 result. Pre-empt
+ *   all known app routes first, then call parseResolverPath for the remainder.
  *
  * identifierKey     — a canonical string for deduplication / map keys.
  *   gs1      → `gs1:<gtin14>:<serial>`
@@ -107,13 +113,24 @@ export function identifierOwnUrl(id: ProductIdentifier): string | null {
  *
  * Handles the two schemes emitted by `identifierToUri`:
  *   - `/01/<gtin14>/21/<encoded-serial>` → `{scheme: "gs1", …}`
- *   - `/<agency>/<encoded-primaryId>[/<encoded-serial>]` → `{scheme: "iso15459", …}`
+ *   - `/<AGENCY>/<encoded-primaryId>[/<encoded-serial>]` → `{scheme: "iso15459", …}`
  *
- * Returns `null` for any path that doesn't match.
+ * Returns `null` for any path that doesn't match, including:
+ *   - "/about/team"  — first segment "about" is 5 chars, exceeds the 3-char limit
+ *   - "/api/v1/…"   — first segment "api" is lowercase
+ *   - "/mh/ABC"     — first segment "mh" is lowercase (ISO/IEC 15459 agency codes
+ *                     are always uppercase per EN 18219; `identifierToUri` always
+ *                     emits uppercase)
+ *
+ * ⚠️  The agency-code shape check (1–3 chars, `[A-Z][A-Z0-9]{0,2}`) cannot
+ * distinguish a short app route from a valid agency code. For example, "/P/x"
+ * is indistinguishable from a passport with agency "P" and primaryId "x" — it
+ * will parse. Consumers MUST match their own reserved routes (/P, /API, /DOCS, …)
+ * BEFORE delegating to `parseResolverPath`.
  *
  * The first path segment determines the scheme: a digit-only segment is a GS1
- * Application Identifier (we only emit `01`); a segment starting with a letter
- * is an ISO/IEC 15459 issuing agency code.
+ * Application Identifier (we only emit `01`); a 1–3 char uppercase segment is
+ * an ISO/IEC 15459 issuing agency code.
  */
 export function parseResolverPath(path: string): ProductIdentifier | null {
   // Normalise: strip leading slash, strip query/fragment
@@ -135,8 +152,10 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
     return { scheme: "gs1", gtin, serialNumber: serial };
   }
 
-  // ISO/IEC 15459 agency path: leading segment starts with a letter
-  if (/^[A-Z]/i.test(first)) {
+  // ISO/IEC 15459 agency path: exactly 1–3 chars, uppercase [A-Z][A-Z0-9]{0,2}.
+  // identifierToUri always emits uppercase agency codes; lowercase paths are
+  // rejected (the caller may uppercase and retry if needed).
+  if (/^[A-Z][A-Z0-9]{0,2}$/.test(first)) {
     const issuingAgencyCode = decodeURIComponent(first).toUpperCase();
     const primaryId = decodeURIComponent(segments[1]);
     const serial = segments[2] ? decodeURIComponent(segments[2]) : undefined;

@@ -76,9 +76,22 @@ to an object `{ facilityGln?, operatorGln? }`:
 // Before (v0.7 and earlier)
 buildCommissioningEvent(date, epc, passportId, "5012345678900");
 
-// After (v0.8+)
+// After (v0.8+) — physical site GLN (AI 414)
 buildCommissioningEvent(date, epc, passportId, { facilityGln: "5012345678900" });
+
+// After (v0.8+) — legal-entity operator GLN only, no physical site (AI 417)
+buildCommissioningEvent(date, epc, passportId, { operatorGln: "5012345000000" });
 ```
+
+**Which GLN goes where:**
+- `facilityGln` is for a **physical site** (factory, warehouse, specific location) — emitted
+  as GS1 AI 414 SGLN in `bizLocation`.
+- `operatorGln` is for a **legal entity / economic operator** (the manufacturer as a company)
+  — emitted as GS1 AI 417 PGLN in `destinationList` / `sourceList`.
+
+If your previous single GLN identified the manufacturer as a company rather than a specific
+site, map it to `operatorGln`. If you had a site-specific GLN, map it to `facilityGln`.
+Both can be provided when you have both.
 
 `SupplyChainEventInput.gln` and `SupplierReportedEvent.gln` fields are renamed to
 `facilityGln` / `operatorGln` in the same release.

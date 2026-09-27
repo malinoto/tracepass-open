@@ -141,15 +141,27 @@ function validateDidString(did: string): string[] {
 
 /**
  * Normalise a DOI to bare form (`10.<registrant>/<suffix>`).
- * Accepts `doi:10.…` and `https://doi.org/10.…` prefixes.
- * Returns null when the bare form does not match the DOI Handbook syntax.
+ *
+ * Accepts the following prefixes (case-insensitive):
+ *   - `doi:10.…`
+ *   - `https://doi.org/10.…`  (canonical resolver)
+ *   - `http://doi.org/10.…`   (legacy http form)
+ *   - `https://dx.doi.org/10.…` / `http://dx.doi.org/10.…` (legacy dx proxy)
+ *
+ * Returns `null` when:
+ *   - the input contains non-ASCII characters (EN 18219 clause 4.3.2 / ISO/IEC 646)
+ *   - the bare form does not match DOI Handbook syntax (`10.<4–9 digits>/<suffix>`)
  */
 export function normalizeDoi(input: string): string | null {
+  // EN 18219 clause 4.3.2: all identifier content must be ISO/IEC 646 (printable ASCII)
+  if (!isAsciiPrintable(input)) return null;
+
   let bare = input.trim();
 
-  // Strip known prefixes (case-insensitive per the DOI Handbook)
-  if (/^https?:\/\/doi\.org\//i.test(bare)) {
-    bare = bare.replace(/^https?:\/\/doi\.org\//i, "");
+  // Strip known prefixes (case-insensitive per the DOI Handbook).
+  // The (dx.)? alternative covers the legacy dx.doi.org proxy.
+  if (/^https?:\/\/(dx\.)?doi\.org\//i.test(bare)) {
+    bare = bare.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "");
   } else if (/^doi:/i.test(bare)) {
     bare = bare.replace(/^doi:/i, "");
   }

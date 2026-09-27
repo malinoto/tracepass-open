@@ -110,6 +110,37 @@ identifierKey(gs1);  // "gs1:05449000000996:SN-001"
 `identifierToUri` returns `null` for `iec61406`, `did` and `doi` — those carry their own
 canonical URL (use `identifierOwnUrl` instead).
 
+### `parseResolverPath` and consumer pre-emption
+
+`parseResolverPath` enforces the ISO/IEC 15459 agency-code shape: the first path segment
+must be 1–3 uppercase chars matching `[A-Z][A-Z0-9]{0,2}`. This rejects common app routes:
+
+| Path | Result |
+|---|---|
+| `/about/team` | `null` — "about" is 5 chars |
+| `/mh/ABC` | `null` — "mh" is lowercase; `identifierToUri` always emits uppercase |
+| `/MH/BAT-001` | `{scheme: "iso15459", …}` ✓ |
+| `/01/0544…/21/SN` | `{scheme: "gs1", …}` ✓ |
+
+**Short uppercase routes are still ambiguous.** `/P/x` parses as `{issuingAgencyCode: "P",
+primaryId: "x"}` because `"P"` is a valid 1-char agency code. Consumers MUST match their
+own short app routes (`/P`, `/Q`, `/DOCS`, …) before delegating to `parseResolverPath`.
+
+## Read the canonical identifier
+
+When code that was written before EN 18219 only sets `passport.gs1`, and new code sets
+`passport.identifier`, use `resolveProductIdentifier` to read whichever is present:
+
+```ts
+import { resolveProductIdentifier } from "@tracepass/dpp-identifiers";
+
+const id = resolveProductIdentifier(passport);
+// → passport.identifier, or lifted Gs1Identifier from passport.gs1, or undefined
+if (!id) throw new Error("No product identifier");
+```
+
+`identifier` takes precedence when both fields are set.
+
 ## Character constraint (EN 18219 clause 4.3.2)
 
 All identifier fields must use ISO/IEC 646 characters — printable ASCII (0x20–0x7E).

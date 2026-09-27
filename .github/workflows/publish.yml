@@ -1,18 +1,37 @@
-# Publishes the four @tracepass/* packages in this workspace to npm on every
+# Publishes the five @tracepass/* packages in this workspace to npm on every
 # v*.*.* tag push, each with an npm provenance attestation. Provenance lets
 # anyone cryptographically verify a package was built by this exact workflow,
 # from this exact repository and commit —
 # see https://docs.npmjs.com/generating-provenance-statements.
 #
 # Packages: @tracepass/dpp-types, @tracepass/gs1-utils, @tracepass/dpp-epcis,
-# @tracepass/dpp-validate. They share a version; bump them together.
+# @tracepass/dpp-validate, @tracepass/dpp-identifiers.
+# They share a version; bump them all together.
 #
 # ─── ONE-TIME SETUP ────────────────────────────────────────────────────────────
 #
 # OIDC Trusted Publishing (no long-lived secrets) must be registered for EACH
-# of the four packages (they already exist from the bootstrap publish):
+# package. The four original packages already exist from their bootstrap publish.
+# @tracepass/dpp-identifiers is NEW and requires two one-time steps before this
+# workflow can publish it:
 #
-#   For each of the 4 packages, at
+#   Step A — Bootstrap publish (once, from a local checkout with a token):
+#     npm publish --workspace @tracepass/dpp-identifiers --access public
+#   The package must exist on the registry before OIDC can claim it.
+#
+#   Step B — Register the Trusted Publisher:
+#   At https://www.npmjs.com/package/@tracepass/dpp-identifiers/access :
+#   1. Trusted Publishers → Add a publisher → GitHub Actions.
+#   2. Organization or user: malinoto
+#      Repository:           tracepass-open
+#      Workflow filename:    publish.yml   (filename only)
+#      Environment name:     (leave blank)
+#   3. Allowed actions: tick npm publish.
+#   4. Save. The repo must be PUBLIC for provenance to be accepted.
+#
+# The same registration is already done for the four existing packages:
+#
+#   For each of the 4 original packages, at
 #   https://www.npmjs.com/package/<pkg>/access :
 #   1. Trusted Publishers → Add a publisher → GitHub Actions.
 #   2. Organization or user: malinoto
@@ -24,7 +43,7 @@
 #
 # ─── RELEASE FLOW ──────────────────────────────────────────────────────────────
 #
-#   # bump all four workspace packages to the same version, then tag:
+#   # bump all five workspace packages to the same version, then tag:
 #   npm version patch --workspaces --include-workspace-root=false
 #   npm version patch --no-git-tag-version   # bump the root marker (optional)
 #

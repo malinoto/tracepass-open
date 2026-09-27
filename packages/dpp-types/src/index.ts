@@ -429,6 +429,11 @@ export interface Passport {
   /**
    * @deprecated Use `identifier` with `scheme: "gs1"` instead. Kept
    * indefinitely as a read alias; the platform's v1 API accepts both.
+   *
+   * **Precedence:** when both `identifier` and `gs1` are present, `identifier`
+   * takes precedence. Use `resolveProductIdentifier(passport)` from
+   * `@tracepass/dpp-identifiers` to read the canonical identifier without
+   * duplicating this precedence logic.
    */
   gs1?: {
     gtin: string;
