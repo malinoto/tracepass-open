@@ -1,4 +1,5 @@
-node_modules/
+# No trailing slash: a symlinked node_modules (as in a worktree) must be ignored too.
+node_modules
 dist/
 *.tsbuildinfo
 .DS_Store
