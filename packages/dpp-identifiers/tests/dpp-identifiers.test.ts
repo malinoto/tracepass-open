@@ -6,11 +6,13 @@ import {
   identifierToUri,
   identifierOwnUrl,
   parseResolverPath,
+  parseDiQuery,
+  diQueryCandidateKeys,
   identifierKey,
   normalizeDoi,
   resolveProductIdentifier,
 } from "../src/index.js";
-import type { ProductIdentifier, OperatorIdentifier, Passport } from "@tracepass/dpp-types";
+import type { ProductIdentifier, OperatorIdentifier, FacilityIdentifier, Passport } from "@tracepass/dpp-types";
 
 // ── GS1 product identifier ────────────────────────────────────────────────────
 
@@ -230,27 +232,34 @@ describe("validateProductIdentifier — did", () => {
 // ── DOI product identifier ────────────────────────────────────────────────────
 
 describe("validateProductIdentifier — doi", () => {
-  it("accepts a valid bare DOI", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/example-suffix" };
+  it("accepts a valid bare DOI with granularity", () => {
+    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/example-suffix", granularity: "item" };
     expect(validateProductIdentifier(id).ok).toBe(true);
   });
 
+  it("rejects a doi without granularity (EN 18219 §5.6.2(b))", () => {
+    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/example-suffix" };
+    const r = validateProductIdentifier(id);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.join(" ")).toMatch(/granularity/i);
+  });
+
   it("accepts and normalises a doi: prefixed form", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "doi:10.1234/suffix" };
+    const id: ProductIdentifier = { scheme: "doi", doi: "doi:10.1234/suffix", granularity: "model" };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/suffix");
   });
 
   it("accepts and normalises an https://doi.org/ prefixed form", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "https://doi.org/10.1234/suffix" };
+    const id: ProductIdentifier = { scheme: "doi", doi: "https://doi.org/10.1234/suffix", granularity: "batch" };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/suffix");
   });
 
   it("normalises to lower-case", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/UPPER-SUFFIX" };
+    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/UPPER-SUFFIX", granularity: "item" };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/upper-suffix");
@@ -389,6 +398,32 @@ describe("validateFacilityIdentifier", () => {
       validateFacilityIdentifier({ scheme: "gln", gln: "5412345000013", extension: "" }).ok,
     ).toBe(false);
   });
+
+  // EN 18219 §6.1–6.5: iso6523, did, doi accepted alongside gln
+  it("accepts ISO/IEC 6523 facility identifier (§6.2)", () => {
+    const id: FacilityIdentifier = { scheme: "iso6523", icd: "0199", value: "5493001KJTIIGC8Y1R12" };
+    expect(validateFacilityIdentifier(id).ok).toBe(true);
+  });
+
+  it("accepts DID facility identifier (§6.4)", () => {
+    const id: FacilityIdentifier = { scheme: "did", did: "did:web:example.com" };
+    expect(validateFacilityIdentifier(id).ok).toBe(true);
+  });
+
+  it("accepts DOI facility identifier (§6.5)", () => {
+    const id: FacilityIdentifier = { scheme: "doi", doi: "10.1234/facility-a" };
+    expect(validateFacilityIdentifier(id).ok).toBe(true);
+  });
+
+  it("rejects an invalid DID", () => {
+    const id: FacilityIdentifier = { scheme: "did", did: "not-a-did" };
+    expect(validateFacilityIdentifier(id).ok).toBe(false);
+  });
+
+  it("rejects an invalid DOI", () => {
+    const id: FacilityIdentifier = { scheme: "doi", doi: "not-a-doi" };
+    expect(validateFacilityIdentifier(id).ok).toBe(false);
+  });
 });
 
 // ── identifierToUri ───────────────────────────────────────────────────────────
@@ -426,19 +461,20 @@ describe("identifierToUri", () => {
     );
   });
 
-  it("builds an ISO 15459 resolver path", () => {
+  it("builds ISO/IEC 18975 query form for iso15459 (EN 18219 §5.2.2)", () => {
     const id: ProductIdentifier = {
       scheme: "iso15459",
       issuingAgencyCode: "MH",
       primaryId: "ABC123",
       raw: "MHABC123",
     };
+    // IAC + primaryId concatenated in .25P; no separator
     expect(identifierToUri(id, RESOLVER)).toBe(
-      "https://resolver.example.com/MH/ABC123",
+      "https://resolver.example.com/?.25P=MHABC123",
     );
   });
 
-  it("includes serial in ISO 15459 path", () => {
+  it("includes serial in .S parameter for iso15459", () => {
     const id: ProductIdentifier = {
       scheme: "iso15459",
       issuingAgencyCode: "MH",
@@ -447,11 +483,11 @@ describe("identifierToUri", () => {
       raw: "MHABC123.S1",
     };
     expect(identifierToUri(id, RESOLVER)).toBe(
-      "https://resolver.example.com/MH/ABC123/S1",
+      "https://resolver.example.com/?.25P=MHABC123&.S=S1",
     );
   });
 
-  it("percent-encodes ISO 15459 serial with '/' and spaces", () => {
+  it("percent-encodes special chars in iso15459 .25P and .S", () => {
     const id: ProductIdentifier = {
       scheme: "iso15459",
       issuingAgencyCode: "MH",
@@ -459,9 +495,12 @@ describe("identifierToUri", () => {
       serial: "S/1 2",
       raw: "MHABC123.S/1 2",
     };
-    expect(identifierToUri(id, RESOLVER)).toBe(
-      "https://resolver.example.com/MH/ABC123/S%2F1%202",
-    );
+    const uri = identifierToUri(id, RESOLVER)!;
+    const url = new URL(uri);
+    // URLSearchParams.get decodes; the raw URI should have encoded the slash+space
+    expect(url.searchParams.get(".25P")).toBe("MHABC123");
+    expect(url.searchParams.get(".S")).toBe("S/1 2");
+    expect(uri).toContain("S%2F1%202");
   });
 
   it("returns null for iec61406, did, doi (they carry their own URL)", () => {
@@ -538,7 +577,10 @@ describe("parseResolverPath", () => {
     }
   });
 
-  it("round-trips iso15459 identifierToUri for a serial with '/' and spaces", () => {
+  it("round-trips iso15459 identifierToUri via parseDiQuery + diQueryCandidateKeys", () => {
+    // identifierToUri now emits the ISO/IEC 18975 query form; the round-trip
+    // goes through parseDiQuery (not parseResolverPath, which handles the legacy
+    // agency-path alias).
     const RESOLVER = "resolver.example.com";
     const id: ProductIdentifier = {
       scheme: "iso15459",
@@ -548,15 +590,14 @@ describe("parseResolverPath", () => {
       raw: "MHABC123.S/1 2",
     };
     const uri = identifierToUri(id, RESOLVER)!;
-    const path = new URL(uri).pathname;
-    const parsed = parseResolverPath(path);
+    const search = new URL(uri).search;
+    const parsed = parseDiQuery(search);
     expect(parsed).not.toBeNull();
-    expect(parsed?.scheme).toBe("iso15459");
-    if (parsed?.scheme === "iso15459") {
-      expect(parsed.issuingAgencyCode).toBe("MH");
-      expect(parsed.primaryId).toBe("ABC123");
-      expect(parsed.serial).toBe("S/1 2");
-    }
+    expect(parsed?.concatenated25P).toBe("MHABC123");
+    expect(parsed?.serial).toBe("S/1 2");
+    // The stored identifierKey "iso15459:MH:ABC123:S/1 2" should be among candidates.
+    const candidates = diQueryCandidateKeys(parsed!.concatenated25P, parsed?.serial);
+    expect(candidates).toContain("iso15459:MH:ABC123:S/1 2");
   });
 
   it("returns null for paths it cannot parse", () => {

@@ -16,12 +16,20 @@
  *
  *   validateFacilityIdentifier(id)  — validate GLN facility identifiers.
  *
- *   identifierToUri(id, resolverBase)  — build a resolver URL (null for
- *     iec61406/did/doi, which carry their own URL).
+ *   identifierToUri(id, resolverBase)  — build a resolver URL; iso15459 emits
+ *     the ISO/IEC 18975 query form `?.25P=...[&.S=...]` per EN 18219 §5.2.2.
+ *     Null for iec61406/did/doi, which carry their own URL.
  *
  *   identifierOwnUrl(id)  — the identifier's own canonical URL when it has one.
  *
- *   parseResolverPath(path)  — inverse of identifierToUri for gs1 and iso15459.
+ *   parseDiQuery(queryString)  — parse the ISO/IEC 18975 `?.25P=...[&.S=...]`
+ *     query string back to `{ concatenated25P, serial? }`.
+ *
+ *   diQueryCandidateKeys(concatenated25P, serial?)  — generate up to 3 candidate
+ *     `identifierKey` strings by trying IAC lengths 1, 2 and 3.
+ *
+ *   parseResolverPath(path)  — inverse of identifierToUri for gs1; also parses
+ *     legacy iso15459 agency paths for backward compatibility.
  *
  *   identifierKey(id)  — a stable string key for deduplication.
  *
@@ -42,6 +50,8 @@ export {
   identifierToUri,
   identifierOwnUrl,
   parseResolverPath,
+  parseDiQuery,
+  diQueryCandidateKeys,
   identifierKey,
 } from "./uri.js";
 

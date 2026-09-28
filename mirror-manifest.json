@@ -59,7 +59,7 @@
     {
       "open": "packages/dpp-identifiers/src/uri.ts",
       "platform": "src/lib/identifiers/uri.ts",
-      "platformHash": "865bfa7c1140f61c"
+      "platformHash": "79e8b941c05b3c54"
     },
     {
       "open": "packages/dpp-identifiers/src/passport.ts",
@@ -69,16 +69,16 @@
     {
       "open": "packages/dpp-identifiers/src/product.ts",
       "platform": "src/lib/identifiers/product.ts",
-      "platformHash": "9a866cd06fa3a488",
+      "platformHash": "dd29384c95b1694c",
       "allowDivergence": "platform uses relative ./gtin import; open uses @tracepass/gs1-utils",
-      "openHash": "daabf64467fdb302"
+      "openHash": "2e12597a58940383"
     },
     {
       "open": "packages/dpp-identifiers/src/operator.ts",
       "platform": "src/lib/identifiers/operator.ts",
-      "platformHash": "85caf50ef12ba708",
+      "platformHash": "f77bccae295cb2f0",
       "allowDivergence": "platform uses relative ./gln import; open uses @tracepass/gs1-utils",
-      "openHash": "986c3b6bd6f5b12a"
+      "openHash": "76acbb4c27de9370"
     }
   ]
 }

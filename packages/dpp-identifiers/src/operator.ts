@@ -11,9 +11,11 @@
  *   did:      W3C DID Core syntax (method [a-z0-9]+, method-specific-id valid).
  *   doi:      prefix 10.<registrant>/<suffix>, accepts doi:/https://doi.org/ prefixes.
  *
- * validateFacilityIdentifier — EN 18219 scheme 7 (GLN only; no other heading
- * names facilities). The optional `extension` field identifies a sub-location
- * (GS1 SGLN extension component).
+ * validateFacilityIdentifier — EN 18219 §6.1–6.5: schemes 6 (ISO/IEC 6523),
+ * 7 (GLN via ISO/IEC 15418), 8 (DID) and 9 (DOI) all cover BOTH economic
+ * operators AND facilities. Reuses the operator validator for the shared
+ * schemes; the GLN scheme additionally accepts an `extension` component
+ * (a GS1 SGLN sub-location).
  */
 
 import type { OperatorIdentifier, FacilityIdentifier } from "@tracepass/dpp-types";
@@ -203,25 +205,52 @@ export function validateOperatorIdentifier(
 }
 
 /**
- * Validate a `FacilityIdentifier` against EN 18219 rules.
- * EN 18219 scheme 7 names GLN as the only facility scheme.
+ * Validate a `FacilityIdentifier` against EN 18219 §6.1–6.5 rules.
  *
- * The optional `extension` field is a sub-location identifier following the
- * GS1 SGLN extension component convention (non-empty when present).
+ * EN 18219 §6.1–6.5 specifies the same four schemes for facilities as for
+ * operators: ISO/IEC 6523, GLN/ISO 15418, DID, and DOI. All four are validated
+ * here. The GLN `extension` field is a GS1 SGLN sub-location component.
  */
 export function validateFacilityIdentifier(
   id: FacilityIdentifier,
 ): ValidationResult<FacilityIdentifier> {
-  const errors: string[] = [];
+  switch (id.scheme) {
+    case "gln": {
+      const errors: string[] = [];
+      if (!validateGln(id.gln)) {
+        errors.push("gln must be a valid 13-digit GLN with a correct mod-10 check digit");
+      }
+      if (id.extension !== undefined && !id.extension) {
+        errors.push("extension, when present, must not be empty");
+      }
+      if (errors.length > 0) return { ok: false, errors };
+      return { ok: true, value: id };
+    }
 
-  if (!validateGln(id.gln)) {
-    errors.push("gln must be a valid 13-digit GLN with a correct mod-10 check digit");
+    case "iso6523":
+      return validateIso6523(id.icd, id.value) as ValidationResult<FacilityIdentifier>;
+
+    case "did": {
+      const didErrors = validateDidString(id.did);
+      if (didErrors.length > 0) return { ok: false, errors: didErrors };
+      return { ok: true, value: id };
+    }
+
+    case "doi": {
+      const bare = normalizeDoi(id.doi);
+      if (!bare) {
+        return {
+          ok: false,
+          errors: [`doi '${id.doi}' must match 10.<4–9 registrant digits>/<suffix>`],
+        };
+      }
+      return { ok: true, value: { ...id, doi: bare } };
+    }
+
+    default: {
+      const _exhaustive: never = id;
+      void _exhaustive;
+      return { ok: false, errors: ["unknown facility identifier scheme"] };
+    }
   }
-
-  if (id.extension !== undefined && !id.extension) {
-    errors.push("extension, when present, must not be empty");
-  }
-
-  if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, value: id };
 }

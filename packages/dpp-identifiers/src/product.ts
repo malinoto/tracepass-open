@@ -304,6 +304,17 @@ function validateDoiId(id: DoiIdentifier): ValidationResult<DoiIdentifier> {
     );
   }
 
+  // EN 18219 §5.6.2(b): granularity declaration is required.
+  if (!id.granularity) {
+    errors.push(
+      "doi granularity is required — specify 'model', 'batch', or 'item' per EN 18219 §5.6.2(b)",
+    );
+  } else if (!["model", "batch", "item"].includes(id.granularity)) {
+    errors.push(
+      `doi granularity '${id.granularity}' is invalid — must be 'model', 'batch', or 'item'`,
+    );
+  }
+
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, value: { ...id, doi: bare! } }; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 }

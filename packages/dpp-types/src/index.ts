@@ -365,6 +365,15 @@ export interface DoiIdentifier {
   scheme: "doi";
   /** The DOI in bare form, e.g. `"10.1234/example-suffix"`. Case-insensitive; stored as lower-case. */
   doi: string;
+  /**
+   * Granularity of the DOI assignment per EN 18219 §5.6.2(b).
+   *
+   * Required on create/validation — tells the data consumer whether the DOI
+   * identifies a model (all identical physical objects share one DOI), a batch
+   * (all items in a production run share one DOI), or an individual item
+   * (each physical unit has a unique DOI).
+   */
+  granularity?: "model" | "batch" | "item";
 }
 
 /**
@@ -412,11 +421,16 @@ export type OperatorIdentifier =
   | { scheme: "doi"; doi: string };
 
 /**
- * Facility identifier per EN 18219.
- * EN 18219 scheme 7 names GLN (via ISO/IEC 15418) as the facility scheme.
- * No other heading names facilities.
+ * Facility identifier per EN 18219 §6.1–6.5.
+ *
+ * EN 18219 specifies the same four schemes for facilities as for operators
+ * (ISO/IEC 6523, GLN/ISO 15418, DID, DOI). All four are supported here.
  */
-export type FacilityIdentifier = { scheme: "gln"; gln: string; extension?: string };
+export type FacilityIdentifier =
+  | { scheme: "iso6523"; icd: string; value: string }
+  | { scheme: "gln"; gln: string; extension?: string }
+  | { scheme: "did"; did: string }
+  | { scheme: "doi"; doi: string };
 
 export interface Passport {
   /**

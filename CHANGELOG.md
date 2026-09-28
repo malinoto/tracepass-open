@@ -5,6 +5,32 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.10.0 — 2026-09-28
+
+Conformance with the full text of EN 18219:2026.
+
+### `@tracepass/dpp-identifiers`
+
+- **Changed:** `identifierToUri` emits the ISO/IEC 18975 query form for `iso15459`,
+  `https://<resolver>/?.25P=<IAC+primaryId>[&.S=<serial>]` (EN 18219 Table B.12). It
+  replaces the `/<AGENCY>/<primaryId>/<serial>` path, which was not scheme-1 conformant.
+  `parseResolverPath` still reads the old path.
+- **New:** `parseDiQuery(queryString)` and `diQueryCandidateKeys(dot25P, serial?)` to
+  resolve the query form. The agency code has no separator, so the lookup tries each
+  1–3 character split and treats more than one match as ambiguous.
+- **BREAKING:** a `doi` product identifier requires `granularity` (`model` | `batch` |
+  `item`), per clause 5.6.2(b).
+- `validateFacilityIdentifier` accepts `iso6523`, `gln`, `did` and `doi` (clauses 6.2–6.5
+  cover facilities as well as operators).
+
+### `@tracepass/dpp-types`
+
+- `DoiIdentifier.granularity` added. It is optional in the type, so stored identifiers
+  without it still type-check; validation requires it.
+- `FacilityIdentifier` widened to the four operator schemes.
+
+Other packages: version bump only (shared version).
+
 ## 0.9.1 — 2026-09-28
 
 ### `@tracepass/dpp-identifiers` — fix

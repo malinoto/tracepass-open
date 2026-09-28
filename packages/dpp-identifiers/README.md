@@ -59,7 +59,7 @@ validateProductIdentifier(
 | `iso15459`  | scheme 1 | Non-GS1 issuing agency. Agency code first char must be a letter |
 | `iec61406`  | scheme 2 | https URL, ASCII-only, RFC 3986-valid |
 | `did`       | scheme 3 | W3C DID Core syntax only; no method allow-list |
-| `doi`       | scheme 5 | `10.<registrant>/<suffix>`; accepts `doi:` / `https://doi.org/` prefixes |
+| `doi`       | scheme 5 | `10.<registrant>/<suffix>`; accepts `doi:` / `https://doi.org/` prefixes. `granularity` (`model` \| `batch` \| `item`) is required: clause 5.6.2(b) |
 
 **Battery passports** accept only `gs1` and `iso15459`: Battery Regulation Art. 77(3)
 requires ISO/IEC 15459 until a delegated act replaces it with EN 18219.
@@ -79,15 +79,15 @@ validateOperatorIdentifier({ scheme: "iso6523", icd: "0199", value: "5493001KJTI
 // GLN (icd 0088) validated with GS1 mod-10
 validateOperatorIdentifier({ scheme: "iso6523", icd: "0088", value: "5412345000013" }).ok;  // true
 
-// Facility — GLN only (EN 18219 scheme 7)
-validateFacilityIdentifier({ scheme: "gln", gln: "5412345000013" }).ok;  // true
+// Facility — the same four schemes as operators (EN 18219 clauses 6.2–6.5)
 validateFacilityIdentifier({ scheme: "gln", gln: "5412345000013", extension: "DOCK-1" }).ok;  // true
+validateFacilityIdentifier({ scheme: "did", did: "did:web:plant.example.com" }).ok;  // true
 ```
 
 ## Build and parse resolver paths
 
 ```ts
-import { identifierToUri, identifierOwnUrl, parseResolverPath, identifierKey } from "@tracepass/dpp-identifiers";
+import { identifierToUri, identifierOwnUrl, parseResolverPath, diQueryCandidateKeys, identifierKey } from "@tracepass/dpp-identifiers";
 
 const gs1 = { scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-001" } as const;
 
@@ -99,8 +99,19 @@ identifierToUri(gs1, "id.example.com");
 parseResolverPath("/01/05449000000996/21/SN-001");
 // { scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-001" }
 
+// ISO/IEC 15459 → the ISO/IEC 18975 query form (EN 18219 Table B.12)
+identifierToUri(
+  { scheme: "iso15459", issuingAgencyCode: "QC", primaryId: "ELMI12345", serial: "654321", raw: "QC/ELMI12345/654321" },
+  "id.example.com",
+);
+// "https://id.example.com/?.25P=QCELMI12345&.S=654321"
+
+// A resolver splits .25P back into candidate keys (the agency code is 1–3 characters)
+diQueryCandidateKeys("QCELMI12345", "654321");
+// ["iso15459:Q:CELMI12345:654321", "iso15459:QC:ELMI12345:654321", "iso15459:QCE:LMI12345:654321"]
+
 // A DOI carries its own URL; no resolver needed
-identifierOwnUrl({ scheme: "doi", doi: "10.1234/my-passport" });
+identifierOwnUrl({ scheme: "doi", doi: "10.1234/my-passport", granularity: "model" });
 // "https://doi.org/10.1234/my-passport"
 
 // Canonical key for deduplication
@@ -112,7 +123,9 @@ canonical URL (use `identifierOwnUrl` instead).
 
 ### `parseResolverPath` and consumer pre-emption
 
-`parseResolverPath` enforces the ISO/IEC 15459 agency-code shape: the first path segment
+`parseResolverPath` also reads the older `/<AGENCY>/<primaryId>[/<serial>]` path, so a URL
+already printed in that form keeps resolving. `identifierToUri` no longer emits it. It
+enforces the ISO/IEC 15459 agency-code shape: the first path segment
 must be 1–3 uppercase chars matching `[A-Z][A-Z0-9]{0,2}`. This rejects common app routes:
 
 | Path | Result |
@@ -152,15 +165,15 @@ This package is pure TypeScript over plain objects. It imports only two sibling 
 (`@tracepass/dpp-types` for types and `@tracepass/gs1-utils` for GTIN/GLN arithmetic),
 neither of which adds a third-party runtime dependency.
 
-## Not yet modelled
+## Out of scope
 
-- **EN 18219 scheme 4** ("identification for products and product groups") — clause
-  5.4.2 onward is not yet publicly readable.
-- **DID method allow-list** — EN 18219 5.4.1 names did:web, did:ethr and did:ebsi as
-  examples, not a closed list. Any DID Core syntax is accepted.
-- **ISO/IEC 18975 path form** for iso15459 resolver paths — 18975 is paywalled. The
-  path emitted by `identifierToUri` is a TracePass resolver route, not a conformance
-  claim against 18975.
+- **EN 18219 scheme 4** (RAIN RFID and 2D codes) encodes the same ISO/IEC 15459
+  identifiers on a limited-capacity carrier. It is a data-carrier concern, not a separate
+  identifier type.
+- **DID method allow-list.** Clause 5.4.2 requires DID Core only. did:web, did:ethr and
+  did:ebsi are a recommendation (5.4.3). Any DID Core syntax is accepted.
+- **A DID as an operator identifier** also needs a verifiable credential from an
+  authorised company register (clause 6.4.2(b)). The validator checks the syntax only.
 
 ## License
 

@@ -52,7 +52,7 @@ const iec: ProductIdentifier = { scheme: "iec61406", uri: "https://id.example.co
 const did: ProductIdentifier = { scheme: "did", method: "web", did: "did:web:example.com" };
 
 // DOI (scheme 5)
-const doi: ProductIdentifier = { scheme: "doi", doi: "10.1234/my-passport" };
+const doi: ProductIdentifier = { scheme: "doi", doi: "10.1234/my-passport", granularity: "model" };
 ```
 
 `Party.identifiers` carries `OperatorIdentifier[]` — ISO 6523 (GLN, LEI, DUNS), standalone
