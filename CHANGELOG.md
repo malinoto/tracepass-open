@@ -5,7 +5,7 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
-## Unreleased
+## 0.9.0 — 2026-09-28
 
 ### New package: `@tracepass/dpp-identifiers`
 
@@ -80,8 +80,24 @@ events emit a `sourceList` entry (typed `possessing_party`). This aligns with GS
 2.0 CBV: AI 414 is the physical location (readPoint/bizLocation), AI 417 is the economic
 operator (source/destination party).
 
-### `@tracepass/dpp-validate` — fix
+### `@tracepass/dpp-validate` — applicability follows the Battery Regulation text
 
+Minor: rules start and stop firing on some batteries, so consumers see different findings.
+
+- **State of health and Annex VII data follow Art. 14.** For industrial (>2 kWh)
+  batteries, state of health applies only to a stationary battery energy storage
+  system with a BMS, and the Annex VII Part A cluster (remaining capacity, self-discharge
+  …) and Part B expected-lifetime data (throughputs, date of putting into service) apply
+  only to stationary storage. EV batteries no longer get the Part A/B parameters.
+  The gates read `batteryProfile.isStationaryBess`; an unconfirmed flag yields
+  `unknown`, never a hidden field.
+- **The recycled-content exemption is industrial-only (Art. 8(1)).** A battery flagged
+  external-storage-only is exempt only when it is an industrial battery >2 kWh; EV and
+  LMT batteries always owe the recycled-content data.
+- **BAT-APP ignores platform-written values** (`source: "system"`: template defaults,
+  derived values), and adds the stationary-storage hint only to the gates that depend on
+  it. BAT-APP and BAT-VAL messages name the field by its label with the key in
+  parentheses.
 - **BAT-1** fix text updated to cite ISO/IEC 15459 and Battery Regulation Art. 77(3)
   explicitly, naming GS1 Digital Link as an example only. The previous text named "EN 18219
   schemes" which was premature — Art. 77(3) requires ISO/IEC 15459 until a delegated act
@@ -89,4 +105,4 @@ operator (source/destination party).
 
 ---
 
-*This file covers changes not yet tagged. See git tags for released versions.*
+*See git tags for released versions.*

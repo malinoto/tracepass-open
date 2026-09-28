@@ -59,7 +59,7 @@
     {
       "open": "packages/dpp-identifiers/src/uri.ts",
       "platform": "src/lib/identifiers/uri.ts",
-      "platformHash": "29493ff4391016df"
+      "platformHash": "1c8f0a3025269341"
     },
     {
       "open": "packages/dpp-identifiers/src/passport.ts",

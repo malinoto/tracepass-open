@@ -118,15 +118,26 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Publish all workspace packages to npm
+      - name: Publish every workspace package whose version is not yet on npm
         # No NODE_AUTH_TOKEN: an empty token would make npm reject with
         # ENEEDAUTH before attempting OIDC. Absent ⇒ OIDC engages cleanly.
         # Provenance comes from publishConfig.provenance: true in each
-        # package.json. --workspaces publishes all four, and a version already
-        # on the registry is FATAL: npm errors and the run stops. So every
-        # release bumps all four packages together, as the release flow above
-        # says, even when only one of them changed.
-        run: npm publish --workspaces
+        # package.json. `npm publish --workspaces` aborted the whole run on the
+        # first version already on the registry, so a re-run after a partial
+        # failure, or a new package bootstrapped by hand (a trusted publisher
+        # can only be registered once the package exists), could never finish.
+        # Each package is published on its own and skipped when its version
+        # already exists. All packages still share one version per release.
+        run: |
+          for dir in packages/*/; do
+            name=$(node -p "require('./${dir}package.json').name")
+            version=$(node -p "require('./${dir}package.json').version")
+            if npm view "${name}@${version}" version >/dev/null 2>&1; then
+              echo "skip ${name}@${version}: already on npm"
+            else
+              npm publish --workspace "${dir%/}"
+            fi
+          done
 
   github-release:
     # npm does not need a GitHub Release, but the repo page, its "Latest" badge

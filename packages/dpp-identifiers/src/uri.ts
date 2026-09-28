@@ -148,7 +148,13 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
     // Only handle the /01/<gtin>/21/<serial> form we emit.
     if (first !== "01" || segments.length < 4 || segments[2] !== "21") return null;
     const gtin = segments[1];
-    const serial = decodeURIComponent(segments[3]);
+    let serial: string;
+    try {
+      serial = decodeURIComponent(segments[3]);
+    } catch {
+      // Malformed percent-sequence (e.g. bare %) → treat as not found, not 500.
+      return null;
+    }
     return { scheme: "gs1", gtin, serialNumber: serial };
   }
 
@@ -156,9 +162,16 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
   // identifierToUri always emits uppercase agency codes; lowercase paths are
   // rejected (the caller may uppercase and retry if needed).
   if (/^[A-Z][A-Z0-9]{0,2}$/.test(first)) {
-    const issuingAgencyCode = decodeURIComponent(first).toUpperCase();
-    const primaryId = decodeURIComponent(segments[1]);
-    const serial = segments[2] ? decodeURIComponent(segments[2]) : undefined;
+    let issuingAgencyCode: string;
+    let primaryId: string;
+    let serial: string | undefined;
+    try {
+      issuingAgencyCode = decodeURIComponent(first).toUpperCase();
+      primaryId = decodeURIComponent(segments[1]);
+      serial = segments[2] ? decodeURIComponent(segments[2]) : undefined;
+    } catch {
+      return null;
+    }
     const raw = [issuingAgencyCode, primaryId, serial].filter(Boolean).join("/");
     return {
       scheme: "iso15459",
