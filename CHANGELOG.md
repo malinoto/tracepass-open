@@ -5,6 +5,22 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.11.0 — 2026-09-28
+
+### `@tracepass/dpp-types`
+
+- **BREAKING:** `Party.identifiers?: OperatorIdentifier[]` (the plural array field) is
+  replaced by two singular fields: `Party.operatorIdentifier?: OperatorIdentifier` and
+  `Party.facilityIdentifier?: FacilityIdentifier`. Any code that read `party.identifiers`
+  must migrate to the singular fields. The platform never populated the array field;
+  the change aligns the public types with the platform's actual storage shape.
+- A `gln`-scheme `operatorIdentifier` also fills `gln`, and the two must match. A
+  facility identifier never fills `gln`. EN 18219 clauses 6.2–6.5.
+
+Other packages: version bump only (shared version).
+
+---
+
 ## 0.10.0 — 2026-09-28
 
 Conformance with the full text of EN 18219:2026.

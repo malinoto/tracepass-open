@@ -251,10 +251,17 @@ export interface Party {
   /** Fallback identifier (VAT, EORI, national tax id) for entities lacking a GLN. */
   legacyOperatorId?: string;
   /**
-   * Scheme-tagged operator identifiers per EN 18219 (ISO/IEC 6523, GLN, DID, DOI).
-   * Additive alongside the existing `gln` field; new integrations should prefer this.
+   * Typed EN 18219 economic-operator identifier (schemes 6–9). One of `gln`,
+   * `legacyOperatorId` or this identifies the party. A `gln`-scheme value also
+   * fills `gln`, and the two must match. EPCIS carries the GLN only.
    */
-  identifiers?: OperatorIdentifier[];
+  operatorIdentifier?: OperatorIdentifier;
+  /**
+   * Typed EN 18219 facility identifier (schemes 6–9).
+   * Optional — for parties that play a site role (manufacturer's physical
+   * plant, importer's warehouse). Distinct from the operator's own GLN.
+   */
+  facilityIdentifier?: FacilityIdentifier;
   url?: string;
   status?: PartyStatus;
 }

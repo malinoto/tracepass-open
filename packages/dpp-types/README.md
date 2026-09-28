@@ -55,8 +55,11 @@ const did: ProductIdentifier = { scheme: "did", method: "web", did: "did:web:exa
 const doi: ProductIdentifier = { scheme: "doi", doi: "10.1234/my-passport", granularity: "model" };
 ```
 
-`Party.identifiers` carries `OperatorIdentifier[]` — ISO 6523 (GLN, LEI, DUNS), standalone
-GLN, DID, or DOI. `FacilityIdentifier` is GLN-only (EN 18219 scheme 7).
+`Party.operatorIdentifier` carries a single `OperatorIdentifier` — ISO 6523 (LEI, GLN via
+icd 0088, DUNS), standalone GLN (scheme "gln"), DID, or DOI. `Party.facilityIdentifier`
+carries a `FacilityIdentifier` with the same four schemes (6–9) plus an optional GLN
+extension component for sub-locations. Both are optional; the legacy `gln` and
+`legacyOperatorId` fields remain for backward compatibility.
 
 The legacy `Passport.gs1` field is still present but **`@deprecated`** — use
 `identifier: { scheme: "gs1", ... }` instead.
