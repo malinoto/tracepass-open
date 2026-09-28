@@ -50,10 +50,13 @@ export function identifierToUri(id: ProductIdentifier, resolverBase: string): st
   const base = resolverBase.replace(/\/+$/, "");
 
   switch (id.scheme) {
-    case "gs1":
-      return (
-        `https://${base}/01/${id.gtin}/21/${encodeURIComponent(id.serialNumber)}`
-      );
+    case "gs1": {
+      // A Digital Link carries the GTIN-14 form: left-pad a GTIN-8/12/13 with
+      // zeros (the check digit is unchanged by padding). Anything else is left
+      // as given; validation belongs to validateProductIdentifier.
+      const gtin = /^\d{8}$|^\d{12,13}$/.test(id.gtin) ? id.gtin.padStart(14, "0") : id.gtin;
+      return `https://${base}/01/${gtin}/21/${encodeURIComponent(id.serialNumber)}`;
+    }
 
     case "iso15459": {
       const parts = [

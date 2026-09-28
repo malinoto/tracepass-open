@@ -5,6 +5,14 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.9.1 — 2026-09-28
+
+### `@tracepass/dpp-identifiers` — fix
+
+- `identifierToUri` emits the GTIN-14 form for a GS1 identifier given as GTIN-8, -12 or
+  -13 (zero-padded; the check digit is unchanged). A 13-digit EAN previously produced a
+  non-canonical Digital Link path. Other packages: version bump only (shared version).
+
 ## 0.9.0 — 2026-09-28
 
 ### New package: `@tracepass/dpp-identifiers`

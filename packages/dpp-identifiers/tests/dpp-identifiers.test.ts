@@ -394,6 +394,18 @@ describe("validateFacilityIdentifier", () => {
 // ── identifierToUri ───────────────────────────────────────────────────────────
 
 describe("identifierToUri", () => {
+  it("emits the GTIN-14 form for a GTIN-8, -12 or -13", () => {
+    expect(identifierToUri({ scheme: "gs1", gtin: "4006381333931", serialNumber: "A1" }, "id.example")).toBe(
+      "https://id.example/01/04006381333931/21/A1",
+    );
+    expect(identifierToUri({ scheme: "gs1", gtin: "96385074", serialNumber: "A1" }, "id.example")).toBe(
+      "https://id.example/01/00000096385074/21/A1",
+    );
+    expect(identifierToUri({ scheme: "gs1", gtin: "036000291452", serialNumber: "A1" }, "id.example")).toBe(
+      "https://id.example/01/00036000291452/21/A1",
+    );
+  });
+
   const RESOLVER = "resolver.example.com";
 
   it("builds a GS1 Digital Link URI", () => {
