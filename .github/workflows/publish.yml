@@ -128,16 +128,26 @@ jobs:
         # can only be registered once the package exists), could never finish.
         # Each package is published on its own and skipped when its version
         # already exists. All packages still share one version per release.
+        # One failing package no longer stops the others: every package is
+        # attempted and the step fails at the end, naming what did not publish.
+        # Registry reads lag a publish by minutes, so a version published moments
+        # earlier (e.g. a hand bootstrap) can look absent; re-run the job later
+        # and it will be skipped.
         run: |
+          failed=""
           for dir in packages/*/; do
             name=$(node -p "require('./${dir}package.json').name")
             version=$(node -p "require('./${dir}package.json').version")
             if npm view "${name}@${version}" version >/dev/null 2>&1; then
               echo "skip ${name}@${version}: already on npm"
-            else
-              npm publish --workspace "${dir%/}"
+            elif ! npm publish --workspace "${dir%/}"; then
+              failed="${failed} ${name}@${version}"
             fi
           done
+          if [ -n "${failed}" ]; then
+            echo "::error::not published:${failed}"
+            exit 1
+          fi
 
   github-release:
     # npm does not need a GitHub Release, but the repo page, its "Latest" badge
