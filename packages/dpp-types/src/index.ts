@@ -42,7 +42,47 @@ export type FieldDataType =
 export type AccessLevel = "public" | "restricted" | "authority";
 
 /** Where in an EU instrument a field is mandated. */
+/** Where a law puts a datum (tracepass-dpp-schemas `obligations[].carrier`). */
+export type ObligationCarrier =
+  | "passport"
+  | "product"
+  | "label"
+  | "sds"
+  | "notification"
+  | "document"
+  | "customs";
+
+/** One law that requires the datum to exist, verified against its primary text. */
+export interface RegulationObligation {
+  /** CELEX id, e.g. `"32026R0405"`. */
+  instrument: string;
+  /** Where in the act, e.g. `"Annex VI Part A(h)"`. */
+  provision: string;
+  carrier: ObligationCarrier;
+  /** The condition the law attaches when the duty does not bind every product; null when it binds all. */
+  condition?: string | null;
+  /** The sentence or sub-point, verbatim from the Official Journal text. */
+  quote: string;
+}
+
 export interface RegulationRef {
+  /** CELEX id of the instrument, e.g. `"32023R1542"`. */
+  instrument?: string | null;
+  /** The provision within it, e.g. `"Art. 77(1)"`. */
+  provision?: string | null;
+  /**
+   * What kind of claim this reference is: `legislation` binds; `standard`
+   * supports a presumption of conformity; `scheme` is voluntary; `national` is
+   * one member state's law; `international` is outside EU law; `specification`
+   * is not a legal reference.
+   */
+  kind?: "legislation" | "standard" | "scheme" | "national" | "international" | "specification" | null;
+  /** Free-text name when the reference is not EU legislation. */
+  source?: string | null;
+  /** Keys into the schemas repo's `standards.json`; relating to a standard never makes a field required. */
+  standards?: string[];
+  /** Every law that requires this datum, and where it puts it. */
+  obligations?: RegulationObligation[];
   article?: string | null;
   annex?: string | null;
   description?: string | null;

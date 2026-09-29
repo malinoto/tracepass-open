@@ -5,7 +5,15 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
-## 0.13.0 — 2026-09-29
+## 0.13.1 — 2026-09-29
+
+- `@tracepass/dpp-types`: `RegulationRef` declares the keys every template carries:
+  `instrument`, `provision`, `kind`, `source`, `standards` and `obligations`
+  (`RegulationObligation`). The type under-described the published templates.
+- 0.13.0 was tagged but never published; the CI typecheck failed on the missing
+  `instrument` key. 0.13.1 is the first release carrying the 0.13.0 changes below.
+
+## 0.13.0 — 2026-09-29 (not published)
 
 Conditional duties become enforceable (platform ADR: condition flags).
 
