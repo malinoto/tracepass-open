@@ -5,6 +5,31 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.14.0 — 2026-09-29
+
+Phase 2 conditional duties: detergents and toys gate registry, date-guard.
+
+### `@tracepass/dpp-validate`
+
+- `battery-applicability` (vendor mirror): extended `FieldGate` with optional `mandatoryFrom` date
+  string. When `categoryFieldApplicability` is called before a gate's `mandatoryFrom` date, it
+  returns `"unknown"` for all fields in that gate — no hard block before the law applies.
+- Added `DETERGENTS_FIELD_GATES` (two gates): `microorganisms` via `microorganismsAdded` flag
+  (Reg (EU) 2026/405 Annex VI Part A(i), mandatory from 2029-09-23), and `ingredients` via
+  `sdsProvided` flag (Annex VI Part A(h)).
+- Added `TOYS_FIELD_GATES` (three gates): `allergenicFragrances` via `containsAllergenicFragrances`
+  flag (Reg (EU) 2025/2509 Annex VI Part I(l)), `replacesDeclarationOfConformity` via
+  `alsoUnderOtherActs` flag (Annex VI Part I(h)), and `notifiedBodyCertificateReference`
+  field-derived from `notifiedBody` — all mandatory from 2030-08-01.
+- Extended `CATEGORY_FIELD_GATES` with `detergents` and `toys` entries.
+- `publish-gate` (vendor mirror): path 2 in `evaluateFieldRequirements` — a gate that returns
+  `"applies"` on a field with no `requiredBy` and `required: false` is now a hard publish block,
+  enabling gate-only enforcement for toys fields that carry no subcategory map.
+- Exported `DETERGENTS_PASSPORT_MANDATORY_FROM` and `TOYS_PASSPORT_MANDATORY_FROM` date constants.
+- `Triggers` interface: phase 2 fields (`microorganismsAdded`, `sdsProvided`,
+  `containsAllergenicFragrances`, `alsoUnderOtherActs`, `fieldPresent`) are optional for
+  backward compatibility with tests that call `gate.decide()` directly.
+
 ## 0.13.1 — 2026-09-29
 
 - `@tracepass/dpp-types`: `RegulationRef` declares the keys every template carries:

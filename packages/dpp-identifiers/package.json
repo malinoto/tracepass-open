@@ -1,7 +1,7 @@
 {
   "name": "@tracepass/dpp-identifiers",
-  "version": "0.13.1",
-  "description": "Validate and parse EU Digital Product Passport identifiers (EN 18219) — GS1 Digital Link, ISO/IEC 15459, IEC 61406, DID, DOI. Pure functions, no network, no third-party runtime dependencies.",
+  "version": "0.14.0",
+  "description": "Validate and parse EU Digital Product Passport identifiers (EN 18219) \u2014 GS1 Digital Link, ISO/IEC 15459, IEC 61406, DID, DOI. Pure functions, no network, no third-party runtime dependencies.",
   "keywords": [
     "digital-product-passport",
     "dpp",

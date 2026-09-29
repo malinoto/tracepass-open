@@ -223,9 +223,17 @@ export function evaluateFieldRequirements(
     const rb = tf.validation.requiredBy;
     if (
       applicabilityMap[tf.key] === "applies" &&
-      rb &&
-      category !== undefined &&
-      rb[category] === "conditional"
+      (
+        // Path 1: field has a per-subcategory requiredBy map and the current
+        // subcategory is "conditional" — the gate's "applies" verdict promotes
+        // the conditional entry to a hard block (battery, detergents pattern).
+        (rb && category !== undefined && rb[category] === "conditional") ||
+        // Path 2: no requiredBy map at all and field is not statically required.
+        // Used for categories whose gated fields carry no subcategory (toys) —
+        // the gate alone decides whether the duty arises; when it says "applies"
+        // the field becomes mandatory regardless of the subcategory value.
+        (!tf.validation.required && !rb)
+      )
     ) {
       if (isFieldAbsent(f)) {
         conditionalMissingFields.push(tf.key);

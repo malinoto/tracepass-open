@@ -36,6 +36,7 @@
 import type { Passport } from "@tracepass/dpp-types";
 import { resolveConditionProfile } from "./condition-profile.js";
 import { IN_SCOPE_BATTERY_CATEGORIES } from "./battery-scope.js";
+import { SUBCATEGORY_FIELD } from "./subcategory.js";
 
 export type Applicability = "applies" | "not_applicable" | "unknown";
 
@@ -53,24 +54,49 @@ const SBESS_FIX_HINT =
   "For an industrial (>2 kWh) battery, confirm whether it is a stationary battery energy storage system: Art. 14 state-of-health and Annex VII expected-lifetime data apply only to stationary storage systems, LMT and (for state of health) EV batteries.";
 
 export interface FieldGate {
-  /** Battery template field keys this gate governs. */
+  /** Template field keys this gate governs. */
   keys: string[];
-  /** Annex XIII / deck reference, for the verdict citation. */
+  /** Regulation article / annex point reference, for the verdict citation. */
   article: string;
   /** One-line reason, surfaced in the verdict + editor tooltip. */
   reason: string;
   /** Extra remediation, for gates that turn on the stationary-storage flag. */
   fixHint?: string;
+  /**
+   * ISO-8601 date from which the underlying provision is mandatory.
+   * Before this date `categoryFieldApplicability` returns "unknown" for fields
+   * governed by this gate, so they produce a warning but never a hard block.
+   * After this date the gate's `decide()` result is used as-is.
+   */
+  mandatoryFrom?: string;
   /** Decide applicability from the resolved trigger values. */
   decide(t: Triggers): Applicability;
 }
 
 interface Triggers {
+  /** Sub-category value read from the passport (batteryCategory / detergentUserType / …). */
   category: string | undefined;
+  // ── Battery flags ─────────────────────────────────────────────────────────
   hasBMS: boolean | undefined;
   rechargeable: boolean | undefined;
   externalStorageOnly: boolean | undefined;
   isStationaryBess: boolean | undefined;
+  // ── Detergents flags (phase 2) — optional for backward compat with tests
+  // that call gate.decide() directly with battery-only trigger shapes.
+  microorganismsAdded?: boolean | undefined;
+  sdsProvided?: boolean | undefined;
+  // ── Toys flags (phase 2) — optional for same reason ──────────────────────
+  containsAllergenicFragrances?: boolean | undefined;
+  alsoUnderOtherActs?: boolean | undefined;
+  /**
+   * Field-derived tri-state: resolves whether a named passport field has an
+   * approved, non-empty value.
+   *   true      — field present + approved
+   *   undefined — field present but pending_review (unknown → no hard block)
+   *   false     — field absent or empty
+   * Optional for backward compat; absent ≡ false (field not present).
+   */
+  fieldPresent?(key: string): boolean | undefined;
 }
 
 /**
@@ -87,17 +113,36 @@ function confirmed(flag: { value: boolean; status: string } | undefined): boolea
   return flag.status === "approved" ? flag.value : undefined;
 }
 
-function readTriggers(passport: Passport): Triggers {
-  const cat = passport.fields["batteryCategory"];
+function readTriggers(passport: Passport, templateCategory: string = "battery"): Triggers {
+  // Sub-category field key (batteryCategory / detergentUserType / …) from the
+  // SUBCATEGORY_FIELD map. Falls back to undefined for categories with no map entry (e.g. toys).
+  const subcatFieldKey = SUBCATEGORY_FIELD[templateCategory];
+  const catField = subcatFieldKey ? passport.fields[subcatFieldKey] : undefined;
   // Use the canonical accessor so conditionProfile (new) and batteryProfile
   // (legacy) both work through the same path.
   const profile = resolveConditionProfile(passport);
   return {
-    category: cat && cat.value != null && cat.value !== "" ? String(cat.value) : undefined,
+    category:
+      catField && catField.value != null && catField.value !== ""
+        ? String(catField.value)
+        : undefined,
+    // Battery flags
     hasBMS: confirmed(profile["hasBMS"]),
     rechargeable: confirmed(profile["rechargeable"]),
     externalStorageOnly: confirmed(profile["externalStorageOnly"]),
     isStationaryBess: confirmed(profile["isStationaryBess"]),
+    // Detergents flags (phase 2)
+    microorganismsAdded: confirmed(profile["microorganismsAdded"]),
+    sdsProvided: confirmed(profile["sdsProvided"]),
+    // Toys flags (phase 2)
+    containsAllergenicFragrances: confirmed(profile["containsAllergenicFragrances"]),
+    alsoUnderOtherActs: confirmed(profile["alsoUnderOtherActs"]),
+    // Field-derived tri-state: approved non-empty → true; pending_review → undefined; absent → false
+    fieldPresent: (key: string): boolean | undefined => {
+      const f = passport.fields[key];
+      if (!f || f.value == null || f.value === "") return false;
+      return f.status === "approved" ? true : undefined;
+    },
   };
 }
 
@@ -350,7 +395,7 @@ export const GATED_FIELD_KEYS: ReadonlySet<string> = new Set(KEY_TO_GATE.keys())
 export function fieldApplicability(passport: Passport, key: string): Applicability {
   const gate = KEY_TO_GATE.get(key);
   if (!gate) return "applies";
-  return gate.decide(readTriggers(passport));
+  return gate.decide(readTriggers(passport, "battery"));
 }
 
 /**
@@ -376,17 +421,108 @@ export function gateForKey(key: string): FieldGate | undefined {
 }
 
 /**
+ * Date strings from which each category's passport obligations become mandatory.
+ * Before these dates, any gate that carries `mandatoryFrom` returns "unknown"
+ * (warning, no hard block). After, the gate's `decide()` result is used as-is.
+ */
+export const DETERGENTS_PASSPORT_MANDATORY_FROM = "2029-09-23";
+export const TOYS_PASSPORT_MANDATORY_FROM = "2030-08-01";
+
+// ─── Detergents gates (Reg (EU) 2026/405) ────────────────────────────────────
+const DETERGENTS_FIELD_GATES: FieldGate[] = [
+  {
+    // Annex VI Part A(i): microorganisms list is required ONLY where micro-organisms
+    // are intentionally added to the product. If no micro-organisms are added the
+    // field does not apply. `microorganismsAdded` flag (owner-confirmed) resolves this.
+    keys: ["microorganisms"],
+    article: "Annex VI Part A(i) / Reg (EU) 2026/405",
+    reason:
+      "The list of micro-organisms is required only where micro-organisms are intentionally added to the detergent formulation.",
+    mandatoryFrom: DETERGENTS_PASSPORT_MANDATORY_FROM,
+    decide: (t) => {
+      if (t.microorganismsAdded === undefined) return "unknown";
+      return t.microorganismsAdded ? "applies" : "not_applicable";
+    },
+  },
+  {
+    // Annex VI Part A(h): the full ingredients list for industrial/institutional
+    // detergents is required UNLESS the manufacturer has provided a Safety Data Sheet
+    // (SDS) for the product. When an SDS is provided the duty is discharged separately.
+    keys: ["ingredients"],
+    article: "Annex VI Part A(h) / Reg (EU) 2026/405",
+    reason:
+      "The full ingredients list for an industrial/institutional detergent is required in the passport unless a Safety Data Sheet covering that information has been provided separately.",
+    mandatoryFrom: DETERGENTS_PASSPORT_MANDATORY_FROM,
+    decide: (t) => {
+      if (t.sdsProvided === undefined) return "unknown";
+      // SDS provided → the duty is discharged via SDS, not the passport.
+      return t.sdsProvided ? "not_applicable" : "applies";
+    },
+  },
+];
+
+// ─── Toys gates (Reg (EU) 2025/2509) ─────────────────────────────────────────
+const TOYS_FIELD_GATES: FieldGate[] = [
+  {
+    // Annex VI Part I(l): a list of fragrances to which the toy may expose users
+    // is required only when those fragrances are listed under Annex II of
+    // Regulation (EC) No 1223/2009 (cosmetics allergens). If no allergen-listed
+    // fragrances are present the duty does not arise.
+    keys: ["allergenicFragrances"],
+    article: "Annex VI Part I(l) / Reg (EU) 2025/2509",
+    reason:
+      "A list of allergen-listed fragrances is required in the toy passport only when such fragrances are present in the toy.",
+    mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
+    decide: (t) => {
+      if (t.containsAllergenicFragrances === undefined) return "unknown";
+      return t.containsAllergenicFragrances ? "applies" : "not_applicable";
+    },
+  },
+  {
+    // Annex VI Part I(h): a statement about which other Union acts apply to the
+    // toy is required only where the toy also falls under one of the acts listed
+    // in Annex XI to the Regulation, or under Directive 2011/65/EU (RoHS).
+    keys: ["replacesDeclarationOfConformity"],
+    article: "Annex VI Part I(h) / Reg (EU) 2025/2509",
+    reason:
+      "Information on compliance with other applicable Union acts (Annex XI / RoHS) is required only when the toy falls under one of those acts.",
+    mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
+    decide: (t) => {
+      if (t.alsoUnderOtherActs === undefined) return "unknown";
+      return t.alsoUnderOtherActs ? "applies" : "not_applicable";
+    },
+  },
+  {
+    // Annex VI Part I(j): the notified-body certificate reference is required only
+    // when a notified body was involved (i.e. the `notifiedBody` field is filled).
+    // This is field-derived (no separate flag): an approved non-empty `notifiedBody`
+    // → certificate reference applies; absent/empty → not_applicable.
+    keys: ["notifiedBodyCertificateReference"],
+    article: "Annex VI Part I(j) / Reg (EU) 2025/2509",
+    reason:
+      "The notified-body certificate reference is required only when a notified body was involved in the conformity assessment (indicated by the notifiedBody field being filled).",
+    mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
+    decide: (t) => {
+      // fieldPresent is optional in Triggers (backward compat); treat absent as false.
+      const present = t.fieldPresent ? t.fieldPresent("notifiedBody") : false;
+      if (present === undefined) return "unknown"; // pending_review → warn, no block
+      return present ? "applies" : "not_applicable";
+    },
+  },
+];
+
+/**
  * CATEGORY_FIELD_GATES — generalised gate registry, keyed by template category.
  *
- * Phase 1: battery only. Other categories gain entries when their conditional
- * rules are encoded. Battery gates are unchanged from BATTERY_FIELD_GATES; the
- * two names refer to the same array.
+ * Phase 1: battery only. Phase 2: detergents and toys added.
  *
  * Callers that need to enumerate gates for a category use this registry.
  * The battery-specific `batteryFieldApplicability` is now a thin wrapper.
  */
 export const CATEGORY_FIELD_GATES: Record<string, FieldGate[]> = {
   battery: BATTERY_FIELD_GATES,
+  detergents: DETERGENTS_FIELD_GATES,
+  toys: TOYS_FIELD_GATES,
 };
 
 /**
@@ -397,16 +533,31 @@ export const CATEGORY_FIELD_GATES: Record<string, FieldGate[]> = {
  * generic path: every category that has gates in CATEGORY_FIELD_GATES is handled,
  * everything else is a no-op. `batteryFieldApplicability` is kept as a
  * backward-compat alias.
+ *
+ * @param now  Optional reference date for `mandatoryFrom` enforcement. Defaults
+ *             to the current wall clock. Callers should pass a fixed date in tests.
+ *             When a gate's `mandatoryFrom` is in the future relative to `now`,
+ *             ALL keys governed by that gate resolve to "unknown" (warning only,
+ *             never a hard publish block) — keeping the provision from creating
+ *             obligations before it legally applies.
  */
 export function categoryFieldApplicability(
   passport: Passport,
   category: string,
+  now?: Date,
 ): Record<string, Applicability> {
   const gates = CATEGORY_FIELD_GATES[category];
   if (!gates || gates.length === 0) return {};
-  const triggers = readTriggers(passport);
+  const triggers = readTriggers(passport, category);
+  const effectiveNow = now ?? new Date();
   const out: Record<string, Applicability> = {};
   for (const gate of gates) {
+    // Date-gate: if the provision has not yet entered into force, return "unknown"
+    // for every field in this gate — never a hard block before the law applies.
+    if (gate.mandatoryFrom && effectiveNow < new Date(gate.mandatoryFrom)) {
+      for (const k of gate.keys) out[k] = "unknown";
+      continue;
+    }
     const verdict = gate.decide(triggers);
     for (const k of gate.keys) out[k] = verdict;
   }

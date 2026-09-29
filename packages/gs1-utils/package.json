@@ -1,7 +1,7 @@
 {
   "name": "@tracepass/gs1-utils",
-  "version": "0.13.1",
-  "description": "GS1 identifier utilities for Digital Product Passports — GTIN and GLN check-digit validation, GS1 Digital Link URI build/parse. Zero dependencies in the core; the optional QR subpath asks for qrcode as a peer.",
+  "version": "0.14.0",
+  "description": "GS1 identifier utilities for Digital Product Passports \u2014 GTIN and GLN check-digit validation, GS1 Digital Link URI build/parse. Zero dependencies in the core; the optional QR subpath asks for qrcode as a peer.",
   "keywords": [
     "gs1",
     "gtin",
