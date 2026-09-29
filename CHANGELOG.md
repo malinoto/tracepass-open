@@ -5,6 +5,18 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.12.0 — 2026-09-29
+
+### `@tracepass/dpp-types`
+
+- `RegulationRef.verifiedAgainstPrimaryText?: { on, celex?, by }` — set when a person
+  has checked the cited provision in the official EUR-Lex text (tracepass-dpp-schemas
+  1.12.0). Optional; no field carries it yet.
+
+Other packages: version bump only (shared version).
+
+---
+
 ## 0.11.0 — 2026-09-28
 
 ### `@tracepass/dpp-types`

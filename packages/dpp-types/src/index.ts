@@ -46,6 +46,27 @@ export interface RegulationRef {
   article?: string | null;
   annex?: string | null;
   description?: string | null;
+  /**
+   * Record that a person read the cited provision in the official EUR-Lex text
+   * and confirmed the field's requirement, scale and unit match. Present only
+   * when the primary text was actually consulted; absent means unverified.
+   *
+   * The schemas repo's citation audit reports the verified share per category
+   * and will reject a `verifiedAgainstPrimaryText` whose `on` date, `celex`
+   * or `by` field is missing from the schema.
+   */
+  verifiedAgainstPrimaryText?: {
+    /** ISO 8601 date the act was read, e.g. `"2026-09-28"`. */
+    on: string;
+    /**
+     * CELEX id of the consolidated version read, e.g. `"32023R1542"`.
+     * Absent when the instrument has no CELEX (a standard, scheme, or
+     * national law).
+     */
+    celex?: string;
+    /** Who performed the verification, e.g. `"TracePass"`. */
+    by: string;
+  } | null;
 }
 
 /** Hints for extracting a field's value from unstructured supplier documents. */
