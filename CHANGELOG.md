@@ -5,6 +5,30 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.13.0 — 2026-09-29
+
+Conditional duties become enforceable (platform ADR: condition flags).
+
+### `@tracepass/dpp-types`
+
+- `ConditionFlag` and `Passport.conditionProfile`: reviewer-approved yes/no flags per
+  category, each with an audit trail. They generalise `batteryProfile`, which stays
+  readable.
+
+### `@tracepass/dpp-validate`
+
+- Evaluates condition-gated duties like the platform. The vendored applicability engine
+  (`battery-applicability`, `condition-profile`, both hash-gated mirrors) feeds the
+  publish gate. An **approved** flag whose gate applies makes a `conditional` field
+  required: an empty value, or one not yet approved, is a critical
+  `gate:conditional` finding and a hard `conditional_missing` block. An absent or
+  pending flag never blocks. A caller that passes no `conditionProfile` gets no
+  conditional enforcement: it under-reports and never over-reports.
+
+Other packages: version bump only (shared version).
+
+---
+
 ## 0.12.0 — 2026-09-29
 
 ### `@tracepass/dpp-types`

@@ -24,24 +24,36 @@ import type { Passport, Template, TemplateField } from "@tracepass/dpp-types";
 import { isInScopeBatteryCategory } from "./battery-scope.js";
 import { isFieldAbsent } from "./field-emptiness.js";
 
+/** Applicability value returned by the condition-gate engine. */
+export type GateApplicability = "applies" | "not_applicable" | "unknown";
+
 export interface PublishCheck {
   ready: boolean;
   /** Field keys that have no value set. */
   missingFields: string[];
   /** Field keys with a value but status != approved. */
   unapprovedFields: string[];
+  /**
+   * Field keys with `requiredBy[category] === "conditional"` whose gate
+   * resolved `"applies"` (from an APPROVED flag) and the field is empty.
+   * This is a HARD publish block — stricter than a soft gap, because the
+   * owner has confirmed the condition holds.
+   */
+  conditionalMissingFields: string[];
   /** Short human reason suitable for a tooltip or toast — undefined when ready. */
   reason?: string;
   /**
    * Distinguishes WHY the passport isn't ready:
-   *   - "hard"  → structural blocker that can't be bypassed
-   *               (already-published, wrong status, template missing).
-   *   - "gap"   → required fields are missing or unapproved. The UI
-   *               can offer to publish anyway with an explicit "I
-   *               understand the risk" acknowledgement.
+   *   - "hard"        → structural blocker that can't be bypassed
+   *                     (already-published, wrong status, template missing).
+   *   - "gap"         → required fields are missing or unapproved. The UI
+   *                     can offer to publish anyway with an explicit "I
+   *                     understand the risk" acknowledgement.
+   *   - "conditional" → a condition-flag gate confirmed a duty applies and
+   *                     the field is empty. Hard block, same as "hard".
    *   - `undefined` when ready === true.
    */
-  blockerType?: "hard" | "gap";
+  blockerType?: "hard" | "gap" | "conditional";
 }
 
 const PUBLISHABLE_STATUSES = new Set<Passport["status"]>([
@@ -152,51 +164,36 @@ export function notApplicableForCategory(
   return requiredBy[category] === "notApplicable";
 }
 
+/** The field-level findings returned by `evaluateFieldRequirements`. */
+export interface FieldRequirements {
+  missingFields: string[];
+  unapprovedFields: string[];
+  conditionalMissingFields: string[];
+}
+
 /**
- * Returns whether `passport` satisfies every publish precondition given
- * its `template`. A passport is publish-ready iff:
- *   - status is in PUBLISHABLE_STATUSES (already-published + terminal
- *     states return ready:false with a specific reason),
- *   - every template field whose effective required flag (resolved via
- *     `effectiveRequired` — which consults `requiredBy` when present) is
- *     true has a non-empty value AND status === "approved".
+ * Evaluate field-level requirements for a passport against its template,
+ * status-independently. Called by both `checkPublishReady` (which adds
+ * status early-returns) and `evaluateCompliance` (which must run even on
+ * published passports so live DPPs are re-evaluated after a template or
+ * flag change).
  *
- * `undefined` template means we can't evaluate — treat as not-ready.
+ * Returns three buckets:
+ *   - `missingFields`            — statically required, no value set
+ *   - `unapprovedFields`         — statically required, value set but not approved
+ *   - `conditionalMissingFields` — gate-confirmed conditional duty, absent
+ *                                   OR present-but-unapproved (hard block)
+ *
+ * `applicabilityMap` is pre-computed by the caller via
+ * `categoryFieldApplicability(passport, template.category)`. Pass `{}` for
+ * non-battery categories — the gate branch is then a no-op. Keeping it
+ * injected preserves the IO-free/pure contract of this function.
  */
-export function checkPublishReady(
+export function evaluateFieldRequirements(
   passport: Passport,
-  template: Template | undefined,
-): PublishCheck {
-  if (passport.status === "published") {
-    return {
-      ready: false,
-      missingFields: [],
-      unapprovedFields: [],
-      reason: "Already published",
-      blockerType: "hard",
-    };
-  }
-
-  if (!PUBLISHABLE_STATUSES.has(passport.status)) {
-    return {
-      ready: false,
-      missingFields: [],
-      unapprovedFields: [],
-      reason: `Cannot publish from status ${passport.status}`,
-      blockerType: "hard",
-    };
-  }
-
-  if (!template) {
-    return {
-      ready: false,
-      missingFields: [],
-      unapprovedFields: [],
-      reason: "Template missing",
-      blockerType: "hard",
-    };
-  }
-
+  template: Template,
+  applicabilityMap: Record<string, GateApplicability> = {},
+): FieldRequirements {
   // The passport's sub-category, read from the field the template category
   // names (battery: batteryCategory, fmcg: productSubcategory, detergents:
   // detergentUserType; core SUBCATEGORY_FIELD), so effectiveRequired can
@@ -205,6 +202,7 @@ export function checkPublishReady(
 
   const missingFields: string[] = [];
   const unapprovedFields: string[] = [];
+  const conditionalMissingFields: string[] = [];
 
   for (const tf of template.fields) {
     // `anticipated` fields rest on a delegated act that has not been adopted,
@@ -212,8 +210,37 @@ export function checkPublishReady(
     // publication. Skip them before the required check.
     if (tf.validation.anticipated) continue;
 
-    if (!effectiveRequiredFor(template.category, tf, category)) continue;
     const f = passport.fields[tf.key];
+
+    // ── Gate-aware conditional check ────────────────────────────────────────
+    // A field with requiredBy[category] === "conditional" is normally not
+    // required. When a gate's APPROVED flag confirms the condition applies,
+    // the field becomes required and its absence is a HARD publish block.
+    // An unapproved value (pending_review) is also a hard block — consistent
+    // with the owner's decision that conditional duties are non-bypassable.
+    // "unknown" (absent or pending_review FLAG) → skip here; the rules engine
+    // emits an unverifiable_conditional warning via BAT-APP but never blocks.
+    const rb = tf.validation.requiredBy;
+    if (
+      applicabilityMap[tf.key] === "applies" &&
+      rb &&
+      category !== undefined &&
+      rb[category] === "conditional"
+    ) {
+      if (isFieldAbsent(f)) {
+        conditionalMissingFields.push(tf.key);
+      } else if (f.status !== "approved") {
+        // Field is present but not yet confirmed — same hard block as absent,
+        // because an unreviewed value satisfies neither the owner nor the law.
+        conditionalMissingFields.push(tf.key);
+      }
+      // Don't fall through to the static required check — the gate owns this
+      // field's requirement for this passport.
+      continue;
+    }
+
+    // ── Static required check ────────────────────────────────────────────────
+    if (!effectiveRequiredFor(template.category, tf, category)) continue;
     // Shared helper: `[]` stays a valid answer ("none apply"), while a
     // whitespace-only string now counts as missing — the inline `=== ""` it
     // replaces let "   " satisfy a required field and publish a blank.
@@ -224,19 +251,100 @@ export function checkPublishReady(
     }
   }
 
-  if (missingFields.length === 0 && unapprovedFields.length === 0) {
-    return { ready: true, missingFields: [], unapprovedFields: [] };
+  return { missingFields, unapprovedFields, conditionalMissingFields };
+}
+
+/**
+ * Returns whether `passport` satisfies every publish precondition given
+ * its `template`. A passport is publish-ready iff:
+ *   - status is in PUBLISHABLE_STATUSES (already-published + terminal
+ *     states return ready:false with a specific reason),
+ *   - every template field whose effective required flag (resolved via
+ *     `effectiveRequired` — which consults `requiredBy` when present) is
+ *     true has a non-empty value AND status === "approved",
+ *   - every `requiredBy[category] === "conditional"` field whose gate
+ *     resolves `"applies"` (from an APPROVED condition flag) also has a
+ *     non-empty value AND status === "approved" (hard block, same severity
+ *     as a structural blocker).
+ *
+ * `undefined` template means we can't evaluate — treat as not-ready.
+ *
+ * @param applicabilityMap  Pre-computed gate-applicability map (field key →
+ *   "applies" | "not_applicable" | "unknown"). Computed by the caller using
+ *   `categoryFieldApplicability(passport, template.category)`. Pass `{}` or
+ *   omit for non-battery passports (no change in behaviour). Keeping it
+ *   injected preserves the IO-free/pure contract of this function.
+ */
+export function checkPublishReady(
+  passport: Passport,
+  template: Template | undefined,
+  applicabilityMap: Record<string, GateApplicability> = {},
+): PublishCheck {
+  if (passport.status === "published") {
+    return {
+      ready: false,
+      missingFields: [],
+      unapprovedFields: [],
+      conditionalMissingFields: [],
+      reason: "Already published",
+      blockerType: "hard",
+    };
+  }
+
+  if (!PUBLISHABLE_STATUSES.has(passport.status)) {
+    return {
+      ready: false,
+      missingFields: [],
+      unapprovedFields: [],
+      conditionalMissingFields: [],
+      reason: `Cannot publish from status ${passport.status}`,
+      blockerType: "hard",
+    };
+  }
+
+  if (!template) {
+    return {
+      ready: false,
+      missingFields: [],
+      unapprovedFields: [],
+      conditionalMissingFields: [],
+      reason: "Template missing",
+      blockerType: "hard",
+    };
+  }
+
+  const { missingFields, unapprovedFields, conditionalMissingFields } =
+    evaluateFieldRequirements(passport, template, applicabilityMap);
+
+  if (
+    missingFields.length === 0 &&
+    unapprovedFields.length === 0 &&
+    conditionalMissingFields.length === 0
+  ) {
+    return {
+      ready: true,
+      missingFields: [],
+      unapprovedFields: [],
+      conditionalMissingFields: [],
+    };
   }
 
   const parts: string[] = [];
+  if (conditionalMissingFields.length > 0)
+    parts.push(`${conditionalMissingFields.length} conditional-required missing`);
   if (missingFields.length > 0) parts.push(`${missingFields.length} missing`);
   if (unapprovedFields.length > 0) parts.push(`${unapprovedFields.length} not approved`);
+
+  // Hard block when any conditional-required field is missing; soft gap otherwise.
+  const blockerType: "hard" | "gap" | "conditional" =
+    conditionalMissingFields.length > 0 ? "conditional" : "gap";
 
   return {
     ready: false,
     missingFields,
     unapprovedFields,
+    conditionalMissingFields,
     reason: `Required fields: ${parts.join(", ")}`,
-    blockerType: "gap",
+    blockerType,
   };
 }

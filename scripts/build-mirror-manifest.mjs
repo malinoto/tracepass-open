@@ -87,6 +87,17 @@ export const MIRRORS = [
     platform: "src/lib/passports/subcategory.ts",
   },
 
+  // Condition-profile accessor and battery-applicability engine — wired into
+  // the dpp-validate verdict to compute applicabilityMap before checkPublishReady.
+  {
+    open: "packages/dpp-validate/src/vendor/condition-profile.ts",
+    platform: "src/lib/compliance/condition-profile.ts",
+  },
+  {
+    open: "packages/dpp-validate/src/vendor/battery-applicability.ts",
+    platform: "src/lib/compliance/battery-applicability.ts",
+  },
+
   // dpp-identifiers — EN 18219 identifier types, builders, resolver paths.
   // uri.ts and passport.ts are normalized to identical (import-path change only).
   { open: "packages/dpp-identifiers/src/uri.ts", platform: "src/lib/identifiers/uri.ts" },

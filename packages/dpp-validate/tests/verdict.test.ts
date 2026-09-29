@@ -556,3 +556,112 @@ describe("BAT-APP — platform-written values and remediation text", () => {
     expect(f?.fix).not.toMatch(/stationary/);
   });
 });
+
+// ── Gate-conditional enforcement via evaluateCompliance ───────────────────────
+describe("evaluateCompliance — gate:conditional critical finding", () => {
+  /**
+   * Build a minimal battery template with a field that is conditionally
+   * required for industrial_gt_2kwh (requiredBy.industrial_gt_2kwh = "conditional")
+   * — mirrors the 12 real rechargeable-gated fields in battery.json.
+   */
+  function batteryTemplate(extraFields: TemplateField[] = []): Template {
+    return {
+      category: "battery",
+      fields: [
+        tf("batteryCategory", { validation: { required: true } }),
+        // A rechargeable-gated field: conditional for industrial_gt_2kwh,
+        // not present at all in a minimal template (required via gate only).
+        tf("dynamicRatedCapacity", {
+          validation: {
+            required: false,
+            requiredBy: { industrial_gt_2kwh: "conditional" },
+          },
+          regulationRef: { instrument: "(EU) 2023/1542", article: "Annex XIII 4(a)(i)" },
+        }),
+        ...extraFields,
+      ],
+      regulation: { number: "(EU) 2023/1542", name: "Battery Regulation", effectiveDate: new Date() },
+    } as unknown as Template;
+  }
+
+  it("emits a critical gate:conditional finding when an approved rechargeable flag makes the field required and the field is absent", () => {
+    // An industrial_gt_2kwh battery with an APPROVED rechargeable=true flag
+    // and an empty dynamicRatedCapacity field must produce a critical finding
+    // with ruleId "gate:conditional".
+    const p = passport({
+      fields: { batteryCategory: field("industrial_gt_2kwh") },
+      // conditionProfile is the canonical field; rechargeable=true + approved
+      // makes the gate return "applies" for industrial_gt_2kwh
+      conditionProfile: {
+        rechargeable: { value: true, status: "approved", source: "manual", audit: [] },
+      },
+    });
+
+    const r = evaluateCompliance(p, batteryTemplate(), "battery");
+
+    expect(r.verdict).toBe("incomplete");
+    const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
+    expect(gateFindings.length).toBeGreaterThan(0);
+    const dcFinding = gateFindings.find((c) => c.target === "dynamicRatedCapacity");
+    expect(dcFinding).toBeDefined();
+    expect(dcFinding?.severity).toBe("critical");
+    expect(dcFinding?.type).toBe("missing_field");
+  });
+
+  it("does NOT emit gate:conditional when rechargeable flag is not approved (pending_review gate = unknown)", () => {
+    // A pending_review flag does not activate the gate — applicability stays "unknown"
+    // and the field remains optional.
+    const p = passport({
+      fields: { batteryCategory: field("industrial_gt_2kwh") },
+      conditionProfile: {
+        rechargeable: { value: true, status: "pending_review", source: "ai_suggested", audit: [] },
+      },
+    });
+
+    const r = evaluateCompliance(p, batteryTemplate(), "battery");
+
+    const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
+    expect(gateFindings.find((c) => c.target === "dynamicRatedCapacity")).toBeUndefined();
+  });
+
+  it("does NOT emit gate:conditional when the gated field is present and approved", () => {
+    const p = passport({
+      fields: {
+        batteryCategory: field("industrial_gt_2kwh"),
+        dynamicRatedCapacity: field(150),
+      },
+      conditionProfile: {
+        rechargeable: { value: true, status: "approved", source: "manual", audit: [] },
+      },
+    });
+
+    const r = evaluateCompliance(p, batteryTemplate(), "battery");
+
+    const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
+    expect(gateFindings.find((c) => c.target === "dynamicRatedCapacity")).toBeUndefined();
+  });
+
+  it("emits gate:conditional when the gated field is present but pending_review (unapproved value = hard block)", () => {
+    // MEDIUM 1: gate-confirmed conditional field with pending_review value
+    // must also block (consistent with the hard-block decision).
+    const p = passport({
+      fields: {
+        batteryCategory: field("industrial_gt_2kwh"),
+        dynamicRatedCapacity: field(150, "pending_review"),
+      },
+      conditionProfile: {
+        rechargeable: { value: true, status: "approved", source: "manual", audit: [] },
+      },
+    });
+
+    const r = evaluateCompliance(p, batteryTemplate(), "battery");
+
+    expect(r.verdict).toBe("incomplete");
+    const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
+    const dcFinding = gateFindings.find((c) => c.target === "dynamicRatedCapacity");
+    expect(dcFinding).toBeDefined();
+    expect(dcFinding?.severity).toBe("critical");
+    // The field IS present (not absent) — the why text should say "not yet approved"
+    expect(dcFinding?.why).toMatch(/not yet approved/);
+  });
+});

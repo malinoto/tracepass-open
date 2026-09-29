@@ -325,6 +325,38 @@ export interface BatteryProfile {
   isStationaryBess?: BatteryProfileFlag;
 }
 
+/**
+ * Generic condition flag — extends `BatteryProfileFlag` with an audit trail.
+ * Used by `conditionProfile` (the new canonical location for condition
+ * classification flags that generalises `batteryProfile`).
+ */
+export interface ConditionFlag {
+  value: boolean;
+  status: PartyStatus;
+  source?: string;
+  /** Audit trail — each write appends one entry. */
+  audit: Array<{
+    value: boolean;
+    changedBy: string | { toHexString: () => string };
+    changedAt: string | Date;
+    source: string;
+    action: "created" | "updated";
+    note?: string;
+  }>;
+}
+
+/**
+ * Generic condition-classification profile. Generalises `batteryProfile` to
+ * any product category. Keys are defined per-category in the
+ * `CONDITION_FLAGS` registry on the platform.
+ *
+ * `resolveConditionProfile(passport)` — the canonical accessor — reads
+ * `conditionProfile` when present and non-empty, and falls back to
+ * `batteryProfile` (adapting BatteryProfileFlag → ConditionFlag with
+ * `audit: []`) for pre-migration passports.
+ */
+export type ConditionProfile = Record<string, ConditionFlag>;
+
 // ─── Scheme-tagged product identifiers (EN 18219) ──────────────────────────
 
 /**
@@ -486,6 +518,12 @@ export interface Passport {
   fields: Record<string, PassportField>;
   parties?: Partial<Record<PartyRole, Party>>;
   batteryProfile?: BatteryProfile;
+  /**
+   * Generic condition-classification flags (new canonical location).
+   * The accessor `resolveConditionProfile(passport)` reads this first,
+   * then falls back to `batteryProfile` for pre-migration passports.
+   */
+  conditionProfile?: ConditionProfile;
   publishedAt?: string | Date;
 }
 

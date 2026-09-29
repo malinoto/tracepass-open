@@ -9,8 +9,9 @@
  * Pure and IO-free: no database, no network, no clock.
  *
  * Composition:
- *   static tier      — required fields (checkPublishReady) + required
- *                      economic operators (required-roles) + format validation
+ *   static tier      — evaluateFieldRequirements (required fields,
+ *                      status-independent) + required economic operators
+ *                      (required-roles) + format validation
  *   conditional tier — CONDITIONAL_RULES[category] + CROSS_CUTTING_RULES
  *   coverage         — "evaluated" if the category has conditional rules,
  *                      else "static-only"
@@ -20,9 +21,10 @@
  */
 
 import type { Passport, Template, TemplateField } from "@tracepass/dpp-types";
-import { checkPublishReady } from "./vendor/publish-gate.js";
+import { evaluateFieldRequirements } from "./vendor/publish-gate.js";
 import { getPartyRoles } from "./vendor/required-roles.js";
 import { derivePassportCounts } from "./vendor/counts.js";
+import { categoryFieldApplicability } from "./vendor/battery-applicability.js";
 import { CONDITIONAL_RULES, CROSS_CUTTING_RULES } from "./rules.js";
 import type {
   ComplianceFinding,
@@ -132,12 +134,19 @@ export function evaluateCompliance(
   const warnings: ComplianceFinding[] = [];
   const checkedRules: string[] = [];
 
-  // ── Static tier 1: required fields (reuse the publish gate) ────────
+  // ── Static tier 1: required fields ─────────────────────────────────
   checkedRules.push("static:required-fields");
-  const publish = checkPublishReady(passport, template);
+  // Compute the gate-applicability map for conditional duties whose APPROVED
+  // flag confirms the condition holds. evaluateFieldRequirements is called
+  // directly (not via checkPublishReady) so published passports are not
+  // short-circuited — live DPPs must be re-evaluated immediately when a
+  // field or flag changes.
+  const applicabilityMap = categoryFieldApplicability(passport, category);
+  const { missingFields, unapprovedFields, conditionalMissingFields } =
+    evaluateFieldRequirements(passport, template, applicabilityMap);
   const fieldRef = (key: string) =>
     template.fields.find((f) => f.key === key)?.regulationRef;
-  for (const key of publish.missingFields) {
+  for (const key of missingFields) {
     const ref = fieldRef(key);
     critical.push({
       type: "missing_field",
@@ -149,13 +158,40 @@ export function evaluateCompliance(
       fix: `Provide a value for ${key}.`,
     });
   }
-  for (const key of publish.unapprovedFields) {
+  for (const key of unapprovedFields) {
     critical.push({
       type: "unapproved_field",
       severity: "critical",
       target: key,
       why: `Required field "${key}" has a value but isn't approved yet.`,
       fix: `Review and approve ${key}.`,
+    });
+  }
+  // Gate-confirmed conditional duties: the APPROVED flag makes the duty concrete
+  // and the field must be present + approved. Same hard-block severity as a
+  // statically-required field — the owner confirmed the condition holds.
+  // "gate:conditional" is pushed when the category has gates (non-empty
+  // applicabilityMap) so the caller knows whether gates were evaluated.
+  if (Object.keys(applicabilityMap).length > 0) {
+    checkedRules.push("gate:conditional");
+  }
+  for (const key of conditionalMissingFields) {
+    const ref = fieldRef(key);
+    const f = passport.fields[key];
+    const isAbsent = f == null || f.value === null || f.value === undefined || f.value === "";
+    critical.push({
+      type: "missing_field",
+      severity: "critical",
+      ruleId: "gate:conditional",
+      target: key,
+      regulation: ref ? template.regulation?.number : undefined,
+      article: ref?.article ?? undefined,
+      why: isAbsent
+        ? `Conditional field "${key}" is required because an approved condition flag confirms the duty applies, but the field has no value.`
+        : `Conditional field "${key}" is required because an approved condition flag confirms the duty applies, but the value is not yet approved.`,
+      fix: isAbsent
+        ? `Provide and approve a value for ${key}.`
+        : `Approve the value for ${key}.`,
     });
   }
 

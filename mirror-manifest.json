@@ -39,7 +39,7 @@
     {
       "open": "packages/dpp-validate/src/vendor/publish-gate.ts",
       "platform": "src/lib/passports/publish-gate.ts",
-      "platformHash": "548db0417dfb7e58"
+      "platformHash": "a285d9523a2e6ace"
     },
     {
       "open": "packages/dpp-validate/src/vendor/battery-scope.ts",
@@ -55,6 +55,16 @@
       "open": "packages/dpp-validate/src/vendor/subcategory.ts",
       "platform": "src/lib/passports/subcategory.ts",
       "platformHash": "aa7793a2ec95759c"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/condition-profile.ts",
+      "platform": "src/lib/compliance/condition-profile.ts",
+      "platformHash": "600e83a73d910c2e"
+    },
+    {
+      "open": "packages/dpp-validate/src/vendor/battery-applicability.ts",
+      "platform": "src/lib/compliance/battery-applicability.ts",
+      "platformHash": "7d5d55446d8b6887"
     },
     {
       "open": "packages/dpp-identifiers/src/uri.ts",
