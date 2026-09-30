@@ -69,6 +69,15 @@ export interface FieldGate {
    * After this date the gate's `decide()` result is used as-is.
    */
   mandatoryFrom?: string;
+  /**
+   * `false` for a gate that only decides WHERE a field may be filled, never
+   * that it MUST be. `categoryFieldApplicability` then leaves an "applies"
+   * verdict out of the map (every consumer reads an absent key as "applies"),
+   * so the publish gate never promotes the field's `conditional` entry to a
+   * hard block; "not_applicable" and "unknown" still flow through for the
+   * warnings and the editor. For an optional field no data point mandates.
+   */
+  promotes?: false;
   /** Decide applicability from the resolved trigger values. */
   decide(t: Triggers): Applicability;
 }
@@ -214,6 +223,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // condition. Either being false → not_applicable; either absent → unknown.
     keys: ["stateOfHealth"],
     article: "Annex XIII 4(b) / Art. 14",
+    // No official data point: Annex XIII 4(b) is DP 61 (SOCE, EV) and
+    // DP 62-66 (LMT / stationary) in the DG GROW guidance (v2.0), with no
+    // stand-alone state-of-health percentage. The field stays optional
+    // wherever it applies; the gate only says where it must NOT be filled.
+    promotes: false,
     fixHint: SBESS_FIX_HINT,
     reason: "State of health (Art. 14) applies only to stationary battery energy storage systems, LMT, and EV batteries that have a battery management system (BMS). A plain industrial (>2 kWh) battery that is not a stationary storage system does not owe this data.",
     decide: (t) => {
@@ -564,6 +578,8 @@ export function categoryFieldApplicability(
       continue;
     }
     const verdict = gate.decide(triggers);
+    // A non-promoting gate never asserts a duty (see FieldGate.promotes).
+    if (verdict === "applies" && gate.promotes === false) continue;
     for (const k of gate.keys) out[k] = verdict;
   }
   return out;

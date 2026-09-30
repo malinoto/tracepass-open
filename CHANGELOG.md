@@ -5,6 +5,25 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.14.2 — 2026-09-30
+
+`stateOfHealth` is no longer a publish duty for any battery.
+
+### `@tracepass/dpp-validate`
+
+- `battery-applicability` (vendor mirror): new `FieldGate.promotes?: false`.
+  - With it, `categoryFieldApplicability` leaves an `"applies"` verdict out of the
+    map, so `evaluateFieldRequirements` never promotes the field's `conditional`
+    entry to a hard block.
+  - `"not_applicable"` and `"unknown"` still flow through, so warnings and editor
+    collapse keep working.
+  - The `stateOfHealth` gate sets it. The DG GROW battery-passport data-point
+    guidance (v2.0) has no stand-alone state-of-health data point: Annex XIII 4(b)
+    is DP 61 (SOCE, EV) and DP 62–66 (LMT / stationary storage). Before, an EV,
+    LMT or stationary battery with a BMS could not publish without it.
+
+---
+
 ## 0.14.1 — 2026-09-30
 
 A battery confirmed to have no battery management system (BMS) is no longer
