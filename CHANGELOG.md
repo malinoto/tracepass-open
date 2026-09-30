@@ -5,6 +5,31 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.14.1 — 2026-09-30
+
+A battery confirmed to have no battery management system (BMS) is no longer
+required to carry Art. 14 state-of-health data.
+
+### `@tracepass/dpp-validate`
+
+- `battery-applicability` (vendor mirror): an approved `hasBMS: false` now resolves the following
+  gates to `not_applicable`. Before, only `stateOfHealth` honoured the flag.
+  - `stateOfCertifiedEnergy` (EV);
+  - the Annex VII Part A cluster (`remainingCapacity`, `remainingPowerCapability`,
+    `remainingRoundTripEfficiency`, `evolutionOfSelfDischargeRate`,
+    `currentInternalResistancePack`, `initialSelfDischargeRate`);
+  - the Part B cluster (`capacityThroughput`, `energyThroughput`, `dateOfServiceEntry`).
+
+  Legal basis: Reg (EU) 2023/1542 Art. 14(1) places this data "in the battery management
+  system", and recital 333 scopes it to batteries "using a battery management system". The
+  Commission battery FAQ (1st ed., Sep 2026) §8.5 says state-of-health requirements apply only
+  where the battery has a BMS. An unset or unapproved flag changes nothing.
+- `publish-gate` (vendor mirror): in `evaluateFieldRequirements`, a confirmed `not_applicable`
+  verdict now outranks the template's static `requiredBy[category] === "required"`. Before, an
+  LMT battery without a BMS could not pass the gate.
+
+---
+
 ## 0.14.0 — 2026-09-29
 
 Phase 2 conditional duties: detergents and toys gate registry, date-guard.

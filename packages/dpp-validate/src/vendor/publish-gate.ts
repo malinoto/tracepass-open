@@ -248,6 +248,11 @@ export function evaluateFieldRequirements(
     }
 
     // ── Static required check ────────────────────────────────────────────────
+    // A gate verdict of "not_applicable" rests on an APPROVED flag (see
+    // `confirmed` in battery-applicability.ts), so it outranks the template's
+    // per-category "required": an LMT battery confirmed to have no BMS owes no
+    // Art. 14 data even though requiredBy.LMT says "required".
+    if (applicabilityMap[tf.key] === "not_applicable") continue;
     if (!effectiveRequiredFor(template.category, tf, category)) continue;
     // Shared helper: `[]` stays a valid answer ("none apply"), while a
     // whitespace-only string now counts as missing — the inline `=== ""` it

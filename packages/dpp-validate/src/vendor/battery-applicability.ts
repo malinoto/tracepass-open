@@ -176,6 +176,9 @@ function art14Subject(t: Triggers): boolean | undefined {
  */
 function sbessOrLmt(t: Triggers): Applicability {
   if (t.category === undefined) return "unknown";
+  // Annex VII data lives in the BMS (Art. 14(1)); a battery confirmed to have
+  // none owes none of it (Commission battery FAQ §8.5). Unknown stays as before.
+  if (t.hasBMS === false) return "not_applicable";
   if (t.category === "LMT") return "applies";
   if (t.category === "industrial_gt_2kwh") {
     if (t.isStationaryBess === true) return "applies";
@@ -278,10 +281,12 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // only to electric-vehicle (EV) batteries. Resolvable from batteryCategory.
     keys: ["stateOfCertifiedEnergy"],
     article: "Annex XIII 4(b) / Art. 14",
-    reason: "State of certified energy (SOCE) applies only to electric-vehicle (EV) batteries.",
+    reason: "State of certified energy (SOCE) applies only to electric-vehicle (EV) batteries that have a battery management system (BMS).",
     decide: (t) => {
       if (t.category === undefined) return "unknown";
-      return t.category === "EV" ? "applies" : "not_applicable";
+      if (t.category !== "EV") return "not_applicable";
+      // SOCE is Art. 14 state-of-health data, held in the BMS; FAQ §8.5.
+      return t.hasBMS === false ? "not_applicable" : "applies";
     },
   },
   {
@@ -306,7 +311,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     ],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A",
     fixHint: SBESS_FIX_HINT,
-    reason: "Remaining capacity, remaining power capability, remaining round-trip efficiency, self-discharge evolution, pack ohmic resistance, and initial self-discharge rate (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems, not EV or non-stationary industrial batteries.",
+    reason: "Remaining capacity, remaining power capability, remaining round-trip efficiency, self-discharge evolution, pack ohmic resistance, and initial self-discharge rate (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
     decide: sbessOrLmt,
   },
   {
@@ -324,7 +329,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     ],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part B",
     fixHint: SBESS_FIX_HINT,
-    reason: "Expected-lifetime parameters (Annex VII Part B) apply only to LMT batteries and stationary battery energy storage systems.",
+    reason: "Expected-lifetime parameters (Annex VII Part B) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS).",
     decide: sbessOrLmt,
   },
   {
