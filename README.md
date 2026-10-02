@@ -45,6 +45,7 @@ publishes the field specifications for 13 categories.
 | [`@tracepass/dpp-validate`](./packages/dpp-validate) | Evaluate a passport against its category spec → a three-tier verdict with regulation-cited findings | none |
 | [`@tracepass/dpp-epcis`](./packages/dpp-epcis) | Map passport events to GS1 **EPCIS 2.0**, with a CBV 2.0 vocabulary extended for steel | none |
 | [`@tracepass/gs1-utils`](./packages/gs1-utils) | GTIN and GLN check digits, GS1 Digital Link build/parse | none¹ |
+| [`@tracepass/dpp-identifiers`](./packages/dpp-identifiers) | Validate and parse EN 18219 product identifiers — GS1 Digital Link, ISO/IEC 15459, IEC 61406, DID, DOI | none (only `@tracepass/*`) |
 | [`@tracepass/dpp-types`](./packages/dpp-types) | The shared types. Types only — compiles to nothing | none |
 
 ¹ QR rendering lives at the `@tracepass/gs1-utils/qr` subpath and declares `qrcode` as an
