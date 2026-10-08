@@ -66,9 +66,11 @@ export interface CategoryPartyRoles {
  * legitimately want to record but isn't compelled to.
  */
 export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
-  // Battery Regulation 2023/1542 Articles 47–50 require all three
-  // operators to be identifiable on the passport for serial-level
-  // batteries (LMT, EV, industrial >2 kWh).
+  // Battery Regulation 2023/1542: manufacturer obligations (Art. 38),
+  // extended producer responsibility (Art. 56) and the producer
+  // responsibility organisation (Art. 57). Requiring the recycler is
+  // this template's choice, not a passport requirement in the law.
+  // (Arts. 47–50 are the due-diligence chapter; don't cite them here.)
   battery: {
     required: ["manufacturer", "recycler", "producerResponsibilityOrg"],
     optional: ["importer", "authorisedRepresentative", "distributor"],
@@ -85,22 +87,23 @@ export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
     optional: ["importer", "authorisedRepresentative", "distributor", "recycler"],
   },
 
-  // Toy Safety Directive 2009/48 Article 4 — both manufacturer and
-  // importer are mandatory for non-EU toys, the most common case.
+  // Toy Safety Directive 2009/48 Articles 4 (manufacturers) and 6
+  // (importers) — both are mandatory for non-EU toys, the most common case.
   toys: {
     required: ["manufacturer", "importer"],
     optional: ["authorisedRepresentative", "distributor"],
   },
 
-  // PPWR 2025/40 Article 11 + national packaging EPR schemes —
-  // PRO required where the EPR scheme applies (most EU member states).
+  // PPWR 2025/40 Articles 45 (extended producer responsibility) and 47
+  // (fulfilment through a PRO) + national packaging EPR schemes — PRO
+  // required where the EPR scheme applies (most EU member states).
   fmcg: {
     required: ["manufacturer", "producerResponsibilityOrg"],
     optional: ["importer", "distributor", "recycler"],
   },
 
-  // PPWR Articles 7 + 45 — packaging materials themselves carry
-  // direct PRO obligations.
+  // PPWR Articles 45 + 47 — packaging producers carry direct EPR
+  // obligations, usually fulfilled through a PRO.
   packaging: {
     required: ["manufacturer", "producerResponsibilityOrg"],
     optional: ["importer", "distributor", "recycler"],

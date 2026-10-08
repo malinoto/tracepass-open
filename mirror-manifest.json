@@ -14,7 +14,7 @@
     {
       "open": "packages/gs1-utils/src/gln.ts",
       "platform": "src/lib/gs1/gln.ts",
-      "platformHash": "69ad8cb48e13343d"
+      "platformHash": "222da63e4621827f"
     },
     {
       "open": "packages/gs1-utils/src/language.ts",
@@ -29,7 +29,7 @@
     {
       "open": "packages/dpp-validate/src/vendor/required-roles.ts",
       "platform": "src/lib/parties/required-roles.ts",
-      "platformHash": "9b939b3da81d42b6"
+      "platformHash": "771cc26d8d38aa8c"
     },
     {
       "open": "packages/dpp-validate/src/vendor/counts.ts",

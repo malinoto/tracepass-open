@@ -8,7 +8,8 @@
  * a legal entity, a physical site, or a functional role within an organisation.
  * GLN is the GS1 Digital Link primary key for the `/414/{gln}` resolver path,
  * and the canonical identifier for economic operators in EU compliance contexts
- * (Battery Regulation 2023/1542 Articles 47–50, PPWR 2025/40 Article 11, etc.).
+ * (operator roles under Battery Regulation 2023/1542 Arts. 38, 41, 56–57 and
+ * PPWR 2025/40 Arts. 45 and 47, etc.).
  *
  * The check-digit algorithm itself is identical to GTIN's, but because the
  * data length is even (12 digits + 1 check digit = 13) instead of odd (13 + 1
