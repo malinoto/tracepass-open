@@ -205,21 +205,18 @@ npm run check:rule-drift  # compliance rules vs the platform snapshot
 ```
 
 `check:rule-drift` compares the built conditional-rule registry against
-`rule-surface.json`. The rules here are extracted by hand from TracePass's
-platform engine, and a category missing from the registry does not fail loudly —
-it reports `static-only`, which reads as "no conditional applies to this
+`rule-surface.json`. A category missing from the registry does not fail
+loudly — it reports `static-only`, which reads as "no conditional applies to this
 category". That is a legitimate value, so a dropped rule is indistinguishable
-from a category that genuinely has none, and the mistake ships. The gate exists
-because that has happened twice.
+from a category that genuinely has none. The gate makes that drop visible.
 
 It runs after `npm run build` because it imports the built registry — checking
 what consumers actually get, rather than re-parsing the source.
 
-`check:mirrors` does the same for the files vendored from that platform verbatim
-— the GS1 helpers, the party-role map, the passport count helpers, the publish
-gate and its two pure helpers — hashing each against `mirror-manifest.json`. All
-ten are currently in sync. A divergence can be recorded deliberately, and pins
-both sides so an accepted gap cannot quietly widen.
+`check:mirrors` keeps the shared helpers consistent with the rules they
+encode, hashing each against `mirror-manifest.json`. A divergence can be
+recorded deliberately, and pins both sides so an accepted gap cannot quietly
+widen.
 
 ## Related
 
