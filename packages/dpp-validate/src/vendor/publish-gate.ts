@@ -287,11 +287,17 @@ export function evaluateFieldRequirements(
  *   `categoryFieldApplicability(passport, template.category)`. Pass `{}` or
  *   omit for non-battery passports (no change in behaviour). Keeping it
  *   injected preserves the IO-free/pure contract of this function.
+ * @param opts.republish  The single-publish route only: a suspended passport
+ *   may be published again (suspend is the reversible way to take a passport
+ *   offline). Bulk publish and the list's publishReady leave it off, so a
+ *   suspended passport, perhaps under a recall, never comes back in a batch.
+ *   Archived and expired stay refused either way.
  */
 export function checkPublishReady(
   passport: Passport,
   template: Template | undefined,
   applicabilityMap: Record<string, GateApplicability> = {},
+  opts: { republish?: boolean } = {},
 ): PublishCheck {
   if (passport.status === "published") {
     return {
@@ -304,7 +310,8 @@ export function checkPublishReady(
     };
   }
 
-  if (!PUBLISHABLE_STATUSES.has(passport.status)) {
+  const republishing = opts.republish === true && passport.status === "suspended";
+  if (!PUBLISHABLE_STATUSES.has(passport.status) && !republishing) {
     return {
       ready: false,
       missingFields: [],
