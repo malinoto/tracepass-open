@@ -665,3 +665,35 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
     expect(dcFinding?.why).toMatch(/not yet approved/);
   });
 });
+
+describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
+  const imp1 = CONDITIONAL_RULES.battery.find((r) => r.id === "IMP-1")!;
+  const tpl = { fields: [] } as unknown as Template;
+  const passportWith = (parties: Partial<Record<string, Party>>) =>
+    ({ fields: {}, parties } as unknown as Passport);
+  const importer = (extra: Partial<Party> = {}): Party => ({ legalName: "Importer SRL", status: "approved", ...extra });
+
+  it("warns when the importer places the battery and lacks trade name and address", () => {
+    const f = imp1.run(passportWith({ manufacturer: { legalName: "Maker", country: "CN" }, importer: importer() }), tpl);
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("warning");
+  });
+
+  it("stays silent once trade name and postal address are set", () => {
+    const p = passportWith({
+      manufacturer: { legalName: "Maker", country: "CN" },
+      importer: importer({ tradeName: "Imp", postalAddress: "Via Roma 1, Roma" }),
+    });
+    expect(imp1.run(p, tpl)).toHaveLength(0);
+  });
+
+  it("stays silent when an approved EU manufacturer is the operator", () => {
+    const p = passportWith({ manufacturer: { legalName: "Maker", country: "DE", status: "approved" }, importer: importer() });
+    expect(imp1.run(p, tpl)).toHaveLength(0);
+  });
+
+  it("treats a pending EU manufacturer as absent", () => {
+    const p = passportWith({ manufacturer: { legalName: "Maker", country: "DE", status: "pending_review" }, importer: importer() });
+    expect(imp1.run(p, tpl)).toHaveLength(1);
+  });
+});

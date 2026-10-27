@@ -324,6 +324,12 @@ export interface Party {
    */
   facilityIdentifier?: FacilityIdentifier;
   url?: string;
+  /** Registered trade name or registered trade mark (a battery importer's Art. 41(3) detail). */
+  tradeName?: string;
+  /** Postal address with a single contact point, as one line. */
+  postalAddress?: string;
+  /** Contact e-mail address. */
+  email?: string;
   status?: PartyStatus;
 }
 

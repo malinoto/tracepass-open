@@ -451,6 +451,46 @@ const CE1: ConditionalRule = {
   },
 };
 
+// ── IMP-1 · importer contact details (battery) ──────────────────────
+// Battery Regulation Art. 41(3): importers indicate on the battery their name,
+// registered trade name or registered trade mark, postal address with a single
+// contact point, and (if available) web and email address. A marking duty, not
+// passport content, so a WARNING, never a block. Fires only when the importer
+// is the operator placing the battery on the market: no approved EU/EEA
+// manufacturer (a pending manufacturer counts as absent).
+const IMP1: ConditionalRule = {
+  id: "IMP-1",
+  run(passport) {
+    const imp = passport.parties?.importer;
+    if (!imp || imp.status === "pending_review") return [];
+    const rawMfr = passport.parties?.manufacturer;
+    const mfr = rawMfr && rawMfr.status !== "pending_review" ? rawMfr : undefined;
+    if (mfr && isEuEeaCountry(mfr.country)) return [];
+
+    const missingTradeName = !imp.tradeName;
+    const missingAddress = !imp.postalAddress;
+    if (!missingTradeName && !missingAddress) return [];
+
+    const missing = [
+      missingTradeName ? "trade name or registered trade mark" : "",
+      missingAddress ? "postal address" : "",
+    ].filter(Boolean).join(" and ");
+
+    return [
+      {
+        type: "conditional_missing" as const,
+        severity: "warning" as const,
+        target: "importer.tradeName|importer.postalAddress",
+        regulation: "(EU) 2023/1542",
+        article: "Art. 41(3)",
+        ruleId: "IMP-1",
+        why: `The importer's ${missing} ${missingTradeName && missingAddress ? "are" : "is"} missing. Art. 41(3) requires importers to indicate their name, registered trade name or mark, and postal address on the battery.`,
+        fix: "Add the importer's trade name and postal address to its party record.",
+      },
+    ];
+  },
+};
+
 /**
  * Conditional-rule registry. Categories ABSENT from this map have no
  * binding conditionals in force → the engine reports them `static-only`.
@@ -458,7 +498,7 @@ const CE1: ConditionalRule = {
  * is NOT listed per-category here.
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
-  battery: [BAT1, BAT_APP, BAT_VAL, CE1],
+  battery: [BAT1, BAT_APP, BAT_VAL, CE1, IMP1],
   construction: [CON1, CE1],
   electronics: [CE1],
   steel: [CE1],
