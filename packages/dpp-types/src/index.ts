@@ -114,7 +114,7 @@ export interface AiHints {
   /** Synonyms a datasheet might use for this field. */
   alternateNames: string[];
   expectedFormat?: string | null;
-  /** Higher runs first when extraction budget is limited. */
+  /** Relative importance of the field, 0 (lowest) to 10 (highest). */
   extractionPriority: number;
 }
 

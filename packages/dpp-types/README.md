@@ -28,7 +28,7 @@ import type { Template, Passport, TemplateField } from "@tracepass/dpp-types";
 ## Identifiers are opaque
 
 `Id` is a `string`. Nothing in these packages parses it, so a passport that came from
-MongoDB, Postgres, or a JSON file works unchanged. Storage engines disagree about what an
+any database or a JSON file works unchanged. Storage engines disagree about what an
 id is; the passport logic doesn't need to care.
 
 ## Product and operator identifiers (EN 18219)

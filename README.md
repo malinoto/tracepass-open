@@ -180,12 +180,11 @@ promise the whole tree contains no transitive supply-chain surface.
 Two decisions enforce it:
 
 **Identifiers are opaque.** `Id` is a `string`. Nothing here parses it, so a passport
-sourced from MongoDB, Postgres, or a JSON file all work unchanged.
+from any database or a JSON file works unchanged.
 
 **`verbatimModuleSyntax` is on.** A value-import that is only used as a type becomes a
-compile error rather than a silent runtime dependency. This is not theoretical: it is
-the exact mistake that made an earlier version of this code carry a hard dependency on a
-database driver it never called.
+compile error rather than a silent runtime dependency, so a type-only import can never
+pull a driver or SDK into the dependency tree.
 
 ## Install
 
@@ -201,7 +200,7 @@ Node ≥ 18. ESM only.
 npm install
 npm run build             # tsc, per package
 npm test                  # vitest
-npm run check:rule-drift  # compliance rules vs the platform snapshot
+npm run check:rule-drift  # compliance rules vs rule-surface.json
 ```
 
 `check:rule-drift` compares the built conditional-rule registry against
