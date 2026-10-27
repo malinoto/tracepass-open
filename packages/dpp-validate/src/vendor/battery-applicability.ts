@@ -202,6 +202,9 @@ function sbessOrLmt(t: Triggers): Applicability {
  * The conditional gates, one per applicability rule from the deck. Order
  * doesn't matter — each governs a disjoint set of field keys.
  */
+/** Battery Regulation Art. 8(1): the earliest date recycled-content documentation applies. */
+export const BATTERY_RECYCLED_CONTENT_EARLIEST = "2028-08-18";
+
 export const BATTERY_FIELD_GATES: FieldGate[] = [
   {
     // Deck 1(k): "capacity threshold for exhaustion (only for electric
@@ -271,17 +274,19 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "recycledContentLithium",
       "recycledContentNickel",
       "recycledContentDocumentation",
-      // Pre/post-consumer split-shares (Annex XIII 1(e)) carry the same gate
-      // as the combined figures above — external-storage-only batteries are exempt.
-      "preConsumerRecycledNickelShare",
-      "preConsumerRecycledCobaltShare",
-      "preConsumerRecycledLithiumShare",
-      "postConsumerRecycledNickelShare",
-      "postConsumerRecycledCobaltShare",
-      "postConsumerRecycledLithiumShare",
+      // The pre/post-consumer split shares are NOT here. Art. 8(1) documents one
+      // share per metal, "recovered from battery manufacturing waste or
+      // post-consumer waste", and Annex XIII 1(e) carries only that
+      // documentation; the DG GROW data-points guidance has no split data point.
+      // The split fields are a voluntary breakdown, so no gate may make them a
+      // publish block (they were, for every EV and LMT battery).
     ],
     article: "Annex XIII 1(e) / Art. 8",
     reason: "Recycled-content information does not apply to industrial batteries with exclusively external storage.",
+    // Art. 8(1): from 18 Aug 2028 or 24 months after the methodology delegated
+    // act enters into force, whichever is later (LMT: 18 Aug 2033). Before the
+    // earliest date the duty cannot apply, so the gate cannot block.
+    mandatoryFrom: BATTERY_RECYCLED_CONTENT_EARLIEST,
     decide: (t) => {
       // Art. 8(1) exempts only "industrial batteries … except those with
       // exclusively external storage"; EV and LMT batteries owe it regardless.

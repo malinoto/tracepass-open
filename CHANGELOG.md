@@ -5,6 +5,28 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.16.0 — 2026-10-27
+
+The pre- and post-consumer recycled-content split shares are no longer a publish duty
+for any battery.
+
+### `@tracepass/dpp-validate`
+
+- `battery-applicability` (the package's own module and the vendor mirror): the six
+  `preConsumerRecycled*Share` / `postConsumerRecycled*Share` fields leave the
+  recycled-content gate.
+  - Battery Regulation Art. 8(1) documents one share per metal, "recovered from battery
+    manufacturing waste or post-consumer waste", and Annex XIII 1(e) carries only that
+    documentation. The DG GROW data-point guidance (v2.0 and v3.2) has no split data
+    point.
+  - Before, an EV or LMT battery could not publish without them. They are now a
+    voluntary breakdown.
+- Vendor mirror: the recycled-content gate carries `mandatoryFrom: "2028-08-18"`, the
+  earliest date Art. 8(1) applies (`BATTERY_RECYCLED_CONTENT_EARLIEST`), so before that
+  date it answers `"unknown"` and cannot block.
+
+---
+
 ## 0.14.2 — 2026-09-30
 
 `stateOfHealth` is no longer a publish duty for any battery.

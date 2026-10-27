@@ -64,7 +64,7 @@
     {
       "open": "packages/dpp-validate/src/vendor/battery-applicability.ts",
       "platform": "src/lib/compliance/battery-applicability.ts",
-      "platformHash": "74471383f38fec90"
+      "platformHash": "fe900d7fd33f4f8b"
     },
     {
       "open": "packages/dpp-identifiers/src/uri.ts",

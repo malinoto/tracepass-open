@@ -186,14 +186,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "recycledContentLithium",
       "recycledContentNickel",
       "recycledContentDocumentation",
-      // Pre/post-consumer split-shares (Annex XIII 1(e)) carry the same gate
-      // as the combined figures above — external-storage-only batteries are exempt.
-      "preConsumerRecycledNickelShare",
-      "preConsumerRecycledCobaltShare",
-      "preConsumerRecycledLithiumShare",
-      "postConsumerRecycledNickelShare",
-      "postConsumerRecycledCobaltShare",
-      "postConsumerRecycledLithiumShare",
+      // The pre/post-consumer split shares are NOT here. Art. 8(1) documents one
+      // share per metal, "recovered from battery manufacturing waste or
+      // post-consumer waste", and Annex XIII 1(e) carries only that
+      // documentation; the DG GROW data-points guidance has no split data point.
+      // The split fields are a voluntary breakdown that no gate may require.
     ],
     article: "Annex XIII 1(e) / Art. 8",
     reason: "Recycled-content information does not apply to industrial batteries with exclusively external storage.",
