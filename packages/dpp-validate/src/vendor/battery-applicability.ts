@@ -78,6 +78,19 @@ export interface FieldGate {
    * warnings and the editor. For an optional field no data point mandates.
    */
   promotes?: false;
+  /**
+   * `true` marks a TEMPORAL gate: the field's applicability depends on
+   * an event that the measurement itself may trigger (e.g. the in-service
+   * signal). The measurements validator must NOT reject a write on
+   * `not_applicable` when this flag is set — doing so would create an
+   * impossible bootstrap where the measurement that sets the signal is
+   * blocked because the signal isn't yet set.
+   *
+   * Only the Annex XIII 4(d) gate should carry this flag. Other
+   * `promotes: false` gates (e.g. `stateOfHealth`) remain hard category
+   * exclusions and MUST still reject writes on `not_applicable`.
+   */
+  temporal?: true;
   /** Decide applicability from the resolved trigger values. */
   decide(t: Triggers): Applicability;
 }
@@ -90,6 +103,14 @@ interface Triggers {
   rechargeable: boolean | undefined;
   externalStorageOnly: boolean | undefined;
   isStationaryBess: boolean | undefined;
+  /**
+   * True when the battery has received any in-service signal:
+   *   • `dynamicDataAsOf` is set (a use measurement has materialized), OR
+   *   • `dateOfServiceEntry` field has a non-empty value.
+   * False until either signal arrives. Never undefined — readTriggers always
+   * derives it (false = pre-service, true = in-service).
+   */
+  isInService?: boolean;
   // ── Detergents flags (phase 2) — optional for backward compat with tests
   // that call gate.decide() directly with battery-only trigger shapes.
   microorganismsAdded?: boolean | undefined;
@@ -146,6 +167,13 @@ function readTriggers(passport: Passport, templateCategory: string = "battery"):
     // Toys flags (phase 2)
     containsAllergenicFragrances: confirmed(profile["containsAllergenicFragrances"]),
     alsoUnderOtherActs: confirmed(profile["alsoUnderOtherActs"]),
+    // In-service signal: any measurement received (dynamicDataAsOf set by the
+    // measurements materialiser) OR the dateOfServiceEntry field has a value.
+    // This is a plain boolean — absent field or no measurement = false (pre-service).
+    isInService:
+      passport.dynamicDataAsOf != null ||
+      (!!passport.fields?.dateOfServiceEntry?.value &&
+        passport.fields.dateOfServiceEntry.value !== ""),
     // Field-derived tri-state: approved non-empty → true; pending_review → undefined; absent → false
     fieldPresent: (key: string): boolean | undefined => {
       const f = passport.fields[key];
@@ -227,7 +255,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     keys: ["stateOfHealth"],
     article: "Annex XIII 4(b) / Art. 14",
     // No official data point: Annex XIII 4(b) is DP 61 (SOCE, EV) and
-    // DP 62-66 (LMT / stationary) in the DG GROW guidance (v2.0), with no
+    // DP 62-66 (LMT / stationary) in the DG GROW guidance (v3.2), with no
     // stand-alone state-of-health percentage. The field stays optional
     // wherever it applies; the gate only says where it must NOT be filled.
     promotes: false,
@@ -399,6 +427,39 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       // industrial_gt_2kwh: the rechargeable flag is decisive.
       if (t.rechargeable === undefined) return "unknown";
       return t.rechargeable ? "applies" : "not_applicable";
+    },
+  },
+  {
+    // Annex XIII 4(d): use data (charging cycles, negative events, operating
+    // conditions, state of charge). These fields apply to EV, LMT, and
+    // industrial_gt_2kwh batteries, but ONLY once the battery is in service.
+    // A passport is published before use; these fields can NEVER block
+    // publishing. Once in service (in-service signal received), an empty
+    // field is a compliance WARNING, not a hard block.
+    //
+    // `promotes: false` ensures this gate's "applies" verdict is NEVER
+    // written into the applicabilityMap and therefore NEVER promotes the
+    // template's `conditional` entry to a publish blocker.
+    //
+    // In-service signal (derived in readTriggers):
+    //   • dynamicDataAsOf is set (measurements materialiser stamps it), OR
+    //   • dateOfServiceEntry field has a non-empty value.
+    keys: [
+      "numberOfFullEquivalentChargingCycles",
+      "numberOfChargingEvents",
+      "negativeEvents",
+      "temperatureConditionsHistorical",
+      "currentStateOfCharge",
+    ],
+    article: "Annex XIII 4(d)",
+    reason:
+      "Use data (Annex XIII 4(d)) applies once the battery is in service. Before the in-service signal these fields are not yet applicable — no warning, no publish block.",
+    promotes: false,
+    temporal: true,
+    decide: (t): Applicability => {
+      // isInService is always set by readTriggers; treat absent as false (pre-service).
+      if (t.isInService) return "applies";
+      return "not_applicable";
     },
   },
 ];

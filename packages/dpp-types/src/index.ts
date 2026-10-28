@@ -571,6 +571,14 @@ export interface Passport {
    */
   conditionProfile?: ConditionProfile;
   publishedAt?: string | Date;
+  /**
+   * Timestamp of the most-recent use measurement that materialized onto a
+   * passport field (set by the platform measurements API). Present on battery
+   * passports that have received at least one use measurement; null or absent
+   * until then. Used as one of the two in-service signals for Annex XIII 4(d)
+   * applicability (the other is `dateOfServiceEntry`).
+   */
+  dynamicDataAsOf?: Date | string | null;
 }
 
 // ─── Traceability events ───────────────────────────────────────────────────

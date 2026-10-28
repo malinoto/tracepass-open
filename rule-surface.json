@@ -3,6 +3,7 @@
   "ruleIds": [
     "BAT-1",
     "BAT-APP",
+    "BAT-INSERVICE",
     "BAT-VAL",
     "CC-1",
     "CE-1",
@@ -13,6 +14,7 @@
     "battery": [
       "BAT-1",
       "BAT-APP",
+      "BAT-INSERVICE",
       "BAT-VAL",
       "CE-1",
       "IMP-1"

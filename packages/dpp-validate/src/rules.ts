@@ -238,6 +238,56 @@ const BAT_APP: ConditionalRule = {
   },
 };
 
+// ── Battery · Annex XIII 4(d) in-service warning ────────────────────
+// BAT-INSERVICE: once the battery has an in-service signal (any use
+// measurement received, or dateOfServiceEntry filled), use-data fields
+// Annex XIII 4(d) are EXPECTED to be filled for EV, LMT, and
+// industrial_gt_2kwh batteries. An empty field emits a WARNING — never
+// a critical, never a publish block.
+const ANNEX_XIII_4D_KEYS = [
+  "numberOfFullEquivalentChargingCycles",
+  "numberOfChargingEvents",
+  "negativeEvents",
+  "temperatureConditionsHistorical",
+  "currentStateOfCharge",
+] as const;
+
+const IN_SERVICE_CATEGORIES = new Set(["EV", "LMT", "industrial_gt_2kwh"]);
+
+const BAT_INSERVICE: ConditionalRule = {
+  id: "BAT-INSERVICE",
+  run(passport, template) {
+    const inService =
+      passport.dynamicDataAsOf != null ||
+      (!!passport.fields?.dateOfServiceEntry?.value &&
+        passport.fields.dateOfServiceEntry.value !== "");
+
+    if (!inService) return [];
+
+    const cat = valueOf(passport, "batteryCategory");
+    if (cat === undefined) return [];
+    if (!IN_SERVICE_CATEGORIES.has(String(cat))) return [];
+
+    const findings: ComplianceFinding[] = [];
+    for (const key of ANNEX_XIII_4D_KEYS) {
+      if (!hasValue(passport, key)) {
+        const label = fieldLabel(key, template);
+        findings.push({
+          type: "conditional_missing" as const,
+          severity: "warning" as const,
+          target: key,
+          regulation: "(EU) 2023/1542",
+          article: "Annex XIII 4(d)",
+          ruleId: "BAT-INSERVICE",
+          why: `${label} is expected now that this ${String(cat)} battery is in service (Annex XIII 4(d): use data shall be recorded).`,
+          fix: `Provide ${key} via the measurements API or directly. This battery has received a service signal and Annex XIII 4(d) data is expected.`,
+        });
+      }
+    }
+    return findings;
+  },
+};
+
 // ── Battery · value validation (not just presence) ──────────────────
 // BAT-VAL: the static tier + BAT-1 check fields are PRESENT; this rule
 // checks the values that ARE present are PLAUSIBLE. All warnings, never
@@ -333,8 +383,11 @@ const BAT_VAL: ConditionalRule = {
         type: "conditional_missing",
         severity: "warning",
         target: "scipNotificationNumber",
-        regulation: "(EC) 1907/2006",
-        article: "WFD Art. 9(1)(i)",
+        // SCIP notification duty is Waste Framework Directive Art. 9(1)(i),
+        // not REACH. REACH Art. 33 is the supply-chain disclosure duty for
+        // articles — batteries are not articles under REACH.
+        regulation: "2008/98/EC",
+        article: "Art. 9(1)(i)",
         ruleId: "BAT-VAL",
         why: "A hazardous substance is recorded, which engages the SCIP notification obligation, but no SCIP notification number is set.",
         fix: "Record scipNotificationNumber for the SCIP database notification covering the recorded hazardous substance(s).",
@@ -498,7 +551,7 @@ const IMP1: ConditionalRule = {
  * is NOT listed per-category here.
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
-  battery: [BAT1, BAT_APP, BAT_VAL, CE1, IMP1],
+  battery: [BAT1, BAT_APP, BAT_INSERVICE, BAT_VAL, CE1, IMP1],
   construction: [CON1, CE1],
   electronics: [CE1],
   steel: [CE1],
