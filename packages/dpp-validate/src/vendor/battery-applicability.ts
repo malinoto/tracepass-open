@@ -233,6 +233,23 @@ function sbessOrLmt(t: Triggers): Applicability {
 /** Battery Regulation Art. 8(1): the earliest date recycled-content documentation applies. */
 export const BATTERY_RECYCLED_CONTENT_EARLIEST = "2028-08-18";
 
+/**
+ * Annex XIII 4(d) use data: the fields the in-service gate below and the
+ * BAT-INSERVICE rule (rules.ts) both act on. One list, so the two cannot drift.
+ * Five, not every field citing 4(d): 4(d) names cycles, negative events
+ * (accidents among them) and "periodically recorded" operating conditions and
+ * state of charge. `temperatureInformation` is a single design/operating figure,
+ * not a periodic record, and `accidentsInformationUrl` is a link form of the
+ * accidents `negativeEvents` already holds.
+ */
+export const ANNEX_XIII_4D_KEYS = [
+  "numberOfFullEquivalentChargingCycles",
+  "numberOfChargingEvents",
+  "negativeEvents",
+  "temperatureConditionsHistorical",
+  "currentStateOfCharge",
+] as const;
+
 export const BATTERY_FIELD_GATES: FieldGate[] = [
   {
     // Deck 1(k): "capacity threshold for exhaustion (only for electric
@@ -444,13 +461,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // In-service signal (derived in readTriggers):
     //   • dynamicDataAsOf is set (measurements materialiser stamps it), OR
     //   • dateOfServiceEntry field has a non-empty value.
-    keys: [
-      "numberOfFullEquivalentChargingCycles",
-      "numberOfChargingEvents",
-      "negativeEvents",
-      "temperatureConditionsHistorical",
-      "currentStateOfCharge",
-    ],
+    keys: [...ANNEX_XIII_4D_KEYS],
     article: "Annex XIII 4(d)",
     reason:
       "Use data (Annex XIII 4(d)) applies once the battery is in service. Before the in-service signal these fields are not yet applicable — no warning, no publish block.",

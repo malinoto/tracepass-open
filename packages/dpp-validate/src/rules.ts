@@ -25,6 +25,7 @@
 import type { Passport, Template } from "@tracepass/dpp-types";
 import { isEuEeaCountry } from "./eu-countries.js";
 import { BATTERY_FIELD_GATES, batteryFieldApplicability } from "./battery-applicability.js";
+import { ANNEX_XIII_4D_KEYS } from "./vendor/battery-applicability.js";
 import type { ComplianceFinding } from "./types.js";
 
 /** A field counts as "present" when it exists with a non-empty value. */
@@ -244,13 +245,8 @@ const BAT_APP: ConditionalRule = {
 // Annex XIII 4(d) are EXPECTED to be filled for EV, LMT, and
 // industrial_gt_2kwh batteries. An empty field emits a WARNING — never
 // a critical, never a publish block.
-const ANNEX_XIII_4D_KEYS = [
-  "numberOfFullEquivalentChargingCycles",
-  "numberOfChargingEvents",
-  "negativeEvents",
-  "temperatureConditionsHistorical",
-  "currentStateOfCharge",
-] as const;
+// The keys: ANNEX_XIII_4D_KEYS in vendor/battery-applicability.ts (the platform's
+// one list for the rule and the in-service gate).
 
 const IN_SERVICE_CATEGORIES = new Set(["EV", "LMT", "industrial_gt_2kwh"]);
 
@@ -295,9 +291,10 @@ const BAT_INSERVICE: ConditionalRule = {
 // not a hard compliance failure (the reviewer owns the value per the
 // "AI suggests, human approves" product stance). Two kinds of check:
 //   (1) numeric-range: percentages must be 0–100; carbon footprints ≥ 0.
-//   (2) correlated-requirement: a recorded hazardous substance engages
-//       the REACH/SCIP notification obligation, so scipNotificationNumber
-//       should be present.
+//   (2) correlated-requirement: a recorded hazardous substance MAY engage
+//       the SCIP notification (WFD Art. 9(1)(i): only a Candidate List SVHC
+//       above 0.1 % w/w in an article), so scipNotificationNumber is asked
+//       for as a check, never as a stated obligation.
 // Absent fields are skipped here (presence is BAT-1 / the static tier's
 // job) so this rule stays additive and can't double-count.
 
@@ -383,14 +380,16 @@ const BAT_VAL: ConditionalRule = {
         type: "conditional_missing",
         severity: "warning",
         target: "scipNotificationNumber",
-        // SCIP notification duty is Waste Framework Directive Art. 9(1)(i),
-        // not REACH. REACH Art. 33 is the supply-chain disclosure duty for
-        // articles — batteries are not articles under REACH.
+        // SCIP notification duty is Waste Framework Directive Art. 9(1)(i):
+        // a supplier of an article (REACH Art. 3(33)) provides ECHA the
+        // REACH Art. 33(1) information, i.e. a Candidate List SVHC above
+        // 0.1 % w/w. A recorded hazardous substance (CLP-classified) is not
+        // necessarily one, so the finding asks the reviewer to check.
         regulation: "2008/98/EC",
         article: "Art. 9(1)(i)",
         ruleId: "BAT-VAL",
-        why: "A hazardous substance is recorded, which engages the SCIP notification obligation, but no SCIP notification number is set.",
-        fix: "Record scipNotificationNumber for the SCIP database notification covering the recorded hazardous substance(s).",
+        why: "A hazardous substance is recorded but no SCIP notification number is set. A SCIP notification is required when an article contains a REACH Candidate List substance (SVHC) above 0.1 % w/w.",
+        fix: "Check whether a recorded substance is on the Candidate List above 0.1 % w/w; if so, record scipNotificationNumber for the SCIP notification.",
       });
     }
 
