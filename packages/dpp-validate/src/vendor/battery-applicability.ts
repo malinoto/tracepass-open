@@ -354,28 +354,43 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     },
   },
   {
-    // Annex XIII 4(b) / Art. 14 / Annex VII Part A: remaining capacity /
-    // power capability, remaining round-trip efficiency (DP 64), self-discharge
-    // evolution, pack ohmic resistance, and initial self-discharge rate apply
-    // only to SBESS and LMT batteries — NOT EV (which has SOCE instead), and
-    // NOT plain industrial batteries that are not stationary storage systems.
+    // Annex XIII 4(b) / Art. 14 / Annex VII Part A: remaining capacity,
+    // self-discharge evolution and initial self-discharge rate apply only to
+    // SBESS and LMT batteries — NOT EV (which has SOCE instead), and NOT plain
+    // industrial batteries that are not stationary storage systems.
     // Art. 14(1) subjects: SBESS + LMT + EV. Annex VII Part A applies to
     // SBESS + LMT. sbessOrLmt() resolves this correctly.
+    // Part A points 2, 3 and 5 are owed only "where possible" and sit in the
+    // non-promoting gate below.
     // NOTE: roundTripEfficiencyFade (DP 58) is "if applicable" in ALL THREE
     // guidance columns and therefore is NOT in this gate — it applies to EV too.
     keys: [
       "remainingCapacity",
-      "remainingPowerCapability",
-      "remainingRoundTripEfficiency",
       "evolutionOfSelfDischargeRate",
-      "currentInternalResistancePack",
       // initialSelfDischargeRate cites Annex VII Part A(4) — same applicability
       // as the rest of the Part A cluster.
       "initialSelfDischargeRate",
     ],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A",
     fixHint: SBESS_FIX_HINT,
-    reason: "Remaining capacity, remaining power capability, remaining round-trip efficiency, self-discharge evolution, pack ohmic resistance, and initial self-discharge rate (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    reason: "Remaining capacity, self-discharge evolution and initial self-discharge rate (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    decide: sbessOrLmt,
+  },
+  {
+    // Annex VII Part A points 2, 3 and 5: remaining power capability, remaining
+    // round-trip efficiency and ohmic resistance, each owed "where possible".
+    // Same subjects as the cluster above, but a best-effort duty must never
+    // become a hard publish block, so the gate does not promote; it only marks
+    // where the fields must NOT be filled (EV, non-stationary industrial).
+    keys: [
+      "remainingPowerCapability",
+      "remainingRoundTripEfficiency",
+      "currentInternalResistancePack",
+    ],
+    article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A(2), (3), (5)",
+    promotes: false,
+    fixHint: SBESS_FIX_HINT,
+    reason: "Remaining power capability, remaining round-trip efficiency and pack ohmic resistance (Annex VII Part A) are owed only where possible, and only for LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
     decide: sbessOrLmt,
   },
   {
