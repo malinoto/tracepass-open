@@ -209,6 +209,16 @@ function art14Subject(t: Triggers): boolean | undefined {
 }
 
 /**
+ * The Art. 10(1) subjects: EV and LMT batteries are rechargeable by definition,
+ * so the flag is irrelevant for them; for industrial_gt_2kwh it is decisive.
+ */
+function rechargeableOrEvLmt(t: Triggers): Applicability {
+  if (t.category === "EV" || t.category === "LMT") return "applies";
+  if (t.rechargeable === undefined) return "unknown";
+  return t.rechargeable ? "applies" : "not_applicable";
+}
+
+/**
  * Annex VII Part A + B applicability: applies for LMT; for industrial_gt_2kwh
  * only when confirmed as a stationary BESS; not_applicable for EV and all
  * other categories; unknown when category is absent or isStationaryBess unset.
@@ -431,7 +441,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     decide: sbessOrLmt,
   },
   {
-    // Phase 1 — rechargeable gate: 12 performance fields that derive from the
+    // Phase 1 — rechargeable gate: 9 performance fields that derive from the
     // Art. 10(1) performance document, which only exists for rechargeable batteries.
     //
     // Category awareness: EV and LMT batteries are inherently rechargeable by
@@ -447,8 +457,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // Legal basis:
     //   Annex XIII 1(j)  — expected lifetime, cycle data, performance-fade metrics
     //   Annex XIII 1(n)  — initial / 50%-cycle-life round-trip efficiency
-    //   Annex XIII 4(a)(i/ii/iv) — dynamic rated capacity, power, internal resistance
-    //   Art. 10(1)       — performance document for rechargeable industrial >2 kWh,
+    //   Art. 10(1)      — performance document for rechargeable industrial >2 kWh,
     //                      EV, and LMT batteries
     keys: [
       // Static performance (Annex XIII 1(j)/(n) / Art. 10(1))
@@ -464,21 +473,31 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "internalResistanceIncrease",
       "capacityFade",
       "powerFade",
-      // Dynamic performance data (Annex XIII 4(a)(i/ii/iv)) — updated on status change
-      // Note: 4(a)(iii) = dynamicEnergyRoundTripEfficiency is "if applicable" → not gated
+    ],
+    article: "Annex XIII 1(j)/(n), Art. 10(1)",
+    reason: "These performance fields come from the Art. 10(1) performance document (rechargeable industrial >2 kWh, EV, LMT). EV and LMT are inherently rechargeable; the flag governs industrial_gt_2kwh only.",
+    decide: rechargeableOrEvLmt,
+  },
+  {
+    // Annex XIII 4(a)(i/ii/iv): the dynamic rated capacity, power capability and
+    // internal resistance, owed "when the battery is placed on the market and
+    // when it is subject to changes in its status". At placing on the market
+    // they are the passport's own Annex IV values (guidance DP 51: "Same as data
+    // point 11"); these fields hold the re-measured values after a change in
+    // status, so they never block a first publish. Same subjects as the gate
+    // above, but non-promoting: it only marks where they must NOT be filled (a
+    // non-rechargeable industrial battery). EV and LMT list them as required,
+    // which is a gap there, never a block. EN 18223 has no member for them.
+    // Note: 4(a)(iii) = dynamicEnergyRoundTripEfficiency is "if applicable" → not gated
+    keys: [
       "dynamicRatedCapacity",
       "dynamicPowerCapability",
       "dynamicInternalResistance",
     ],
-    article: "Annex XIII 1(j)/(n), 4(a)(i/ii/iv), Art. 10(1)",
-    reason: "These performance fields come from the Art. 10(1) performance document (rechargeable industrial >2 kWh, EV, LMT). EV and LMT are inherently rechargeable; the flag governs industrial_gt_2kwh only.",
-    decide: (t) => {
-      // EV and LMT are rechargeable by definition — the flag is irrelevant for them.
-      if (t.category === "EV" || t.category === "LMT") return "applies";
-      // industrial_gt_2kwh: the rechargeable flag is decisive.
-      if (t.rechargeable === undefined) return "unknown";
-      return t.rechargeable ? "applies" : "not_applicable";
-    },
+    article: "Annex XIII 4(a)(i/ii/iv), Art. 10(1)",
+    promotes: false,
+    reason: "The dynamic performance values (Annex XIII 4(a)) apply to rechargeable batteries (industrial >2 kWh, EV, LMT). At placing on the market they equal the rated capacity, original power capability and initial internal resistance; these fields carry the values after a change in status.",
+    decide: rechargeableOrEvLmt,
   },
   {
     // Annex XIII 4(d): use data (charging cycles, negative events, operating

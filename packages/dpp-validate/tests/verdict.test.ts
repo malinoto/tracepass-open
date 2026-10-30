@@ -562,7 +562,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
   /**
    * Build a minimal battery template with a field that is conditionally
    * required for industrial_gt_2kwh (requiredBy.industrial_gt_2kwh = "conditional")
-   * — mirrors the 12 real rechargeable-gated fields in battery.json.
+   * — mirrors the real rechargeable-gated fields in battery.json.
    */
   function batteryTemplate(extraFields: TemplateField[] = []): Template {
     return {
@@ -571,12 +571,12 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
         tf("batteryCategory", { validation: { required: true } }),
         // A rechargeable-gated field: conditional for industrial_gt_2kwh,
         // not present at all in a minimal template (required via gate only).
-        tf("dynamicRatedCapacity", {
+        tf("capacityFade", {
           validation: {
             required: false,
             requiredBy: { industrial_gt_2kwh: "conditional" },
           },
-          regulationRef: { instrument: "(EU) 2023/1542", article: "Annex XIII 4(a)(i)" },
+          regulationRef: { instrument: "(EU) 2023/1542", article: "Annex XIII 4(a)" },
         }),
         ...extraFields,
       ],
@@ -586,7 +586,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
 
   it("emits a critical gate:conditional finding when an approved rechargeable flag makes the field required and the field is absent", () => {
     // An industrial_gt_2kwh battery with an APPROVED rechargeable=true flag
-    // and an empty dynamicRatedCapacity field must produce a critical finding
+    // and an empty capacityFade field must produce a critical finding
     // with ruleId "gate:conditional".
     const p = passport({
       fields: { batteryCategory: field("industrial_gt_2kwh") },
@@ -602,7 +602,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
     expect(r.verdict).toBe("incomplete");
     const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
     expect(gateFindings.length).toBeGreaterThan(0);
-    const dcFinding = gateFindings.find((c) => c.target === "dynamicRatedCapacity");
+    const dcFinding = gateFindings.find((c) => c.target === "capacityFade");
     expect(dcFinding).toBeDefined();
     expect(dcFinding?.severity).toBe("critical");
     expect(dcFinding?.type).toBe("missing_field");
@@ -621,14 +621,14 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
     const r = evaluateCompliance(p, batteryTemplate(), "battery");
 
     const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
-    expect(gateFindings.find((c) => c.target === "dynamicRatedCapacity")).toBeUndefined();
+    expect(gateFindings.find((c) => c.target === "capacityFade")).toBeUndefined();
   });
 
   it("does NOT emit gate:conditional when the gated field is present and approved", () => {
     const p = passport({
       fields: {
         batteryCategory: field("industrial_gt_2kwh"),
-        dynamicRatedCapacity: field(150),
+        capacityFade: field(150),
       },
       conditionProfile: {
         rechargeable: { value: true, status: "approved", source: "manual", audit: [] },
@@ -638,7 +638,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
     const r = evaluateCompliance(p, batteryTemplate(), "battery");
 
     const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
-    expect(gateFindings.find((c) => c.target === "dynamicRatedCapacity")).toBeUndefined();
+    expect(gateFindings.find((c) => c.target === "capacityFade")).toBeUndefined();
   });
 
   it("emits gate:conditional when the gated field is present but pending_review (unapproved value = hard block)", () => {
@@ -647,7 +647,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
     const p = passport({
       fields: {
         batteryCategory: field("industrial_gt_2kwh"),
-        dynamicRatedCapacity: field(150, "pending_review"),
+        capacityFade: field(150, "pending_review"),
       },
       conditionProfile: {
         rechargeable: { value: true, status: "approved", source: "manual", audit: [] },
@@ -658,7 +658,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
 
     expect(r.verdict).toBe("incomplete");
     const gateFindings = r.critical.filter((c) => c.ruleId === "gate:conditional");
-    const dcFinding = gateFindings.find((c) => c.target === "dynamicRatedCapacity");
+    const dcFinding = gateFindings.find((c) => c.target === "capacityFade");
     expect(dcFinding).toBeDefined();
     expect(dcFinding?.severity).toBe("critical");
     // The field IS present (not absent) — the why text should say "not yet approved"

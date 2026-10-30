@@ -65,3 +65,21 @@ describe("stationary storage is rechargeable", () => {
     expect(categoryFieldApplicability(passport, "battery", NOW).capacityFade).toBe("applies");
   });
 });
+
+// Annex XIII 4(a) owes the dynamic values "when the battery is placed on the
+// market and when it is subject to changes in its status"; at placing they are
+// the passport's Annex IV values, so the dynamic fields are never a duty.
+describe("dynamic Annex XIII 4(a) values", () => {
+  it("are never promoted on a confirmed rechargeable industrial battery", () => {
+    const passport = {
+      status: "draft",
+      fields: { batteryCategory: { value: "industrial_gt_2kwh", status: "approved" } },
+      conditionProfile: { rechargeable: { value: true, status: "approved" } },
+    } as unknown as Passport;
+    const map = categoryFieldApplicability(passport, "battery", NOW);
+    for (const key of ["dynamicRatedCapacity", "dynamicPowerCapability", "dynamicInternalResistance"]) {
+      expect(map[key], key).toBeUndefined();
+    }
+    expect(map.powerFade).toBe("applies");
+  });
+});
