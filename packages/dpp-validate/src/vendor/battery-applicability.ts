@@ -377,10 +377,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
   {
     // Annex VII Part A(4) names only the "evolution of self-discharging rates";
     // no provision of the Regulation names an initial self-discharge rate. It is
-    // the baseline the evolution is measured from, and guidance v3.2 (DP 65)
-    // words it "where possible". Same subjects as the Part A cluster, but it
-    // must never become a publish duty, so the gate does not promote; it only
-    // marks where the field must NOT be filled (EV, non-stationary industrial).
+    // the baseline the evolution is measured from, and guidance v3.2 has no
+    // data point for it (its DP 65 is the evolution). Same subjects as the
+    // Part A cluster, but it must never become a publish duty, so the gate does
+    // not promote; it only marks where the field must NOT be filled (EV,
+    // non-stationary industrial).
     keys: ["initialSelfDischargeRate"],
     article: "Annex XIII 4(b) / Annex VII Part A(4)",
     promotes: false,
