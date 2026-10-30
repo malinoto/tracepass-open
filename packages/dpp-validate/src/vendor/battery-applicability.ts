@@ -158,7 +158,13 @@ function readTriggers(passport: Passport, templateCategory: string = "battery"):
         : undefined,
     // Battery flags
     hasBMS: confirmed(profile["hasBMS"]),
-    rechargeable: confirmed(profile["rechargeable"]),
+    // A stationary battery energy storage system stores energy from and
+    // delivers it to the grid or end-users (Art. 3), so it is "designed to be
+    // electrically recharged": rechargeable by definition. A confirmed
+    // rechargeable flag still wins.
+    rechargeable:
+      confirmed(profile["rechargeable"]) ??
+      (confirmed(profile["isStationaryBess"]) === true ? true : undefined),
     externalStorageOnly: confirmed(profile["externalStorageOnly"]),
     isStationaryBess: confirmed(profile["isStationaryBess"]),
     // Detergents flags (phase 2)

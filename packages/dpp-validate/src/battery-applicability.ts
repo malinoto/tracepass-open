@@ -90,7 +90,11 @@ function readTriggers(passport: Passport): Triggers {
   return {
     category: cat && cat.value != null && cat.value !== "" ? String(cat.value) : undefined,
     hasBMS: confirmed(profile?.hasBMS),
-    rechargeable: confirmed(profile?.rechargeable),
+    // A stationary battery energy storage system is "designed to be electrically
+    // recharged" by its Art. 3 definition; a confirmed rechargeable flag still wins.
+    rechargeable:
+      confirmed(profile?.rechargeable) ??
+      (confirmed(profile?.isStationaryBess) === true ? true : undefined),
     externalStorageOnly: confirmed(profile?.externalStorageOnly),
     isStationaryBess: confirmed(profile?.isStationaryBess),
   };

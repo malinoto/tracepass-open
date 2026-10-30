@@ -52,3 +52,16 @@ describe("initial self-discharge rate", () => {
     expect(map.initialSelfDischargeRate).toBe("not_applicable");
   });
 });
+
+// A stationary battery energy storage system is rechargeable by its Art. 3
+// definition, so the Art. 10(1) performance fields apply once it is confirmed.
+describe("stationary storage is rechargeable", () => {
+  it("capacity fade applies to a confirmed stationary industrial battery", () => {
+    const passport = {
+      status: "draft",
+      fields: { batteryCategory: { value: "industrial_gt_2kwh", status: "approved" } },
+      conditionProfile: { isStationaryBess: { value: true, status: "approved" } },
+    } as unknown as Passport;
+    expect(categoryFieldApplicability(passport, "battery", NOW).capacityFade).toBe("applies");
+  });
+});

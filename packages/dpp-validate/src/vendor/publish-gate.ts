@@ -172,6 +172,31 @@ export interface FieldRequirements {
 }
 
 /**
+ * Whether a gate's APPROVED flag has made a conditional field required for
+ * this passport. Shared by the publish gate and the guard that refuses to
+ * empty a required field on a published passport, so the two never disagree.
+ */
+export function isGateRequired(
+  tf: TemplateField,
+  category: string | undefined,
+  applicabilityMap: Record<string, GateApplicability>,
+): boolean {
+  if (applicabilityMap[tf.key] !== "applies") return false;
+  const rb = tf.validation.requiredBy;
+  return (
+    // Path 1: field has a per-subcategory requiredBy map and the current
+    // subcategory is "conditional" — the gate's "applies" verdict promotes
+    // the conditional entry to a hard block (battery, detergents pattern).
+    (!!rb && category !== undefined && rb[category] === "conditional") ||
+    // Path 2: no requiredBy map at all and field is not statically required.
+    // Used for categories whose gated fields carry no subcategory (toys) —
+    // the gate alone decides whether the duty arises; when it says "applies"
+    // the field becomes mandatory regardless of the subcategory value.
+    (!tf.validation.required && !rb)
+  );
+}
+
+/**
  * Evaluate field-level requirements for a passport against its template,
  * status-independently. Called by both `checkPublishReady` (which adds
  * status early-returns) and `evaluateCompliance` (which must run even on
@@ -220,21 +245,7 @@ export function evaluateFieldRequirements(
     // with the owner's decision that conditional duties are non-bypassable.
     // "unknown" (absent or pending_review FLAG) → skip here; the rules engine
     // emits an unverifiable_conditional warning via BAT-APP but never blocks.
-    const rb = tf.validation.requiredBy;
-    if (
-      applicabilityMap[tf.key] === "applies" &&
-      (
-        // Path 1: field has a per-subcategory requiredBy map and the current
-        // subcategory is "conditional" — the gate's "applies" verdict promotes
-        // the conditional entry to a hard block (battery, detergents pattern).
-        (rb && category !== undefined && rb[category] === "conditional") ||
-        // Path 2: no requiredBy map at all and field is not statically required.
-        // Used for categories whose gated fields carry no subcategory (toys) —
-        // the gate alone decides whether the duty arises; when it says "applies"
-        // the field becomes mandatory regardless of the subcategory value.
-        (!tf.validation.required && !rb)
-      )
-    ) {
+    if (isGateRequired(tf, category, applicabilityMap)) {
       if (isFieldAbsent(f)) {
         conditionalMissingFields.push(tf.key);
       } else if (f.status !== "approved") {
