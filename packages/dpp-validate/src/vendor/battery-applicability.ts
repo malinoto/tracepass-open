@@ -354,26 +354,38 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     },
   },
   {
-    // Annex XIII 4(b) / Art. 14 / Annex VII Part A: remaining capacity,
-    // self-discharge evolution and initial self-discharge rate apply only to
-    // SBESS and LMT batteries — NOT EV (which has SOCE instead), and NOT plain
-    // industrial batteries that are not stationary storage systems.
+    // Annex XIII 4(b) / Art. 14 / Annex VII Part A: remaining capacity and
+    // self-discharge evolution apply only to SBESS and LMT batteries — NOT EV
+    // (which has SOCE instead), and NOT plain industrial batteries that are
+    // not stationary storage systems.
     // Art. 14(1) subjects: SBESS + LMT + EV. Annex VII Part A applies to
     // SBESS + LMT. sbessOrLmt() resolves this correctly.
-    // Part A points 2, 3 and 5 are owed only "where possible" and sit in the
-    // non-promoting gate below.
+    // Part A points 2, 3 and 5 are owed only "where possible", and the initial
+    // self-discharge rate is not named by the law at all; both sit in
+    // non-promoting gates below.
     // NOTE: roundTripEfficiencyFade (DP 58) is "if applicable" in ALL THREE
     // guidance columns and therefore is NOT in this gate — it applies to EV too.
     keys: [
       "remainingCapacity",
       "evolutionOfSelfDischargeRate",
-      // initialSelfDischargeRate cites Annex VII Part A(4) — same applicability
-      // as the rest of the Part A cluster.
-      "initialSelfDischargeRate",
     ],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A",
     fixHint: SBESS_FIX_HINT,
-    reason: "Remaining capacity, self-discharge evolution and initial self-discharge rate (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    reason: "Remaining capacity and self-discharge evolution (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    decide: sbessOrLmt,
+  },
+  {
+    // Annex VII Part A(4) names only the "evolution of self-discharging rates";
+    // no provision of the Regulation names an initial self-discharge rate. It is
+    // the baseline the evolution is measured from, and guidance v3.2 (DP 65)
+    // words it "where possible". Same subjects as the Part A cluster, but it
+    // must never become a publish duty, so the gate does not promote; it only
+    // marks where the field must NOT be filled (EV, non-stationary industrial).
+    keys: ["initialSelfDischargeRate"],
+    article: "Annex XIII 4(b) / Annex VII Part A(4)",
+    promotes: false,
+    fixHint: SBESS_FIX_HINT,
+    reason: "The initial self-discharge rate is the baseline for the self-discharge evolution of Annex VII Part A, which applies only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries. The Regulation does not require it as a value of its own.",
     decide: sbessOrLmt,
   },
   {

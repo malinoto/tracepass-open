@@ -36,3 +36,19 @@ describe("Annex VII Part A 'where possible' parameters", () => {
     for (const key of WHERE_POSSIBLE) expect(map[key]).toBe("not_applicable");
   });
 });
+
+// Point 4 names only the "evolution of self-discharging rates"; no provision of
+// the Regulation names an initial rate, so it is never a duty, while the
+// evolution stays one.
+describe("initial self-discharge rate", () => {
+  it("is never promoted to a duty on LMT", () => {
+    const map = categoryFieldApplicability(batteryPassport("LMT"), "battery", NOW);
+    expect(map.initialSelfDischargeRate).toBeUndefined();
+    expect(map.evolutionOfSelfDischargeRate).toBe("applies");
+  });
+
+  it("stays not applicable on EV", () => {
+    const map = categoryFieldApplicability(batteryPassport("EV"), "battery", NOW);
+    expect(map.initialSelfDischargeRate).toBe("not_applicable");
+  });
+});
