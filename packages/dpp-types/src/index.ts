@@ -246,7 +246,14 @@ export interface Regulation {
 export interface Template {
   category: string;
   categoryLabel: LocalizedString;
+  /** Legacy integer label; nothing enforces a bump. Use `modelVersion`. */
   version: number;
+  /**
+   * SemVer name of the category's data model (the keys `model-subset.json` lists),
+   * paired with its SHA-256 hash in `model-versions.json`. Present from
+   * `@tracepass/dpp-schemas` 1.31.0; optional so older template files still type-check.
+   */
+  modelVersion?: string;
   isLatest: boolean;
   regulation: Regulation;
   fields: TemplateField[];

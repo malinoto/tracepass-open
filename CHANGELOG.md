@@ -5,6 +5,29 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.19.0 — 2026-11-02
+
+### `@tracepass/dpp-validate`
+
+- **One copy of the battery gates.** The package exported, and its conditional rules
+  used, an older hand-written `battery-applicability.ts`, while the verdict engine used
+  the platform mirror in `vendor/`. The old copy had 8 gates and no recycled-content
+  start date, so `BATTERY_FIELD_GATES`, `batteryFieldApplicability` and the conditional
+  rules could disagree with the verdict and with the platform. Every export and rule now
+  uses the vendor mirror, whose hashes `mirror-manifest.json` records, and the old file
+  is gone.
+- Behaviour change, hence MINOR: before 18 Aug 2028, the recycled-content fields now
+  answer `"unknown"` from the exported functions as well, never `"applies"` or
+  `"not_applicable"`.
+
+### `@tracepass/dpp-types`
+
+- `Template.modelVersion?: string`: the SemVer data-model version that
+  `@tracepass/dpp-schemas` 1.31.0 adds to every template. The integer `version` is
+  documented as a legacy label.
+
+---
+
 ## 0.16.0 — 2026-10-27
 
 The pre- and post-consumer recycled-content split shares are no longer a publish duty

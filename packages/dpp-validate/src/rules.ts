@@ -24,8 +24,7 @@
 
 import type { Passport, Template } from "@tracepass/dpp-types";
 import { isEuEeaCountry } from "./eu-countries.js";
-import { BATTERY_FIELD_GATES, batteryFieldApplicability } from "./battery-applicability.js";
-import { ANNEX_XIII_4D_KEYS } from "./vendor/battery-applicability.js";
+import { ANNEX_XIII_4D_KEYS, BATTERY_FIELD_GATES, batteryFieldApplicability } from "./vendor/battery-applicability.js";
 import type { ComplianceFinding } from "./types.js";
 
 /** A field counts as "present" when it exists with a non-empty value. */
@@ -180,7 +179,7 @@ const BAT1: ConditionalRule = {
 
 // ── Battery · field-applicability (deck 27 May 2026, slide 36) ──────
 // BAT-APP: not every Annex XIII field applies to every battery. The
-// shared predicate (battery-applicability.ts) decides per field from
+// shared predicate (vendor/battery-applicability.ts) decides per field from
 // batteryCategory + the batteryProfile classifiers. This rule turns that
 // into findings WITHOUT ever blocking:
 //   - a field that's `not_applicable` but FILLED → warning (likely

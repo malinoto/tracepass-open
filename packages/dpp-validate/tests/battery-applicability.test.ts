@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   batteryFieldApplicability,
   GATED_FIELD_KEYS,
-} from "../src/battery-applicability.js";
+} from "../src/vendor/battery-applicability.js";
 import type { Passport, PassportField, BatteryProfile } from "@tracepass/dpp-types";
 
 // ── Tiny builders ─────────────────────────────────────────────────
@@ -205,11 +205,28 @@ it("pending_review isStationaryBess never hard-gates the Part A cluster", () => 
 });
 
 describe("recycled content — Art. 8(1) external-storage exemption is industrial-only", () => {
+  // The recycled-content duty starts on 18 Aug 2028 at the earliest
+  // (BATTERY_RECYCLED_CONTENT_EARLIEST); the exemption logic is judged after it.
+  afterEach(() => vi.useRealTimers());
+  const afterRecycledContentStart = () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2028-09-01T00:00:00Z"));
+  };
+  it("is unknown for every battery before the recycled-content duty starts", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-02T00:00:00Z"));
+    for (const cat of ["EV", "LMT", "industrial_gt_2kwh"]) {
+      const m = batteryFieldApplicability(batteryPassport(cat, { externalStorageOnly: true }), "battery");
+      expect(m.recycledContentCobalt).toBe("unknown");
+    }
+  });
   it("exempts an industrial battery with exclusively external storage", () => {
+    afterRecycledContentStart();
     const m = batteryFieldApplicability(batteryPassport("industrial_gt_2kwh", { externalStorageOnly: true }), "battery");
     expect(m.recycledContentCobalt).toBe("not_applicable");
   });
   it("never exempts EV or LMT batteries", () => {
+    afterRecycledContentStart();
     for (const cat of ["EV", "LMT"]) {
       const m = batteryFieldApplicability(batteryPassport(cat, { externalStorageOnly: true }), "battery");
       expect(m.recycledContentCobalt).toBe("applies");

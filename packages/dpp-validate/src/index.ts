@@ -25,14 +25,16 @@ export {
 } from "./rules.js";
 export type { ConditionalRule } from "./rules.js";
 
+// The platform's own gates (vendor/, mirrored and hash-checked by
+// mirror-manifest.json), so the public package and the platform cannot disagree.
+export { IN_SCOPE_BATTERY_CATEGORIES } from "./vendor/battery-scope.js";
 export {
-  IN_SCOPE_BATTERY_CATEGORIES,
   BATTERY_FIELD_GATES,
   GATED_FIELD_KEYS,
   batteryFieldApplicability,
   gateForKey,
-} from "./battery-applicability.js";
-export type { Applicability, FieldGate } from "./battery-applicability.js";
+} from "./vendor/battery-applicability.js";
+export type { Applicability, FieldGate } from "./vendor/battery-applicability.js";
 
 // Re-exported because a passport's publish-readiness and required economic
 // operators are part of judging whether it is compliant, not separate concerns.
