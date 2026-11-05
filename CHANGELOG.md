@@ -5,6 +5,22 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.21.0 — 2026-11-05
+
+### `@tracepass/dpp-validate`
+
+- **CHEM-1, SVHC in articles, as a warning.** REACH Art. 33(1) and Waste Framework
+  Directive Art. 9(1)(i) (SCIP) put no information in a passport, so CHEM-1 only
+  checks what a passport already records, and only where a field exists that clears it:
+  - electronics: `svhcPresent` true and no `scipNotificationId`;
+  - steel: `svhcPresent` true and no `svhcCandidateListSubstances`;
+  - furniture: `svhcCandidateListSubstances` listed and no `scipNotificationNumber`.
+
+  Never critical, and never on detergents or paints, which are mixtures. Furniture now
+  reports `conditionalCoverage: "evaluated"`. New findings, hence MINOR.
+
+---
+
 ## 0.20.0 — 2026-11-05
 
 ### `@tracepass/dpp-validate`

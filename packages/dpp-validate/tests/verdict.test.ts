@@ -67,13 +67,13 @@ describe("isEuEeaCountry", () => {
 // ── Verdict composition ───────────────────────────────────────────
 describe("evaluateCompliance — static tier", () => {
   it("compliant when required fields present+approved and required party set", () => {
-    // furniture requires a manufacturer party (required-roles.ts) — set it,
+    // tyres require a manufacturer party (required-roles.ts) — set it,
     // and CC-1 is satisfied directly by an EU manufacturer.
     const t = template([tf("a", { validation: { required: true } })]);
     const p = passport({ fields: { a: field("x") }, parties: { manufacturer: party("DE") } });
-    const r = evaluateCompliance(p, t, "furniture");
+    const r = evaluateCompliance(p, t, "tyres");
     expect(r.verdict).toBe("compliant");
-    expect(r.conditionalCoverage).toBe("static-only"); // furniture has no conditional rules
+    expect(r.conditionalCoverage).toBe("static-only"); // tyres have no conditional rules
   });
 
   it("incomplete on a missing required field, citing the field's regulationRef", () => {

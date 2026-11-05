@@ -40,8 +40,10 @@ identified, values match their datatype, enum, pattern, and bounds.
 
 **Conditional** — obligations that only fire under a condition. Battery carbon-footprint
 fields apply only to rechargeable batteries; CE-marking coherence triggers when a
-conformity status is recorded. Five categories carry these rules — battery, construction,
-electronics, steel and toys — plus one cross-cutting rule for every category.
+conformity status is recorded; a recorded substance of very high concern (SVHC) asks for
+the SCIP notification or the substance names, as a warning. Six categories carry these
+rules — battery, construction, electronics, furniture, steel and toys — plus one
+cross-cutting rule for every category.
 
 Some obligations start on a date. The battery passport is mandatory from 18 February 2027
 (Regulation (EU) 2023/1542 Art. 77(1)), so a missing passport identifier is a warning
@@ -53,7 +55,7 @@ evaluateCompliance(passport, batteryTemplate, "battery", new Date("2027-02-18"))
 ```
 
 **Coverage** — the engine reports whether it evaluated conditionals at all. For the other
-six categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for
+categories `conditionalCoverage` is `"static-only"`, so silence is never mistaken for
 a compliance claim.
 
 ## It will not pass what it could not check

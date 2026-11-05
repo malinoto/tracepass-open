@@ -396,6 +396,71 @@ const BAT_VAL: ConditionalRule = {
   },
 };
 
+// ── CHEM-1 · SVHC in articles (REACH Art. 33, SCIP) — warning tier ──────
+// REACH (EC) No 1907/2006 Art. 33(1): a supplier of an article containing a
+// Candidate List substance "in a concentration above 0,1 % weight by weight
+// (w/w)" gives the recipient safe-use information, "as a minimum, the name of
+// that substance". WFD 2008/98/EC Art. 9(1)(i) adds the SCIP notification to
+// ECHA for the same articles. Neither duty puts the information in a passport,
+// so CHEM-1 only checks that what the passport already records is consistent:
+// always a warning, and only where a field exists that clears it. Articles
+// only — detergents and paints are mixtures (SDS, REACH Art. 31).
+function svhcDeclared(passport: Passport, key: string): boolean {
+  const v = valueOf(passport, key);
+  return v === true || (typeof v === "string" && ["true", "yes"].includes(v.trim().toLowerCase()));
+}
+function nonEmptyList(passport: Passport, key: string): boolean {
+  const v = valueOf(passport, key);
+  return Array.isArray(v) ? v.length > 0 : v !== undefined;
+}
+function scipFinding(target: string, trigger: string): ComplianceFinding {
+  return {
+    type: "conditional_missing",
+    severity: "warning",
+    target,
+    regulation: "2008/98/EC",
+    article: "Art. 9(1)(i)",
+    ruleId: "CHEM-1",
+    why: `${trigger}, but no SCIP notification is recorded. An article containing a REACH Candidate List substance above 0.1 % w/w must be notified to ECHA's SCIP database; recording the notification here is a consistency check, not a passport duty.`,
+    fix: `If a Candidate List substance is above 0.1 % w/w, record ${target}; if none is, correct the SVHC field.`,
+  };
+}
+
+const CHEM1_ELECTRONICS: ConditionalRule = {
+  id: "CHEM-1",
+  run(passport) {
+    if (!svhcDeclared(passport, "svhcPresent") || hasValue(passport, "scipNotificationId")) return [];
+    return [scipFinding("scipNotificationId", "The product is recorded as containing an SVHC")];
+  },
+};
+
+const CHEM1_STEEL: ConditionalRule = {
+  id: "CHEM-1",
+  run(passport) {
+    if (!svhcDeclared(passport, "svhcPresent") || nonEmptyList(passport, "svhcCandidateListSubstances")) return [];
+    return [
+      {
+        type: "conditional_missing",
+        severity: "warning",
+        target: "svhcCandidateListSubstances",
+        regulation: "(EC) No 1907/2006",
+        article: "Art. 33(1)",
+        ruleId: "CHEM-1",
+        why: "The product is recorded as containing an SVHC, but no substance is named. REACH Art. 33(1) requires the supplier of an article to give recipients, as a minimum, the name of a Candidate List substance present above 0.1 % w/w; recording it here is a consistency check, not a passport duty.",
+        fix: "Name each Candidate List substance above 0.1 % w/w in svhcCandidateListSubstances, or correct svhcPresent.",
+      },
+    ];
+  },
+};
+
+const CHEM1_FURNITURE: ConditionalRule = {
+  id: "CHEM-1",
+  run(passport) {
+    if (!nonEmptyList(passport, "svhcCandidateListSubstances") || hasValue(passport, "scipNotificationNumber")) return [];
+    return [scipFinding("scipNotificationNumber", "Candidate List substances are recorded")];
+  },
+};
+
 // ── Construction · CPR: Reg (EU) No 305/2011 today, (EU) 2024/3110 later ──
 // CON-1: a product covered by a harmonised technical specification cannot
 // declare CE marking `not_applicable` — coverage is exactly what engages
@@ -579,8 +644,9 @@ const IMP1: ConditionalRule = {
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
   battery: [BAT1, BAT_APP, BAT_INSERVICE, BAT_VAL, CE1, IMP1],
   construction: [CON1, CE1],
-  electronics: [CE1],
-  steel: [CE1],
+  electronics: [CE1, CHEM1_ELECTRONICS],
+  furniture: [CHEM1_FURNITURE],
+  steel: [CE1, CHEM1_STEEL],
   toys: [CE1],
 };
 
