@@ -114,9 +114,9 @@ it:
 ```
 
 It also reports its own coverage, so silence is never mistaken for a compliance claim.
-Seven categories carry binding conditional rules — battery, detergents,
-paints-coatings, construction, electronics, steel and toys — plus one
-cross-cutting rule that applies to every category. For the other six,
+Six categories carry conditional rules — battery, construction, electronics,
+furniture, steel and toys — plus one cross-cutting rule that applies to every
+category. For the other seven,
 `conditionalCoverage` is `"static-only"`: the template's required fields are the whole
 obligation, and the engine says so rather than implying it checked more.
 

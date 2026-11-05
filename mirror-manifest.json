@@ -47,6 +47,11 @@
       "platformHash": "a012bef9a0c14266"
     },
     {
+      "open": "packages/dpp-validate/src/vendor/composition-detail.ts",
+      "platform": "src/lib/compliance/composition-detail.ts",
+      "platformHash": "12cd922cc3f83de2"
+    },
+    {
       "open": "packages/dpp-validate/src/vendor/field-emptiness.ts",
       "platform": "src/lib/passports/field-emptiness.ts",
       "platformHash": "6fb72034bf97a240"

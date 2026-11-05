@@ -2,8 +2,9 @@
  * Per-category CONDITIONAL compliance rules.
  *
  * These encode the conditional obligations that are binding and in force.
- * Five categories carry them — battery, construction, electronics, steel and
- * toys — plus one cross-cutting rule (CC-1) that applies to every category.
+ * Six categories carry them — battery, construction, electronics, furniture,
+ * steel and toys — plus one cross-cutting rule (CC-1) that applies to every
+ * category.
  * The remaining categories have no rule entry here, so the engine reports them
  * `static-only`: their template's required fields are the whole obligation.
  *
@@ -25,6 +26,7 @@
 import type { Passport, Template } from "@tracepass/dpp-types";
 import { isEuEeaCountry } from "./eu-countries.js";
 import { ANNEX_XIII_4D_KEYS, BATTERY_FIELD_GATES, batteryFieldApplicability } from "./vendor/battery-applicability.js";
+import { COMPOSITION_FIELDS, SHARE_SUM_TOLERANCE, analyzeComposition } from "./vendor/composition-detail.js";
 import type { ComplianceFinding } from "./types.js";
 
 /** A field counts as "present" when it exists with a non-empty value. */
@@ -285,8 +287,9 @@ const BAT_INSERVICE: ConditionalRule = {
 
 // ── Battery · value validation (not just presence) ──────────────────
 // BAT-VAL: the static tier + BAT-1 check fields are PRESENT; this rule
-// checks the values that ARE present are PLAUSIBLE. All warnings, never
-// blocking — a malformed value is a data-quality flag for the reviewer,
+// checks the values that ARE present are PLAUSIBLE. Warnings, except a
+// composition that names only a chemistry label on an in-scope battery from
+// 18 Feb 2027 (see 1c). A malformed value is a data-quality flag for the reviewer,
 // not a hard compliance failure (the reviewer owns the value per the
 // "AI suggests, human approves" product stance). Two kinds of check:
 //   (1) numeric-range: percentages must be 0–100; carbon footprints ≥ 0.
@@ -326,7 +329,7 @@ const BATTERY_NONNEGATIVE_FIELDS = [
 
 const BAT_VAL: ConditionalRule = {
   id: "BAT-VAL",
-  run(passport, template) {
+  run(passport, template, ctx) {
     const findings: ComplianceFinding[] = [];
 
     // (1a) percentages in [0, 100].
@@ -361,6 +364,64 @@ const BAT_VAL: ConditionalRule = {
           ruleId: "BAT-VAL",
           why: `${label} is ${n}; a carbon-footprint value cannot be negative.`,
           fix: `Correct ${label} to a non-negative value (kg CO2e/kWh).`,
+        });
+      }
+    }
+
+    // (1c) detailed composition (Annex XIII 2(a), guidance DP 46): "detailed
+    // composition, including materials used in the cathode, anode and
+    // electrolyte". The law asks for the materials, not their quantities; a list
+    // naming only a chemistry label is not a composition (Commission Battery
+    // Passport FAQ §7.7: "not merely a general indication of chemistry such as
+    // 'LFP'"). Annex XIII binds only where Art. 77(1) requires a passport, so the
+    // label-only finding follows BAT-1's scope and date gate: none for an
+    // out-of-scope category, a warning before 18 Feb 2027 or while the category
+    // is unknown, critical from that day for an in-scope battery. Shares are
+    // optional and are only checked when given.
+    const cat = valueOf(passport, "batteryCategory");
+    const outOfScope = cat !== undefined && !IN_SCOPE_BATTERY.has(String(cat));
+    const compositionCritical =
+      cat !== undefined && !outOfScope && batteryPassportMandatory(ctx?.now ?? new Date());
+    for (const key of COMPOSITION_FIELDS) {
+      const a = analyzeComposition(valueOf(passport, key));
+      if (!a) continue;
+      const label = fieldLabel(key, template);
+      if (a.materials === 0) {
+        if (outOfScope) continue;
+        findings.push({
+          type: "invalid_format",
+          severity: compositionCritical ? "critical" : "warning",
+          target: key,
+          regulation: "(EU) 2023/1542",
+          article: "Annex XIII 2(a)",
+          ruleId: "BAT-VAL",
+          why: `${label} names no material, only ${a.chemistryLabels > 0 ? "a chemistry label" : "unnamed entries"}, which is a general indication of chemistry rather than the detailed composition Annex XIII 2(a) requires (Commission Battery Passport FAQ §7.7).`,
+          fix: `List each material in ${label} as an entry with its substance (and its CAS number when known), down to a threshold of about 1 %, e.g. {substanceName: "Graphite", casNumber: "7782-42-5"}. A share of the battery's mass is optional.`,
+        });
+        continue;
+      }
+      if (a.outOfRange > 0) {
+        findings.push({
+          type: "invalid_format",
+          severity: "warning",
+          target: key,
+          regulation: "(EU) 2023/1542",
+          article: "Annex XIII 2(a)",
+          ruleId: "BAT-VAL",
+          why: `${a.outOfRange} of the ${a.entries} entries in ${label} give a weight share outside 0–100 %.`,
+          fix: `Correct those shares to a value between 0 and 100 %, or remove them; a share is optional.`,
+        });
+      }
+      if (a.shareSum > 100 + SHARE_SUM_TOLERANCE) {
+        findings.push({
+          type: "invalid_format",
+          severity: "warning",
+          target: key,
+          regulation: "(EU) 2023/1542",
+          article: "Annex XIII 2(a)",
+          ruleId: "BAT-VAL",
+          why: `The weight shares in ${label} add up to ${Math.round(a.shareSum * 10) / 10} %, more than 100 %.`,
+          fix: `Check the shares in ${label}; they are percentages of the battery's mass and cannot exceed 100 % in total.`,
         });
       }
     }

@@ -5,6 +5,21 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.22.0 — 2026-11-05
+
+### `@tracepass/dpp-validate`
+
+- **BAT-VAL checks the detailed composition (Annex XIII 2(a)),** as the platform does.
+  For `cathodeActiveMaterials`, `anodeActiveMaterials` and `electrolyteComposition`, a
+  list that names only a chemistry label (`["LFP"]`, `NMC811`) is critical for an LMT,
+  EV or industrial > 2 kWh battery from 18 Feb 2027, a warning before that day or while
+  `batteryCategory` is unset, and nothing for portable, SLI or industrial ≤ 2 kWh.
+  Shares are optional; one outside 0–100 %, or a total over 100 %, is a warning. The
+  analyser is a platform mirror, `vendor/composition-detail.ts`, hashed in
+  `mirror-manifest.json`. New findings, hence MINOR.
+
+---
+
 ## 0.21.0 — 2026-11-05
 
 ### `@tracepass/dpp-validate`

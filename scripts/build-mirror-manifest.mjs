@@ -77,6 +77,10 @@ export const MIRRORS = [
     platform: "src/lib/compliance/battery-scope.ts",
   },
   {
+    open: "packages/dpp-validate/src/vendor/composition-detail.ts",
+    platform: "src/lib/compliance/composition-detail.ts",
+  },
+  {
     open: "packages/dpp-validate/src/vendor/field-emptiness.ts",
     platform: "src/lib/passports/field-emptiness.ts",
   },
