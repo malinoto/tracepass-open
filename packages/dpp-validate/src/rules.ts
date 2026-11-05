@@ -396,13 +396,26 @@ const BAT_VAL: ConditionalRule = {
   },
 };
 
-// ── Construction · Reg (EU) 2024/3110 (new CPR) ─────────────────────
-// CON-1: a Declaration of Performance & Conformity is required IF the
-// product is covered by a harmonised technical specification. The
-// template's `harmonizedStandardReference` (required) signals coverage;
-// when it's set, the CE-marking / declaration evidence must follow.
-// NB: the CPR's *DPP* provisions are NOT in force (future delegated
-// acts) — only this DoP/DoC conditional is binding today.
+// ── Construction · CPR: Reg (EU) No 305/2011 today, (EU) 2024/3110 later ──
+// CON-1: a product covered by a harmonised technical specification cannot
+// declare CE marking `not_applicable` — coverage is exactly what engages
+// the DoP/DoC obligation. The binding text today is Reg 305/2011: Art. 4(1)
+// ("When a construction product is covered by a harmonised standard … the
+// manufacturer shall draw up a declaration of performance") and Art. 8(2)
+// (the CE marking "shall be affixed" to those products). Reg 2024/3110 keeps
+// those articles for products under the standards already cited (Art. 95(3),
+// (8)); its own economic-operator obligations reach a product family only one
+// year after an Art. 5(8) or 6(1) implementing act covers it (Art. 95(9)),
+// and none is adopted yet. Cite 2024/3110 Art. 13 only from that point. `ceMarkingStatus` is NOT a required field — CE
+// marking under the CPR applies only where a harmonised technical
+// specification or an ETA covers the product, and a product covered by
+// neither cannot be CE-marked at all, so requiring it statically would force
+// a value on steel mill products and much rebar. This rule is what carries
+// the obligation instead: it engages only once coverage is declared, which
+// is exactly the condition the law attaches. Hence the absence branch below
+// — the static tier no longer catches a missing value here.
+// NB: the CPR's *DPP* provisions cannot apply yet (future delegated act)
+// — only this DoP/DoC conditional is binding today.
 const CON1: ConditionalRule = {
   id: "CON-1",
   run(passport) {
@@ -413,14 +426,29 @@ const CON1: ConditionalRule = {
     if (!hasValue(passport, "ceMarkingStatus")) {
       return [
         {
+          type: "unverifiable_conditional",
+          severity: "warning",
+          target: "ceMarkingStatus",
+          regulation: "(EU) No 305/2011",
+          article: "Art. 4(1), Art. 8(2)",
+          ruleId: "CON-1",
+          why: "A harmonised technical specification is referenced, but CE marking status isn't recorded, so the Declaration of Performance & Conformity obligation couldn't be evaluated.",
+          fix: "Record ceMarkingStatus for the referenced harmonised standard.",
+        },
+      ];
+    }
+
+    if (valueOf(passport, "ceMarkingStatus") === "not_applicable") {
+      return [
+        {
           type: "conditional_missing",
           severity: "critical",
           target: "ceMarkingStatus",
-          regulation: "(EU) 2024/3110",
-          article: "DoP/DoC",
+          regulation: "(EU) No 305/2011",
+          article: "Art. 4(1), Art. 8(2)",
           ruleId: "CON-1",
-          why: "Product is covered by a harmonised technical specification; a Declaration of Performance & Conformity (CE marking) is required.",
-          fix: "Record ceMarkingStatus and the declaration evidence for the referenced harmonised standard.",
+          why: "The product references a harmonised technical specification, which engages the Declaration of Performance & Conformity obligation — CE marking cannot then be 'not_applicable'.",
+          fix: "Set ceMarkingStatus to `marked` (or `pending` while assessment is under way), or remove the harmonised-standard reference if the product is not covered by one.",
         },
       ];
     }

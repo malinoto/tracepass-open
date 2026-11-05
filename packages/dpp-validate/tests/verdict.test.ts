@@ -359,10 +359,31 @@ it("reports chemicals as static-only — the category no longer exists", () => {
 describe("evaluateCompliance — CON-1 DoP/DoC", () => {
   const t = () => template([tf("harmonizedStandardReference"), tf("ceMarkingStatus", { dataType: "enum" })]);
 
-  it("critical when covered by a harmonised spec but CE/declaration missing", () => {
+  it("warns (cannot evaluate) when covered by a harmonised spec but CE status is absent", () => {
     const p = passport({ parties: { manufacturer: party("DE") }, fields: { harmonizedStandardReference: field("EN 15804") } });
     const r = evaluateCompliance(p, t(), "construction");
-    expect(r.critical.some((c) => c.ruleId === "CON-1" && c.target === "ceMarkingStatus")).toBe(true);
+    expect(r.warnings.some((w) => w.ruleId === "CON-1" && w.type === "unverifiable_conditional")).toBe(true);
+  });
+
+  it("critical when a harmonised spec is referenced but CE marking is declared not_applicable", () => {
+    const p = passport({
+      parties: { manufacturer: party("DE") },
+      fields: { harmonizedStandardReference: field("EN 15804"), ceMarkingStatus: field("not_applicable") },
+    });
+    const con1 = evaluateCompliance(p, t(), "construction").critical.find((c) => c.ruleId === "CON-1");
+    expect(con1?.target).toBe("ceMarkingStatus");
+    // Reg 305/2011 Arts. 4(1), 8(2): 2024/3110's operator duties wait on an implementing act (its Art. 95(9)).
+    expect(con1?.regulation).toBe("(EU) No 305/2011");
+    expect(con1?.article).toBe("Art. 4(1), Art. 8(2)");
+  });
+
+  it("no CON-1 finding when a harmonised spec is referenced and the product is marked", () => {
+    const p = passport({
+      parties: { manufacturer: party("DE") },
+      fields: { harmonizedStandardReference: field("EN 15804"), ceMarkingStatus: field("marked") },
+    });
+    const r = evaluateCompliance(p, t(), "construction");
+    expect(r.critical.some((c) => c.ruleId === "CON-1")).toBe(false);
   });
 
   it("no CON-1 finding when no harmonised standard is referenced", () => {

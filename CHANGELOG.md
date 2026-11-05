@@ -5,6 +5,24 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.20.0 — 2026-11-05
+
+### `@tracepass/dpp-validate`
+
+- **CON-1 matches the platform, and cites the law that binds today.** A construction
+  product that references a harmonised technical specification:
+  - with no `ceMarkingStatus` recorded, is now a warning (`unverifiable_conditional`):
+    the obligation cannot be evaluated. It was a critical. Behaviour change, hence MINOR.
+  - with `ceMarkingStatus: "not_applicable"`, is now critical: coverage is exactly what
+    engages the declaration of performance and the CE mark.
+  - The finding cites Regulation (EU) No 305/2011 Arts. 4(1) and 8(2). Regulation
+    (EU) 2024/3110 keeps those articles for products under the standards already cited
+    (Art. 95(3), (8)); its own economic-operator obligations reach a product family only
+    one year after an Art. 5(8) or 6(1) implementing act covers it (Art. 95(9)), and
+    none is adopted.
+
+---
+
 ## 0.19.0 — 2026-11-02
 
 ### `@tracepass/dpp-validate`
