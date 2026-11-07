@@ -261,6 +261,12 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     expect(r.conditionalCoverage).toBe("evaluated");
   });
 
+  it("a batteryCategory that is not a string is not a category (no BAT-1 finding)", () => {
+    const p = passport({ parties, fields: { batteryCategory: field(["EV"]) } });
+    const r = evaluateCompliance(p, t(), "battery", new Date("2027-02-18T00:00:00Z"));
+    expect([...r.critical, ...r.warnings].some((c) => c.ruleId === "BAT-1")).toBe(false);
+  });
+
   // BAT-2: Art. 77(1) applies from 18 February 2027, so the same gap is a
   // warning before that day and critical from it.
   const BEFORE = new Date("2027-02-17T23:59:59Z");
