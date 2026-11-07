@@ -33,8 +33,7 @@
  * The GS1-hosted EPCIS 2.0 JSON-LD context URL. Stable, published by
  * GS1. Consumers dereference it to resolve EPCIS + CBV core terms.
  */
-export const EPCIS_CONTEXT_URL =
-  "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld";
+export const EPCIS_CONTEXT_URL = "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld";
 
 /**
  * Base URI for the TracePass-owned vocabulary. The CBV bizStep

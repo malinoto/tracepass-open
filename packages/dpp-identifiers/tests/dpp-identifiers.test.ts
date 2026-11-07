@@ -12,7 +12,12 @@ import {
   normalizeDoi,
   resolveProductIdentifier,
 } from "../src/index.js";
-import type { ProductIdentifier, OperatorIdentifier, FacilityIdentifier, Passport } from "@tracepass/dpp-types";
+import type {
+  ProductIdentifier,
+  OperatorIdentifier,
+  FacilityIdentifier,
+  Passport,
+} from "@tracepass/dpp-types";
 
 // ── GS1 product identifier ────────────────────────────────────────────────────
 
@@ -233,7 +238,11 @@ describe("validateProductIdentifier — did", () => {
 
 describe("validateProductIdentifier — doi", () => {
   it("accepts a valid bare DOI with granularity", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/example-suffix", granularity: "item" };
+    const id: ProductIdentifier = {
+      scheme: "doi",
+      doi: "10.1234/example-suffix",
+      granularity: "item",
+    };
     expect(validateProductIdentifier(id).ok).toBe(true);
   });
 
@@ -245,21 +254,33 @@ describe("validateProductIdentifier — doi", () => {
   });
 
   it("accepts and normalises a doi: prefixed form", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "doi:10.1234/suffix", granularity: "model" };
+    const id: ProductIdentifier = {
+      scheme: "doi",
+      doi: "doi:10.1234/suffix",
+      granularity: "model",
+    };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/suffix");
   });
 
   it("accepts and normalises an https://doi.org/ prefixed form", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "https://doi.org/10.1234/suffix", granularity: "batch" };
+    const id: ProductIdentifier = {
+      scheme: "doi",
+      doi: "https://doi.org/10.1234/suffix",
+      granularity: "batch",
+    };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/suffix");
   });
 
   it("normalises to lower-case", () => {
-    const id: ProductIdentifier = { scheme: "doi", doi: "10.1234/UPPER-SUFFIX", granularity: "item" };
+    const id: ProductIdentifier = {
+      scheme: "doi",
+      doi: "10.1234/UPPER-SUFFIX",
+      granularity: "item",
+    };
     const r = validateProductIdentifier(id);
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value as { doi: string }).doi).toBe("10.1234/upper-suffix");
@@ -401,7 +422,11 @@ describe("validateFacilityIdentifier", () => {
 
   // EN 18219 §6.1–6.5: iso6523, did, doi accepted alongside gln
   it("accepts ISO/IEC 6523 facility identifier (§6.2)", () => {
-    const id: FacilityIdentifier = { scheme: "iso6523", icd: "0199", value: "5493001KJTIIGC8Y1R12" };
+    const id: FacilityIdentifier = {
+      scheme: "iso6523",
+      icd: "0199",
+      value: "5493001KJTIIGC8Y1R12",
+    };
     expect(validateFacilityIdentifier(id).ok).toBe(true);
   });
 
@@ -430,15 +455,15 @@ describe("validateFacilityIdentifier", () => {
 
 describe("identifierToUri", () => {
   it("emits the GTIN-14 form for a GTIN-8, -12 or -13", () => {
-    expect(identifierToUri({ scheme: "gs1", gtin: "4006381333931", serialNumber: "A1" }, "id.example")).toBe(
-      "https://id.example/01/04006381333931/21/A1",
-    );
-    expect(identifierToUri({ scheme: "gs1", gtin: "96385074", serialNumber: "A1" }, "id.example")).toBe(
-      "https://id.example/01/00000096385074/21/A1",
-    );
-    expect(identifierToUri({ scheme: "gs1", gtin: "036000291452", serialNumber: "A1" }, "id.example")).toBe(
-      "https://id.example/01/00036000291452/21/A1",
-    );
+    expect(
+      identifierToUri({ scheme: "gs1", gtin: "4006381333931", serialNumber: "A1" }, "id.example"),
+    ).toBe("https://id.example/01/04006381333931/21/A1");
+    expect(
+      identifierToUri({ scheme: "gs1", gtin: "96385074", serialNumber: "A1" }, "id.example"),
+    ).toBe("https://id.example/01/00000096385074/21/A1");
+    expect(
+      identifierToUri({ scheme: "gs1", gtin: "036000291452", serialNumber: "A1" }, "id.example"),
+    ).toBe("https://id.example/01/00036000291452/21/A1");
   });
 
   const RESOLVER = "resolver.example.com";
@@ -469,9 +494,7 @@ describe("identifierToUri", () => {
       raw: "MHABC123",
     };
     // IAC + primaryId concatenated in .25P; no separator
-    expect(identifierToUri(id, RESOLVER)).toBe(
-      "https://resolver.example.com/?.25P=MHABC123",
-    );
+    expect(identifierToUri(id, RESOLVER)).toBe("https://resolver.example.com/?.25P=MHABC123");
   });
 
   it("includes serial in .S parameter for iso15459", () => {
@@ -482,9 +505,7 @@ describe("identifierToUri", () => {
       serial: "S1",
       raw: "MHABC123.S1",
     };
-    expect(identifierToUri(id, RESOLVER)).toBe(
-      "https://resolver.example.com/?.25P=MHABC123&.S=S1",
-    );
+    expect(identifierToUri(id, RESOLVER)).toBe("https://resolver.example.com/?.25P=MHABC123&.S=S1");
   });
 
   it("percent-encodes special chars in iso15459 .25P and .S", () => {
@@ -504,9 +525,7 @@ describe("identifierToUri", () => {
   });
 
   it("returns null for iec61406, did, doi (they carry their own URL)", () => {
-    expect(
-      identifierToUri({ scheme: "iec61406", uri: "https://x.com/id/1" }, RESOLVER),
-    ).toBeNull();
+    expect(identifierToUri({ scheme: "iec61406", uri: "https://x.com/id/1" }, RESOLVER)).toBeNull();
     expect(
       identifierToUri({ scheme: "did", did: "did:web:example.com", method: "web" }, RESOLVER),
     ).toBeNull();
@@ -621,9 +640,9 @@ describe("parseResolverPath", () => {
 
 describe("identifierKey", () => {
   it("produces stable keys per scheme", () => {
-    expect(
-      identifierKey({ scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-1" }),
-    ).toBe("gs1:05449000000996:SN-1");
+    expect(identifierKey({ scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-1" })).toBe(
+      "gs1:05449000000996:SN-1",
+    );
 
     expect(
       identifierKey({
@@ -644,13 +663,13 @@ describe("identifierKey", () => {
       }),
     ).toBe("iso15459:MH:ABC:");
 
-    expect(
-      identifierKey({ scheme: "iec61406", uri: "https://example.com/id/x" }),
-    ).toBe("iec61406:https://example.com/id/x");
+    expect(identifierKey({ scheme: "iec61406", uri: "https://example.com/id/x" })).toBe(
+      "iec61406:https://example.com/id/x",
+    );
 
-    expect(
-      identifierKey({ scheme: "did", did: "did:web:example.com", method: "web" }),
-    ).toBe("did:did:web:example.com");
+    expect(identifierKey({ scheme: "did", did: "did:web:example.com", method: "web" })).toBe(
+      "did:did:web:example.com",
+    );
 
     expect(identifierKey({ scheme: "doi", doi: "10.1234/ABC" })).toBe("doi:10.1234/abc");
   });
@@ -777,7 +796,11 @@ describe("resolveProductIdentifier", () => {
 
   it("preserves digitalLinkUri when lifting gs1", () => {
     const p = minPassport({
-      gs1: { gtin: "05449000000996", serialNumber: "S1", digitalLinkUri: "https://id.x.com/01/..." },
+      gs1: {
+        gtin: "05449000000996",
+        serialNumber: "S1",
+        digitalLinkUri: "https://id.x.com/01/...",
+      },
     });
     const result = resolveProductIdentifier(p);
     if (result?.scheme === "gs1") {

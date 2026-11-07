@@ -11,7 +11,9 @@ const template = { fields: [] } as unknown as Template;
 function passport(fields: Record<string, unknown>): Passport {
   return {
     status: "draft",
-    fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, { value: v, status: "approved" }])),
+    fields: Object.fromEntries(
+      Object.entries(fields).map(([k, v]) => [k, { value: v, status: "approved" }]),
+    ),
   } as unknown as Passport;
 }
 const chem1 = (category: string, fields: Record<string, unknown>) =>
@@ -23,7 +25,12 @@ describe("CHEM-1 · electronics", () => {
   it("SVHC present and no SCIP id → a SCIP warning", () => {
     const f = chem1("electronics", { svhcPresent: true });
     expect(f).toHaveLength(1);
-    expect(f[0]).toMatchObject({ severity: "warning", target: "scipNotificationId", regulation: "2008/98/EC", article: "Art. 9(1)(i)" });
+    expect(f[0]).toMatchObject({
+      severity: "warning",
+      target: "scipNotificationId",
+      regulation: "2008/98/EC",
+      article: "Art. 9(1)(i)",
+    });
   });
   it("a string 'yes' counts as present", () => {
     expect(chem1("electronics", { svhcPresent: "yes" })).toHaveLength(1);
@@ -39,10 +46,17 @@ describe("CHEM-1 · steel", () => {
   it("SVHC present and no substance named → a REACH Art. 33(1) warning", () => {
     const f = chem1("steel", { svhcPresent: true, svhcCandidateListSubstances: [] });
     expect(f).toHaveLength(1);
-    expect(f[0]).toMatchObject({ severity: "warning", target: "svhcCandidateListSubstances", regulation: "(EC) No 1907/2006", article: "Art. 33(1)" });
+    expect(f[0]).toMatchObject({
+      severity: "warning",
+      target: "svhcCandidateListSubstances",
+      regulation: "(EC) No 1907/2006",
+      article: "Art. 33(1)",
+    });
   });
   it("a named substance clears it", () => {
-    expect(chem1("steel", { svhcPresent: true, svhcCandidateListSubstances: ["Lead"] })).toEqual([]);
+    expect(chem1("steel", { svhcPresent: true, svhcCandidateListSubstances: ["Lead"] })).toEqual(
+      [],
+    );
   });
 });
 
@@ -53,7 +67,9 @@ describe("CHEM-1 · furniture", () => {
     expect(f[0]).toMatchObject({ severity: "warning", target: "scipNotificationNumber" });
   });
   it("SCIP number recorded, or no substance listed → nothing", () => {
-    expect(chem1("furniture", { svhcCandidateListSubstances: ["DEHP"], scipNotificationNumber: "x" })).toEqual([]);
+    expect(
+      chem1("furniture", { svhcCandidateListSubstances: ["DEHP"], scipNotificationNumber: "x" }),
+    ).toEqual([]);
     expect(chem1("furniture", { svhcCandidateListSubstances: [] })).toEqual([]);
   });
 });

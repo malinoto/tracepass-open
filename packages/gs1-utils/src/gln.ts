@@ -75,7 +75,7 @@ export function normalizeGln(input: string): string | null {
   const cleaned = input
     .trim()
     .replace(/^gln[:\s]+/i, "") // strip leading "GLN:" / "GLN " prefix
-    .replace(/[\s-]/g, "");      // strip whitespace + hyphens
+    .replace(/[\s-]/g, ""); // strip whitespace + hyphens
 
   return validateGln(cleaned) ? cleaned : null;
 }

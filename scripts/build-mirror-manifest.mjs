@@ -181,12 +181,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 
   if (unreconciled.length && !accept) {
-    console.error(
-      "✖ Refusing to write the manifest — these mirrors do not match the platform:\n",
-    );
+    console.error("✖ Refusing to write the manifest — these mirrors do not match the platform:\n");
     for (const u of unreconciled) {
       console.error(`  • ${u.open}\n    vs ${u.platform}`);
-      console.error(`    diff <(sed 's|@/types|@tracepass/dpp-types|' ${join(PLATFORM, u.platform)}) \\\n         ${join(REPO, u.open)}\n`);
+      console.error(
+        `    diff <(sed 's|@/types|@tracepass/dpp-types|' ${join(PLATFORM, u.platform)}) \\\n         ${join(REPO, u.open)}\n`,
+      );
     }
     console.error(
       "  Port the change into this repo first, then regenerate. Recording the new\n" +

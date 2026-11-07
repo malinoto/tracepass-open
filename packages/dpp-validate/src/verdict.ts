@@ -37,10 +37,7 @@ import type {
  *  Returns a finding (warning) on mismatch, or null when clean. Empty
  *  values are NOT checked here — presence is the static field check's
  *  job; this only judges the SHAPE of values that ARE set. */
-function checkFieldFormat(
-  tf: TemplateField,
-  value: unknown,
-): ComplianceFinding | null {
+function checkFieldFormat(tf: TemplateField, value: unknown): ComplianceFinding | null {
   const v = tf.validation;
   const base = {
     type: "invalid_format" as const,
@@ -58,7 +55,11 @@ function checkFieldFormat(
     const vals = Array.isArray(value) ? value : [value];
     const bad = vals.filter((x) => !allowed.has(String(x)));
     if (bad.length > 0) {
-      return { ...base, why: `Value "${bad.join(", ")}" is not one of the allowed options for ${tf.key}.`, fix: `Use one of: ${[...allowed].join(", ")}.` };
+      return {
+        ...base,
+        why: `Value "${bad.join(", ")}" is not one of the allowed options for ${tf.key}.`,
+        fix: `Use one of: ${[...allowed].join(", ")}.`,
+      };
     }
   }
 
@@ -68,16 +69,32 @@ function checkFieldFormat(
   // rather than coercing to 0.
   if (typeof value === "string") {
     if (v.minLength != null && value.length < v.minLength) {
-      return { ...base, why: `${tf.key} is shorter than the required ${v.minLength} characters.`, fix: `Provide at least ${v.minLength} characters.` };
+      return {
+        ...base,
+        why: `${tf.key} is shorter than the required ${v.minLength} characters.`,
+        fix: `Provide at least ${v.minLength} characters.`,
+      };
     }
     if (v.maxLength != null && value.length > v.maxLength) {
-      return { ...base, why: `${tf.key} exceeds the maximum ${v.maxLength} characters.`, fix: `Shorten to at most ${v.maxLength} characters.` };
+      return {
+        ...base,
+        why: `${tf.key} exceeds the maximum ${v.maxLength} characters.`,
+        fix: `Shorten to at most ${v.maxLength} characters.`,
+      };
     }
     if (v.pattern) {
       let re: RegExp | null = null;
-      try { re = new RegExp(v.pattern); } catch { re = null; }
+      try {
+        re = new RegExp(v.pattern);
+      } catch {
+        re = null;
+      }
       if (re && !re.test(value)) {
-        return { ...base, why: `${tf.key} doesn't match the required format.`, fix: `Expected format: ${tf.aiHints?.expectedFormat ?? v.pattern}.` };
+        return {
+          ...base,
+          why: `${tf.key} doesn't match the required format.`,
+          fix: `Expected format: ${tf.aiHints?.expectedFormat ?? v.pattern}.`,
+        };
       }
     }
   }
@@ -86,10 +103,18 @@ function checkFieldFormat(
   // explicit `min: null` / `max: null`, which must not coerce to 0).
   if (typeof value === "number") {
     if (v.min != null && value < v.min) {
-      return { ...base, why: `${tf.key} (${value}) is below the minimum ${v.min}.`, fix: `Use a value ≥ ${v.min}.` };
+      return {
+        ...base,
+        why: `${tf.key} (${value}) is below the minimum ${v.min}.`,
+        fix: `Use a value ≥ ${v.min}.`,
+      };
     }
     if (v.max != null && value > v.max) {
-      return { ...base, why: `${tf.key} (${value}) is above the maximum ${v.max}.`, fix: `Use a value ≤ ${v.max}.` };
+      return {
+        ...base,
+        why: `${tf.key} (${value}) is above the maximum ${v.max}.`,
+        fix: `Use a value ≤ ${v.max}.`,
+      };
     }
   }
 
@@ -142,10 +167,12 @@ export function evaluateCompliance(
   // short-circuited — live DPPs must be re-evaluated immediately when a
   // field or flag changes.
   const applicabilityMap = categoryFieldApplicability(passport, category);
-  const { missingFields, unapprovedFields, conditionalMissingFields } =
-    evaluateFieldRequirements(passport, template, applicabilityMap);
-  const fieldRef = (key: string) =>
-    template.fields.find((f) => f.key === key)?.regulationRef;
+  const { missingFields, unapprovedFields, conditionalMissingFields } = evaluateFieldRequirements(
+    passport,
+    template,
+    applicabilityMap,
+  );
+  const fieldRef = (key: string) => template.fields.find((f) => f.key === key)?.regulationRef;
   for (const key of missingFields) {
     const ref = fieldRef(key);
     critical.push({
@@ -189,9 +216,7 @@ export function evaluateCompliance(
       why: isAbsent
         ? `Conditional field "${key}" is required because an approved condition flag confirms the duty applies, but the field has no value.`
         : `Conditional field "${key}" is required because an approved condition flag confirms the duty applies, but the value is not yet approved.`,
-      fix: isAbsent
-        ? `Provide and approve a value for ${key}.`
-        : `Approve the value for ${key}.`,
+      fix: isAbsent ? `Provide and approve a value for ${key}.` : `Approve the value for ${key}.`,
     });
   }
 

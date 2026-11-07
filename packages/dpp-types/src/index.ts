@@ -18,9 +18,30 @@ export type Id = string;
 
 /** The 24 official languages of the European Union. */
 export type Locale =
-  | "bg" | "cs" | "da" | "de" | "el" | "en" | "es" | "et" | "fi" | "fr"
-  | "ga" | "hr" | "hu" | "it" | "lt" | "lv" | "mt" | "nl" | "pl" | "pt"
-  | "ro" | "sk" | "sl" | "sv";
+  | "bg"
+  | "cs"
+  | "da"
+  | "de"
+  | "el"
+  | "en"
+  | "es"
+  | "et"
+  | "fi"
+  | "fr"
+  | "ga"
+  | "hr"
+  | "hu"
+  | "it"
+  | "lt"
+  | "lv"
+  | "mt"
+  | "nl"
+  | "pl"
+  | "pt"
+  | "ro"
+  | "sk"
+  | "sl"
+  | "sv";
 
 /** A string translated into one or more EU languages. `en` is always present. */
 export type LocalizedString = { en: string } & Partial<Record<Locale, string>>;
@@ -28,9 +49,16 @@ export type LocalizedString = { en: string } & Partial<Record<Locale, string>>;
 // ─── Template (the field specification for a product category) ──────────────
 
 export type FieldDataType =
-  | "string" | "number" | "boolean" | "date"
-  | "enum" | "multi_enum" | "url" | "object"
-  | "array" | "file_reference";
+  | "string"
+  | "number"
+  | "boolean"
+  | "date"
+  | "enum"
+  | "multi_enum"
+  | "url"
+  | "object"
+  | "array"
+  | "file_reference";
 
 /**
  * Who may read a field.
@@ -44,13 +72,7 @@ export type AccessLevel = "public" | "restricted" | "authority";
 /** Where in an EU instrument a field is mandated. */
 /** Where a law puts a datum (tracepass-dpp-schemas `obligations[].carrier`). */
 export type ObligationCarrier =
-  | "passport"
-  | "product"
-  | "label"
-  | "sds"
-  | "notification"
-  | "document"
-  | "customs";
+  "passport" | "product" | "label" | "sds" | "notification" | "document" | "customs";
 
 /** One law that requires the datum to exist, verified against its primary text. */
 export interface RegulationObligation {
@@ -76,7 +98,8 @@ export interface RegulationRef {
    * one member state's law; `international` is outside EU law; `specification`
    * is not a legal reference.
    */
-  kind?: "legislation" | "standard" | "scheme" | "national" | "international" | "specification" | null;
+  kind?:
+    "legislation" | "standard" | "scheme" | "national" | "international" | "specification" | null;
   /** Free-text name when the reference is not EU legislation. */
   source?: string | null;
   /** Keys into the schemas repo's `standards.json`; relating to a standard never makes a field required. */
@@ -197,8 +220,7 @@ export interface TemplateField {
 
 /** A field-group section, in display order. */
 export type TemplateSection =
-  | string
-  | { key: string; label?: LocalizedString; fieldCount?: number; sortOrder?: number };
+  string | { key: string; label?: LocalizedString; fieldCount?: number; sortOrder?: number };
 
 /**
  * How much of a regulation date is real.
@@ -267,15 +289,12 @@ export interface Template {
 // ─── Passport (a filled-in template for one physical product) ───────────────
 
 export type FieldSource =
-  | "manual" | "ai_suggested" | "ai_approved"
-  | "reference_db" | "supplier" | "system" | "company";
+  "manual" | "ai_suggested" | "ai_approved" | "reference_db" | "supplier" | "system" | "company";
 
-export type FieldStatus =
-  | "empty" | "pending_review" | "approved" | "flagged" | "rejected";
+export type FieldStatus = "empty" | "pending_review" | "approved" | "flagged" | "rejected";
 
 export type PassportStatus =
-  | "draft" | "in_review" | "approved"
-  | "published" | "suspended" | "expired" | "archived";
+  "draft" | "in_review" | "approved" | "published" | "suspended" | "expired" | "archived";
 
 /** One filled-in field of a passport. */
 export interface PassportField {
@@ -500,11 +519,7 @@ export interface DoiIdentifier {
  * EN 18219.
  */
 export type ProductIdentifier =
-  | Gs1Identifier
-  | Iso15459Identifier
-  | Iec61406Identifier
-  | DidIdentifier
-  | DoiIdentifier;
+  Gs1Identifier | Iso15459Identifier | Iec61406Identifier | DidIdentifier | DoiIdentifier;
 
 // ─── Scheme-tagged operator and facility identifiers (EN 18219) ─────────────
 
@@ -591,11 +606,9 @@ export interface Passport {
 // ─── Traceability events ───────────────────────────────────────────────────
 
 export type ServiceEventType =
-  | "repair" | "warranty_claim" | "maintenance"
-  | "inspection" | "replacement" | "recall";
+  "repair" | "warranty_claim" | "maintenance" | "inspection" | "replacement" | "recall";
 
-export type ServiceEventStatus =
-  | "scheduled" | "in_progress" | "completed" | "cancelled";
+export type ServiceEventStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
 
 /**
  * A repair, inspection, or other service performed on a product.
@@ -620,8 +633,7 @@ export interface ServiceEvent {
   createdAt: string | Date;
 }
 
-export type OwnershipTransferStatus =
-  | "pending" | "accepted" | "rejected" | "expired";
+export type OwnershipTransferStatus = "pending" | "accepted" | "rejected" | "expired";
 
 /** A change of custody. Only an `accepted` transfer becomes an EPCIS event. */
 export interface OwnershipTransfer {

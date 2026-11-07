@@ -24,9 +24,7 @@ function epcisDocument(events: unknown[]): Record<string, unknown> {
 
 describe("event ids", () => {
   it("builds a stable urn from passport id + discriminator", () => {
-    expect(buildEventId("p-123", "commissioning")).toBe(
-      "urn:tracepass:epcis:p-123:commissioning",
-    );
+    expect(buildEventId("p-123", "commissioning")).toBe("urn:tracepass:epcis:p-123:commissioning");
   });
 
   it("sanitizes unsafe characters in the discriminator", () => {
@@ -56,24 +54,19 @@ describe("buildCommissioningEvent", () => {
   });
 
   it("adds a bizLocation when a facilityGln is supplied", () => {
-    const ev = buildCommissioningEvent(
-      "2026-07-19T10:00:00Z",
-      "urn:epc:id:sgtin:demo",
-      "p-123",
-      { facilityGln: "5412345000013" },
-    ) as Record<string, unknown>;
+    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
+      facilityGln: "5412345000013",
+    }) as Record<string, unknown>;
     expect(ev.bizLocation).toBeDefined();
     // no operatorGln → no destinationList
     expect(ev.destinationList).toBeUndefined();
   });
 
   it("adds a destinationList owning_party entry when operatorGln is supplied", () => {
-    const ev = buildCommissioningEvent(
-      "2026-07-19T10:00:00Z",
-      "urn:epc:id:sgtin:demo",
-      "p-123",
-      { facilityGln: "5412345000013", operatorGln: "5412345000013" },
-    ) as Record<string, unknown>;
+    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
+      facilityGln: "5412345000013",
+      operatorGln: "5412345000013",
+    }) as Record<string, unknown>;
     expect(ev.bizLocation).toBeDefined();
     expect(ev.destinationList).toBeDefined();
     const dest = ev.destinationList as Array<Record<string, string>>;
@@ -83,9 +76,7 @@ describe("buildCommissioningEvent", () => {
   });
 
   it("returns null when the timestamp is missing", () => {
-    expect(
-      buildCommissioningEvent(null, "urn:epc:id:sgtin:demo", "p-123"),
-    ).toBeNull();
+    expect(buildCommissioningEvent(null, "urn:epc:id:sgtin:demo", "p-123")).toBeNull();
   });
 });
 
@@ -123,11 +114,7 @@ describe("CBV bizStep mapping", () => {
 
 describe("validateEpcisDocument", () => {
   it("accepts a well-formed EPCIS 2.0 document", () => {
-    const ev = buildCommissioningEvent(
-      "2026-07-19T10:00:00Z",
-      "urn:epc:id:sgtin:demo",
-      "p-123",
-    );
+    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123");
     const result = validateEpcisDocument(epcisDocument([ev]));
     expect(result.valid).toBe(true);
     expect(result.issues).toHaveLength(0);
@@ -159,8 +146,6 @@ describe("validateEpcisDocument", () => {
     (doc.epcisBody as Record<string, unknown>).eventList = "not-an-array";
     const result = validateEpcisDocument(doc);
     expect(result.valid).toBe(false);
-    expect(
-      result.issues.some((i) => i.path === "$.epcisBody.eventList"),
-    ).toBe(true);
+    expect(result.issues.some((i) => i.path === "$.epcisBody.eventList")).toBe(true);
   });
 });

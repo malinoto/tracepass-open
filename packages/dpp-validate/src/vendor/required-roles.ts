@@ -176,9 +176,7 @@ export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
  * so callers can early-return rather than crash on legacy / unknown
  * category strings.
  */
-export function getPartyRoles(
-  category: string,
-): CategoryPartyRoles | null {
+export function getPartyRoles(category: string): CategoryPartyRoles | null {
   return CATEGORY_PARTY_ROLES[category as CategoryKey] ?? null;
 }
 

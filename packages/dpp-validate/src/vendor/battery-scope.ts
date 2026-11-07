@@ -18,14 +18,9 @@
  */
 
 /** Categories that owe a battery passport (BAT-1 / Art. 77(1)). */
-export const IN_SCOPE_BATTERY_CATEGORIES = [
-  "LMT",
-  "EV",
-  "industrial_gt_2kwh",
-] as const;
+export const IN_SCOPE_BATTERY_CATEGORIES = ["LMT", "EV", "industrial_gt_2kwh"] as const;
 
-export type InScopeBatteryCategory =
-  (typeof IN_SCOPE_BATTERY_CATEGORIES)[number];
+export type InScopeBatteryCategory = (typeof IN_SCOPE_BATTERY_CATEGORIES)[number];
 
 const IN_SCOPE = new Set<string>(IN_SCOPE_BATTERY_CATEGORIES);
 
@@ -37,8 +32,6 @@ const IN_SCOPE = new Set<string>(IN_SCOPE_BATTERY_CATEGORIES);
  * know yet" must check for `undefined` themselves; BAT-1 does exactly that so it
  * can raise `unverifiable_conditional` rather than silently passing.
  */
-export function isInScopeBatteryCategory(
-  category: string | undefined | null,
-): boolean {
+export function isInScopeBatteryCategory(category: string | undefined | null): boolean {
   return category != null && IN_SCOPE.has(category);
 }

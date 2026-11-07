@@ -92,7 +92,8 @@ for (const cat of expected.filter((c) => actual.includes(c))) {
   const missing = want.filter((r) => !have.includes(r));
   const extra = have.filter((r) => !want.includes(r));
   if (missing.length) problems.push(`"${cat}" is missing rule(s): ${missing.join(", ")}`);
-  if (extra.length) problems.push(`"${cat}" has rule(s) the platform does not: ${extra.join(", ")}`);
+  if (extra.length)
+    problems.push(`"${cat}" has rule(s) the platform does not: ${extra.join(", ")}`);
 }
 
 // ── Rule IDs overall ─────────────────────────────────────────────

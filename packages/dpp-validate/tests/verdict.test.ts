@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { evaluateCompliance } from "../src/verdict.js";
 import { isEuEeaCountry } from "../src/eu-countries.js";
-import { getPartyRoles, isRequiredRole, allRolesForCategory } from "../src/vendor/required-roles.js";
+import {
+  getPartyRoles,
+  isRequiredRole,
+  allRolesForCategory,
+} from "../src/vendor/required-roles.js";
 import { effectiveRequired, effectiveRequiredForBattery } from "../src/vendor/publish-gate.js";
 import { CONDITIONAL_RULES } from "../src/rules.js";
 import type { Passport, Template, TemplateField, PassportField, Party } from "@tracepass/dpp-types";
@@ -98,7 +102,9 @@ describe("evaluateCompliance — static tier", () => {
     const t = template([]);
     const r = evaluateCompliance(passport(), t, "battery");
     const roles = r.critical.filter((f) => f.type === "missing_party").map((f) => f.target);
-    expect(roles).toEqual(expect.arrayContaining(["manufacturer", "recycler", "producerResponsibilityOrg"]));
+    expect(roles).toEqual(
+      expect.arrayContaining(["manufacturer", "recycler", "producerResponsibilityOrg"]),
+    );
   });
 
   it("warns on a value that violates an enum, without blocking", () => {
@@ -155,7 +161,9 @@ describe("evaluateCompliance — static tier", () => {
       parties: { manufacturer: party("DE") },
     });
     const r = evaluateCompliance(p, t, "chemicals");
-    expect(r.warnings.some((w) => w.type === "invalid_format" && w.target === "dataCarrierType")).toBe(true);
+    expect(
+      r.warnings.some((w) => w.type === "invalid_format" && w.target === "dataCarrierType"),
+    ).toBe(true);
   });
 
   it("treats explicit null bounds as 'no constraint' (real template shape)", () => {
@@ -164,10 +172,27 @@ describe("evaluateCompliance — static tier", () => {
     // regression caught only by the live .loc test, never the unit
     // fixtures (which used absent bounds).
     const t = template([
-      tf("n", { dataType: "number", validation: { required: false, min: null as unknown as undefined, max: null as unknown as undefined } }),
-      tf("s", { validation: { required: false, minLength: null as unknown as undefined, maxLength: null as unknown as undefined, pattern: null as unknown as undefined } }),
+      tf("n", {
+        dataType: "number",
+        validation: {
+          required: false,
+          min: null as unknown as undefined,
+          max: null as unknown as undefined,
+        },
+      }),
+      tf("s", {
+        validation: {
+          required: false,
+          minLength: null as unknown as undefined,
+          maxLength: null as unknown as undefined,
+          pattern: null as unknown as undefined,
+        },
+      }),
     ]);
-    const p = passport({ fields: { n: field(243), s: field("anything") }, parties: { manufacturer: party("DE") } });
+    const p = passport({
+      fields: { n: field(243), s: field("anything") },
+      parties: { manufacturer: party("DE") },
+    });
     const r = evaluateCompliance(p, t, "furniture");
     expect(r.warnings.filter((w) => w.type === "invalid_format")).toHaveLength(0);
     expect(r.verdict).toBe("compliant");
@@ -194,7 +219,9 @@ describe("evaluateCompliance — CC-1 EU operator", () => {
   it("warns (unverifiable) when manufacturer country is unset", () => {
     const p = passport({ parties: { manufacturer: party(undefined) } });
     const r = evaluateCompliance(p, t(), "furniture");
-    expect(r.warnings.some((w) => w.ruleId === "CC-1" && w.type === "unverifiable_conditional")).toBe(true);
+    expect(
+      r.warnings.some((w) => w.ruleId === "CC-1" && w.type === "unverifiable_conditional"),
+    ).toBe(true);
   });
 
   it("no CC-1 finding for an EU manufacturer", () => {
@@ -206,7 +233,9 @@ describe("evaluateCompliance — CC-1 EU operator", () => {
   it("warns when non-EU manufacturer has neither importer nor AR", () => {
     const p = passport({ parties: { manufacturer: party("CN") } });
     const r = evaluateCompliance(p, t(), "furniture");
-    expect(r.warnings.some((w) => w.ruleId === "CC-1" && w.type === "conditional_missing")).toBe(true);
+    expect(r.warnings.some((w) => w.ruleId === "CC-1" && w.type === "conditional_missing")).toBe(
+      true,
+    );
   });
 
   it("satisfied when non-EU manufacturer has an importer (grouped, not AR-only)", () => {
@@ -239,7 +268,9 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
   it("critical when an in-scope EV battery lacks its unique identifier, from 18 Feb 2027", () => {
     const p = passport({ parties, fields: { batteryCategory: field("EV") } });
     const r = evaluateCompliance(p, t(), "battery", FROM);
-    expect(r.critical.some((c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier")).toBe(true);
+    expect(
+      r.critical.some((c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier"),
+    ).toBe(true);
     expect(r.verdict).toBe("incomplete");
   });
 
@@ -247,7 +278,9 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     const p = passport({ parties, fields: { batteryCategory: field("EV") } });
     const r = evaluateCompliance(p, t(), "battery", BEFORE);
     expect(r.critical.some((c) => c.ruleId === "BAT-1")).toBe(false);
-    const w = r.warnings.find((c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier");
+    const w = r.warnings.find(
+      (c) => c.ruleId === "BAT-1" && c.target === "batteryUniqueIdentifier",
+    );
     expect(w?.severity).toBe("warning");
     expect(w?.why).toContain("18 February 2027");
     expect(r.verdict).toBe("compliant_with_warnings");
@@ -290,7 +323,10 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
   });
 
   it("no BAT-1 finding for an out-of-scope portable battery", () => {
-    const p = passport({ parties, fields: { batteryCategory: field("portable"), batteryUniqueIdentifier: field("x") } });
+    const p = passport({
+      parties,
+      fields: { batteryCategory: field("portable"), batteryUniqueIdentifier: field("x") },
+    });
     const r = evaluateCompliance(p, t(), "battery");
     expect(r.critical.some((c) => c.ruleId === "BAT-1")).toBe(false);
   });
@@ -303,7 +339,9 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
 
   it("warns (unverifiable) when batteryCategory is unset", () => {
     const r = evaluateCompliance(passport({ parties }), t(), "battery");
-    expect(r.warnings.some((w) => w.ruleId === "BAT-1" && w.type === "unverifiable_conditional")).toBe(true);
+    expect(
+      r.warnings.some((w) => w.ruleId === "BAT-1" && w.type === "unverifiable_conditional"),
+    ).toBe(true);
   });
 });
 
@@ -323,10 +361,15 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
 describe.each(["detergents", "paints-coatings"])(
   "evaluateCompliance — no CHEM-1 for %s (REACH Art. 33 binds articles, not mixtures)",
   (category) => {
-    const t = () => template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
+    const t = () =>
+      template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
 
     it("no CHEM-1 warning when svhcSubstances is absent", () => {
-      const r = evaluateCompliance(passport({ parties: { manufacturer: party("DE") } }), t(), category);
+      const r = evaluateCompliance(
+        passport({ parties: { manufacturer: party("DE") } }),
+        t(),
+        category,
+      );
       expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
       expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
     });
@@ -349,7 +392,10 @@ describe.each(["detergents", "paints-coatings"])(
 // The dead key must NOT resurrect the rule: `chemicals` is not a category.
 it("reports chemicals as static-only — the category no longer exists", () => {
   const t = template([tf("svhcSubstances", { dataType: "array" }), tf("svhcSubstanceName")]);
-  const p = passport({ parties: { manufacturer: party("DE") }, fields: { svhcSubstances: field(["lead"]) } });
+  const p = passport({
+    parties: { manufacturer: party("DE") },
+    fields: { svhcSubstances: field(["lead"]) },
+  });
   const r = evaluateCompliance(p, t, "chemicals");
   expect(r.critical.some((c) => c.ruleId === "CHEM-1")).toBe(false);
   expect(r.warnings.some((w) => w.ruleId === "CHEM-1")).toBe(false);
@@ -357,20 +403,31 @@ it("reports chemicals as static-only — the category no longer exists", () => {
 
 // ── Construction CON-1 ────────────────────────────────────────────
 describe("evaluateCompliance — CON-1 DoP/DoC", () => {
-  const t = () => template([tf("harmonizedStandardReference"), tf("ceMarkingStatus", { dataType: "enum" })]);
+  const t = () =>
+    template([tf("harmonizedStandardReference"), tf("ceMarkingStatus", { dataType: "enum" })]);
 
   it("warns (cannot evaluate) when covered by a harmonised spec but CE status is absent", () => {
-    const p = passport({ parties: { manufacturer: party("DE") }, fields: { harmonizedStandardReference: field("EN 15804") } });
+    const p = passport({
+      parties: { manufacturer: party("DE") },
+      fields: { harmonizedStandardReference: field("EN 15804") },
+    });
     const r = evaluateCompliance(p, t(), "construction");
-    expect(r.warnings.some((w) => w.ruleId === "CON-1" && w.type === "unverifiable_conditional")).toBe(true);
+    expect(
+      r.warnings.some((w) => w.ruleId === "CON-1" && w.type === "unverifiable_conditional"),
+    ).toBe(true);
   });
 
   it("critical when a harmonised spec is referenced but CE marking is declared not_applicable", () => {
     const p = passport({
       parties: { manufacturer: party("DE") },
-      fields: { harmonizedStandardReference: field("EN 15804"), ceMarkingStatus: field("not_applicable") },
+      fields: {
+        harmonizedStandardReference: field("EN 15804"),
+        ceMarkingStatus: field("not_applicable"),
+      },
     });
-    const con1 = evaluateCompliance(p, t(), "construction").critical.find((c) => c.ruleId === "CON-1");
+    const con1 = evaluateCompliance(p, t(), "construction").critical.find(
+      (c) => c.ruleId === "CON-1",
+    );
     expect(con1?.target).toBe("ceMarkingStatus");
     // Reg 305/2011 Arts. 4(1), 8(2): 2024/3110's operator duties wait on an implementing act (its Art. 95(9)).
     expect(con1?.regulation).toBe("(EU) No 305/2011");
@@ -395,7 +452,11 @@ describe("evaluateCompliance — CON-1 DoP/DoC", () => {
 
 // ── CE-1 · CE-marking coherence ───────────────────────────────────
 describe("evaluateCompliance — CE-1 CE-marking coherence", () => {
-  const t = () => template([tf("ceMarkingStatus", { dataType: "enum" }), tf("ceMarking", { dataType: "boolean" })]);
+  const t = () =>
+    template([
+      tf("ceMarkingStatus", { dataType: "enum" }),
+      tf("ceMarking", { dataType: "boolean" }),
+    ]);
   const p = (fields: Record<string, PassportField>) =>
     passport({ parties: { manufacturer: party("DE") }, fields });
 
@@ -437,9 +498,19 @@ describe("evaluateCompliance — CE-1 CE-marking coherence", () => {
 describe("category coverage", () => {
   // The 13 live categories — mirrors tracepass-dpp-schemas/templates/*.json.
   const CATEGORIES = [
-    "battery", "construction", "detergents", "electronics", "fmcg",
-    "furniture", "jewelry", "packaging", "paints-coatings", "steel",
-    "textile", "toys", "tyres",
+    "battery",
+    "construction",
+    "detergents",
+    "electronics",
+    "fmcg",
+    "furniture",
+    "jewelry",
+    "packaging",
+    "paints-coatings",
+    "steel",
+    "textile",
+    "toys",
+    "tyres",
   ] as const;
 
   it("every live category has a party-role entry", () => {
@@ -512,22 +583,38 @@ describe("effectiveRequired — requiredBy resolution", () => {
 // requiredBy is resolved from each category's own sub-category field, not only
 // batteryCategory (vendor/subcategory.ts, mirrored from the platform).
 describe("evaluateCompliance — requiredBy outside batteries", () => {
-  const t = () => ({
-    ...template([
-      tf("detergentUserType"),
-      tf("ingredients", { dataType: "array", validation: { required: false, requiredBy: { consumer: "required", industrial_institutional: "conditional" } } } as Partial<TemplateField>),
-    ]),
-    category: "detergents",
-  }) as unknown as Template;
-  const missing = (r: ReturnType<typeof evaluateCompliance>) => r.critical.some((c) => c.target === "ingredients");
+  const t = () =>
+    ({
+      ...template([
+        tf("detergentUserType"),
+        tf("ingredients", {
+          dataType: "array",
+          validation: {
+            required: false,
+            requiredBy: { consumer: "required", industrial_institutional: "conditional" },
+          },
+        } as Partial<TemplateField>),
+      ]),
+      category: "detergents",
+    }) as unknown as Template;
+  const missing = (r: ReturnType<typeof evaluateCompliance>) =>
+    r.critical.some((c) => c.target === "ingredients");
 
   it("a consumer detergent must carry its substance list", () => {
-    const r = evaluateCompliance(passport({ fields: { detergentUserType: field("consumer") } }), t(), "detergents");
+    const r = evaluateCompliance(
+      passport({ fields: { detergentUserType: field("consumer") } }),
+      t(),
+      "detergents",
+    );
     expect(missing(r)).toBe(true);
   });
 
   it("an industrial and institutional detergent need not", () => {
-    const r = evaluateCompliance(passport({ fields: { detergentUserType: field("industrial_institutional") } }), t(), "detergents");
+    const r = evaluateCompliance(
+      passport({ fields: { detergentUserType: field("industrial_institutional") } }),
+      t(),
+      "detergents",
+    );
     expect(missing(r)).toBe(false);
   });
 });
@@ -601,7 +688,11 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
         }),
         ...extraFields,
       ],
-      regulation: { number: "(EU) 2023/1542", name: "Battery Regulation", effectiveDate: new Date() },
+      regulation: {
+        number: "(EU) 2023/1542",
+        name: "Battery Regulation",
+        effectiveDate: new Date(),
+      },
     } as unknown as Template;
   }
 
@@ -691,11 +782,18 @@ describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
   const imp1 = CONDITIONAL_RULES.battery.find((r) => r.id === "IMP-1")!;
   const tpl = { fields: [] } as unknown as Template;
   const passportWith = (parties: Partial<Record<string, Party>>) =>
-    ({ fields: {}, parties } as unknown as Passport);
-  const importer = (extra: Partial<Party> = {}): Party => ({ legalName: "Importer SRL", status: "approved", ...extra });
+    ({ fields: {}, parties }) as unknown as Passport;
+  const importer = (extra: Partial<Party> = {}): Party => ({
+    legalName: "Importer SRL",
+    status: "approved",
+    ...extra,
+  });
 
   it("warns when the importer places the battery and lacks trade name and address", () => {
-    const f = imp1.run(passportWith({ manufacturer: { legalName: "Maker", country: "CN" }, importer: importer() }), tpl);
+    const f = imp1.run(
+      passportWith({ manufacturer: { legalName: "Maker", country: "CN" }, importer: importer() }),
+      tpl,
+    );
     expect(f).toHaveLength(1);
     expect(f[0]!.severity).toBe("warning");
   });
@@ -709,12 +807,18 @@ describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
   });
 
   it("stays silent when an approved EU manufacturer is the operator", () => {
-    const p = passportWith({ manufacturer: { legalName: "Maker", country: "DE", status: "approved" }, importer: importer() });
+    const p = passportWith({
+      manufacturer: { legalName: "Maker", country: "DE", status: "approved" },
+      importer: importer(),
+    });
     expect(imp1.run(p, tpl)).toHaveLength(0);
   });
 
   it("treats a pending EU manufacturer as absent", () => {
-    const p = passportWith({ manufacturer: { legalName: "Maker", country: "DE", status: "pending_review" }, importer: importer() });
+    const p = passportWith({
+      manufacturer: { legalName: "Maker", country: "DE", status: "pending_review" },
+      importer: importer(),
+    });
     expect(imp1.run(p, tpl)).toHaveLength(1);
   });
 });

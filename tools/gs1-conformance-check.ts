@@ -96,14 +96,10 @@ async function main() {
   // 1. Self-description endpoint exists + carries the required
   //    metadata per spec § 6.5.
   checks.push(
-    await check(
-      "well-known.exists",
-      "GET /.well-known/gs1resolver returns 200",
-      async () => {
-        const r = await fetch(`${base}/.well-known/gs1resolver`);
-        return { pass: r.status === 200, detail: `status=${r.status}` };
-      },
-    ),
+    await check("well-known.exists", "GET /.well-known/gs1resolver returns 200", async () => {
+      const r = await fetch(`${base}/.well-known/gs1resolver`);
+      return { pass: r.status === 200, detail: `status=${r.status}` };
+    }),
   );
   checks.push(
     await check(
@@ -203,11 +199,7 @@ async function main() {
         const j = (await r.json()) as Record<string, unknown>;
         const ctx = j["@context"];
         const ctxOk = Array.isArray(ctx)
-          ? ctx.some(
-              (entry) =>
-                entry === "https://schema.org" ||
-                entry === "https://schema.org/",
-            )
+          ? ctx.some((entry) => entry === "https://schema.org" || entry === "https://schema.org/")
           : ctx === "https://schema.org" || ctx === "https://schema.org/";
         const typeOk = j["@type"] === "Product";
         const idOk = typeof j.identifier === "string";
@@ -264,32 +256,22 @@ async function main() {
   // 6. Vary header on the negotiated response — caches must split
   //    HTML vs JSON-LD by Accept.
   checks.push(
-    await check(
-      "passport.vary-header",
-      "JSON-LD response sets Vary: Accept",
-      async () => {
-        const r = await fetch(passportUrl, {
-          headers: { Accept: "application/ld+json" },
-        });
-        const vary = r.headers.get("vary") ?? "";
-        const ok = vary.toLowerCase().includes("accept");
-        return { pass: ok, detail: `vary=${vary}` };
-      },
-    ),
+    await check("passport.vary-header", "JSON-LD response sets Vary: Accept", async () => {
+      const r = await fetch(passportUrl, {
+        headers: { Accept: "application/ld+json" },
+      });
+      const vary = r.headers.get("vary") ?? "";
+      const ok = vary.toLowerCase().includes("accept");
+      return { pass: ok, detail: `vary=${vary}` };
+    }),
   );
 
   // 7. Unknown GTIN/serial returns 404 (not 200 with a fallback page).
   checks.push(
-    await check(
-      "passport.unknown-404",
-      "Unknown serial returns 404",
-      async () => {
-        const r = await fetch(
-          `${base}/01/${gtin}/21/__definitely-not-a-real-serial__`,
-        );
-        return { pass: r.status === 404, detail: `status=${r.status}` };
-      },
-    ),
+    await check("passport.unknown-404", "Unknown serial returns 404", async () => {
+      const r = await fetch(`${base}/01/${gtin}/21/__definitely-not-a-real-serial__`);
+      return { pass: r.status === 404, detail: `status=${r.status}` };
+    }),
   );
 
   const passed = checks.filter((c) => c.pass).length;

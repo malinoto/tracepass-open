@@ -261,10 +261,7 @@ export function parseDiQuery(
  * @param concatenated25P - the decoded `.25P` value, e.g. `"QCELMI12345"` or `"MI12345"`
  * @param serial           - the decoded `.S` value, if present (same as Iso15459Identifier.serial)
  */
-export function diQueryCandidateKeys(
-  concatenated25P: string,
-  serial?: string,
-): string[] {
+export function diQueryCandidateKeys(concatenated25P: string, serial?: string): string[] {
   if (!concatenated25P || !/^[A-Z]/.test(concatenated25P)) return [];
 
   const IAC_PATTERN = /^[A-Z][A-Z0-9]{0,2}$/;

@@ -63,15 +63,47 @@ const TZ_OFFSET = /^[+-]\d{2}:\d{2}$/;
  * new bizSteps — rare; the list has been stable since CBV 2.0 (2022).
  */
 const CBV_BIZSTEP_TOKENS = new Set([
-  "accepting", "arriving", "assembling", "collecting", "commissioning",
-  "consigning", "creating_class_instance", "cycle_counting",
-  "decommissioning", "departing", "destroying", "disassembling",
-  "dispensing", "encoding", "entering_exiting", "holding", "inspecting",
-  "installing", "killing", "loading", "other", "packing", "picking",
-  "receiving", "removing", "repackaging", "repairing", "replacing",
-  "reserving", "retail_selling", "sampling", "sensor_reporting",
-  "shipping", "staging_outbound", "stock_taking", "stocking", "storing",
-  "transporting", "unloading", "unpacking", "void_shipping",
+  "accepting",
+  "arriving",
+  "assembling",
+  "collecting",
+  "commissioning",
+  "consigning",
+  "creating_class_instance",
+  "cycle_counting",
+  "decommissioning",
+  "departing",
+  "destroying",
+  "disassembling",
+  "dispensing",
+  "encoding",
+  "entering_exiting",
+  "holding",
+  "inspecting",
+  "installing",
+  "killing",
+  "loading",
+  "other",
+  "packing",
+  "picking",
+  "receiving",
+  "removing",
+  "repackaging",
+  "repairing",
+  "replacing",
+  "reserving",
+  "retail_selling",
+  "sampling",
+  "sensor_reporting",
+  "shipping",
+  "staging_outbound",
+  "stock_taking",
+  "stocking",
+  "storing",
+  "transporting",
+  "unloading",
+  "unpacking",
+  "void_shipping",
 ]);
 
 /**
@@ -81,13 +113,38 @@ const CBV_BIZSTEP_TOKENS = new Set([
  * Source: GS1 CBV 2.0 Table 7-3 (disposition).
  */
 const CBV_DISPOSITION_TOKENS = new Set([
-  "active", "available", "completeness_inferred", "completeness_verified",
-  "conformant", "container_closed", "container_open", "damaged", "destroyed",
-  "dispensed", "disposed", "encoded", "expired", "in_progress", "in_transit",
-  "inactive", "mismatch_instance", "mismatch_class", "mismatch_quantity",
-  "needs_replacement", "no_pedigree_match", "non_conformant", "non_sellable_other",
-  "partially_dispensed", "recalled", "reserved", "retail_sold", "returned",
-  "sellable_accessible", "sellable_not_accessible", "stolen", "unavailable",
+  "active",
+  "available",
+  "completeness_inferred",
+  "completeness_verified",
+  "conformant",
+  "container_closed",
+  "container_open",
+  "damaged",
+  "destroyed",
+  "dispensed",
+  "disposed",
+  "encoded",
+  "expired",
+  "in_progress",
+  "in_transit",
+  "inactive",
+  "mismatch_instance",
+  "mismatch_class",
+  "mismatch_quantity",
+  "needs_replacement",
+  "no_pedigree_match",
+  "non_conformant",
+  "non_sellable_other",
+  "partially_dispensed",
+  "recalled",
+  "reserved",
+  "retail_sold",
+  "returned",
+  "sellable_accessible",
+  "sellable_not_accessible",
+  "stolen",
+  "unavailable",
   "unknown",
 ]);
 
@@ -114,11 +171,7 @@ function isObject(v: unknown): v is Record<string, unknown> {
  * Validate one EPCIS event object. Pushes issues onto `issues` with
  * paths rooted at `basePath`.
  */
-function validateEvent(
-  event: unknown,
-  basePath: string,
-  issues: EpcisValidationIssue[],
-): void {
+function validateEvent(event: unknown, basePath: string, issues: EpcisValidationIssue[]): void {
   if (!isObject(event)) {
     issues.push({ path: basePath, message: "event is not an object" });
     return;
@@ -139,10 +192,7 @@ function validateEvent(
     });
   }
 
-  if (
-    typeof event.eventTimeZoneOffset !== "string" ||
-    !TZ_OFFSET.test(event.eventTimeZoneOffset)
-  ) {
+  if (typeof event.eventTimeZoneOffset !== "string" || !TZ_OFFSET.test(event.eventTimeZoneOffset)) {
     issues.push({
       path: `${basePath}.eventTimeZoneOffset`,
       message: "missing or malformed eventTimeZoneOffset",
@@ -155,8 +205,7 @@ function validateEvent(
   //   - TransformationEvent           → `inputEPCList` / `outputEPCList`
   //   - AggregationEvent              → `childEPCs` (+ a `parentID`)
   // Omitting `childEPCs` here would reject every valid AggregationEvent.
-  const nonEmptyArray = (v: unknown): boolean =>
-    Array.isArray(v) && v.length > 0;
+  const nonEmptyArray = (v: unknown): boolean => Array.isArray(v) && v.length > 0;
   const hasObjects =
     nonEmptyArray(event.epcList) ||
     nonEmptyArray(event.outputEPCList) ||
@@ -180,8 +229,7 @@ function validateEvent(
   // topic — see the comment on CBV_BIZSTEP_TOKENS above for why this
   // is dropped here in the platform instead of waiting for OpenEPCIS
   // to find out.
-  if (event.bizStep !== undefined &&
-      !isCbvValueOrUri(event.bizStep, CBV_BIZSTEP_TOKENS)) {
+  if (event.bizStep !== undefined && !isCbvValueOrUri(event.bizStep, CBV_BIZSTEP_TOKENS)) {
     issues.push({
       path: `${basePath}.bizStep`,
       message:
@@ -191,8 +239,10 @@ function validateEvent(
         "OpenEPCIS will reject it.",
     });
   }
-  if (event.disposition !== undefined &&
-      !isCbvValueOrUri(event.disposition, CBV_DISPOSITION_TOKENS)) {
+  if (
+    event.disposition !== undefined &&
+    !isCbvValueOrUri(event.disposition, CBV_DISPOSITION_TOKENS)
+  ) {
     issues.push({
       path: `${basePath}.disposition`,
       message:

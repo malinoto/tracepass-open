@@ -25,8 +25,16 @@
 
 import type { Passport, Template } from "@tracepass/dpp-types";
 import { isEuEeaCountry } from "./eu-countries.js";
-import { ANNEX_XIII_4D_KEYS, BATTERY_FIELD_GATES, batteryFieldApplicability } from "./vendor/battery-applicability.js";
-import { COMPOSITION_FIELDS, SHARE_SUM_TOLERANCE, analyzeComposition } from "./vendor/composition-detail.js";
+import {
+  ANNEX_XIII_4D_KEYS,
+  BATTERY_FIELD_GATES,
+  batteryFieldApplicability,
+} from "./vendor/battery-applicability.js";
+import {
+  COMPOSITION_FIELDS,
+  SHARE_SUM_TOLERANCE,
+  analyzeComposition,
+} from "./vendor/composition-detail.js";
 import type { ComplianceFinding } from "./types.js";
 
 /** A field counts as "present" when it exists with a non-empty value. */
@@ -91,8 +99,7 @@ const CC1: ConditionalRule = {
     }
     if (isEuEeaCountry(mfr.country)) return []; // EU/EEA manufacturer satisfies Art. 4 directly.
 
-    const satisfied =
-      !!passport.parties?.importer || !!passport.parties?.authorisedRepresentative;
+    const satisfied = !!passport.parties?.importer || !!passport.parties?.authorisedRepresentative;
     if (satisfied) return [];
 
     return [
@@ -490,7 +497,8 @@ function scipFinding(target: string, trigger: string): ComplianceFinding {
 const CHEM1_ELECTRONICS: ConditionalRule = {
   id: "CHEM-1",
   run(passport) {
-    if (!svhcDeclared(passport, "svhcPresent") || hasValue(passport, "scipNotificationId")) return [];
+    if (!svhcDeclared(passport, "svhcPresent") || hasValue(passport, "scipNotificationId"))
+      return [];
     return [scipFinding("scipNotificationId", "The product is recorded as containing an SVHC")];
   },
 };
@@ -498,7 +506,11 @@ const CHEM1_ELECTRONICS: ConditionalRule = {
 const CHEM1_STEEL: ConditionalRule = {
   id: "CHEM-1",
   run(passport) {
-    if (!svhcDeclared(passport, "svhcPresent") || nonEmptyList(passport, "svhcCandidateListSubstances")) return [];
+    if (
+      !svhcDeclared(passport, "svhcPresent") ||
+      nonEmptyList(passport, "svhcCandidateListSubstances")
+    )
+      return [];
     return [
       {
         type: "conditional_missing",
@@ -517,7 +529,11 @@ const CHEM1_STEEL: ConditionalRule = {
 const CHEM1_FURNITURE: ConditionalRule = {
   id: "CHEM-1",
   run(passport) {
-    if (!nonEmptyList(passport, "svhcCandidateListSubstances") || hasValue(passport, "scipNotificationNumber")) return [];
+    if (
+      !nonEmptyList(passport, "svhcCandidateListSubstances") ||
+      hasValue(passport, "scipNotificationNumber")
+    )
+      return [];
     return [scipFinding("scipNotificationNumber", "Candidate List substances are recorded")];
   },
 };
@@ -679,7 +695,9 @@ const IMP1: ConditionalRule = {
     const missing = [
       missingTradeName ? "trade name or registered trade mark" : "",
       missingAddress ? "postal address" : "",
-    ].filter(Boolean).join(" and ");
+    ]
+      .filter(Boolean)
+      .join(" and ");
 
     return [
       {

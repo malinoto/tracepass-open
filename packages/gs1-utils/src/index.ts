@@ -14,11 +14,7 @@ export {
 // `calculateCheckDigit` exists in both gln.ts and gtin.ts with the same mod-10
 // algorithm but different length rules, so each is re-exported under its own
 // name rather than colliding at the barrel.
-export {
-  validateGln,
-  normalizeGln,
-  calculateCheckDigit as calculateGlnCheckDigit,
-} from "./gln.js";
+export { validateGln, normalizeGln, calculateCheckDigit as calculateGlnCheckDigit } from "./gln.js";
 
 export {
   validateGtin,

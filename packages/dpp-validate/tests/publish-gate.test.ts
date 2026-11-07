@@ -14,12 +14,17 @@ describe("checkPublishReady status rules", () => {
   });
 
   it("allows a suspended passport with republish (suspend is reversible)", () => {
-    expect(checkPublishReady(passport("suspended"), template, {}, { republish: true }).ready).toBe(true);
+    expect(checkPublishReady(passport("suspended"), template, {}, { republish: true }).ready).toBe(
+      true,
+    );
   });
 
   it("refuses archived and expired even with republish (archive is one-way)", () => {
     for (const status of ["archived", "expired"] as const) {
-      expect(checkPublishReady(passport(status), template, {}, { republish: true }).ready, status).toBe(false);
+      expect(
+        checkPublishReady(passport(status), template, {}, { republish: true }).ready,
+        status,
+      ).toBe(false);
     }
   });
 

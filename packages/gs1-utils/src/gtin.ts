@@ -68,11 +68,20 @@ export function normalizeGtin(input: string): string | null {
 
   let gtin14: string;
   switch (input.length) {
-    case 8:  gtin14 = "000000" + input; break;
-    case 12: gtin14 = "00"     + input; break;
-    case 13: gtin14 = "0"      + input; break;
-    case 14: gtin14 = input;            break;
-    default: return null;
+    case 8:
+      gtin14 = "000000" + input;
+      break;
+    case 12:
+      gtin14 = "00" + input;
+      break;
+    case 13:
+      gtin14 = "0" + input;
+      break;
+    case 14:
+      gtin14 = input;
+      break;
+    default:
+      return null;
   }
 
   return validateGtin(gtin14) ? gtin14 : null;

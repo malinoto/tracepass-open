@@ -19,7 +19,12 @@
  */
 
 const NAME_KEYS = ["name", "substance", "substanceName", "material"] as const;
-const SHARE_KEYS = ["weightPercent", "massPercent", "concentrationPercent", "sharePercent"] as const;
+const SHARE_KEYS = [
+  "weightPercent",
+  "massPercent",
+  "concentrationPercent",
+  "sharePercent",
+] as const;
 
 /** A general indication of chemistry rather than a material (FAQ §7.7's "LFP"). */
 const CHEMISTRY_LABEL =
@@ -62,7 +67,8 @@ function readShare(entry: unknown): number | undefined {
   const e = entry as Record<string, unknown>;
   for (const k of SHARE_KEYS) {
     const v = e[k];
-    const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+    const n =
+      typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
     if (Number.isFinite(n)) return n;
   }
   return undefined;

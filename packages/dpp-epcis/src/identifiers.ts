@@ -72,9 +72,7 @@ export function locationUri(gln: string | undefined | null): string | null {
  * `{ id: "<uri>" }`. Returns null when the GLN is missing or invalid
  * so the event builder can cleanly omit the key.
  */
-export function locationRef(
-  gln: string | undefined | null,
-): { id: string } | null {
+export function locationRef(gln: string | undefined | null): { id: string } | null {
   const uri = locationUri(gln);
   return uri ? { id: uri } : null;
 }
@@ -106,10 +104,7 @@ export function partyUri(gln: string | undefined | null): string | null {
  * discriminator (the source collection + its row id, or a synthetic
  * index for inline supplyChainEvents which have no own id).
  */
-export function buildEventId(
-  passportId: string,
-  discriminator: string,
-): string {
+export function buildEventId(passportId: string, discriminator: string): string {
   const safe = discriminator.replace(/[^a-zA-Z0-9._-]/g, "-");
   return `urn:tracepass:epcis:${passportId}:${safe}`;
 }

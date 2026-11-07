@@ -293,7 +293,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // wherever it applies; the gate only says where it must NOT be filled.
     promotes: false,
     fixHint: SBESS_FIX_HINT,
-    reason: "State of health (Art. 14) applies only to stationary battery energy storage systems, LMT, and EV batteries that have a battery management system (BMS). A plain industrial (>2 kWh) battery that is not a stationary storage system does not owe this data.",
+    reason:
+      "State of health (Art. 14) applies only to stationary battery energy storage systems, LMT, and EV batteries that have a battery management system (BMS). A plain industrial (>2 kWh) battery that is not a stationary storage system does not owe this data.",
     decide: (t) => {
       const a14 = art14Subject(t);
       // Either axis definitively false → field does not apply.
@@ -343,7 +344,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       // publish block (they were, for every EV and LMT battery).
     ],
     article: "Annex XIII 1(e) / Art. 8",
-    reason: "Recycled-content information does not apply to industrial batteries with exclusively external storage.",
+    reason:
+      "Recycled-content information does not apply to industrial batteries with exclusively external storage.",
     // Art. 8(1): from 18 Aug 2028 or 24 months after the methodology delegated
     // act enters into force, whichever is later (LMT: 18 Aug 2033). Before the
     // earliest date the duty cannot apply, so the gate cannot block.
@@ -361,7 +363,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // only to electric-vehicle (EV) batteries. Resolvable from batteryCategory.
     keys: ["stateOfCertifiedEnergy"],
     article: "Annex XIII 4(b) / Art. 14",
-    reason: "State of certified energy (SOCE) applies only to electric-vehicle (EV) batteries that have a battery management system (BMS).",
+    reason:
+      "State of certified energy (SOCE) applies only to electric-vehicle (EV) batteries that have a battery management system (BMS).",
     decide: (t) => {
       if (t.category === undefined) return "unknown";
       if (t.category !== "EV") return "not_applicable";
@@ -381,13 +384,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // non-promoting gates below.
     // NOTE: roundTripEfficiencyFade (DP 58) is "if applicable" in ALL THREE
     // guidance columns and therefore is NOT in this gate — it applies to EV too.
-    keys: [
-      "remainingCapacity",
-      "evolutionOfSelfDischargeRate",
-    ],
+    keys: ["remainingCapacity", "evolutionOfSelfDischargeRate"],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A",
     fixHint: SBESS_FIX_HINT,
-    reason: "Remaining capacity and self-discharge evolution (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    reason:
+      "Remaining capacity and self-discharge evolution (Annex VII Part A) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
     decide: sbessOrLmt,
   },
   {
@@ -402,7 +403,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     article: "Annex XIII 4(b) / Annex VII Part A(4)",
     promotes: false,
     fixHint: SBESS_FIX_HINT,
-    reason: "The initial self-discharge rate is the baseline for the self-discharge evolution of Annex VII Part A, which applies only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries. The Regulation does not require it as a value of its own.",
+    reason:
+      "The initial self-discharge rate is the baseline for the self-discharge evolution of Annex VII Part A, which applies only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries. The Regulation does not require it as a value of its own.",
     decide: sbessOrLmt,
   },
   {
@@ -419,7 +421,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part A(2), (3), (5)",
     promotes: false,
     fixHint: SBESS_FIX_HINT,
-    reason: "Remaining power capability, remaining round-trip efficiency and pack ohmic resistance (Annex VII Part A) are owed only where possible, and only for LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
+    reason:
+      "Remaining power capability, remaining round-trip efficiency and pack ohmic resistance (Annex VII Part A) are owed only where possible, and only for LMT batteries and stationary battery energy storage systems that have a battery management system (BMS), not EV or non-stationary industrial batteries.",
     decide: sbessOrLmt,
   },
   {
@@ -430,14 +433,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // battery that is not a stationary storage system does not owe this data.
     // The template already marks these notApplicable for EV via requiredBy;
     // the gate enforces that at the applicability-warning layer too.
-    keys: [
-      "capacityThroughput",
-      "energyThroughput",
-      "dateOfServiceEntry",
-    ],
+    keys: ["capacityThroughput", "energyThroughput", "dateOfServiceEntry"],
     article: "Annex XIII 4(b) / Art. 14 / Annex VII Part B",
     fixHint: SBESS_FIX_HINT,
-    reason: "Expected-lifetime parameters (Annex VII Part B) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS).",
+    reason:
+      "Expected-lifetime parameters (Annex VII Part B) apply only to LMT batteries and stationary battery energy storage systems that have a battery management system (BMS).",
     decide: sbessOrLmt,
   },
   {
@@ -475,7 +475,8 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "powerFade",
     ],
     article: "Annex XIII 1(j)/(n), Art. 10(1)",
-    reason: "These performance fields come from the Art. 10(1) performance document (rechargeable industrial >2 kWh, EV, LMT). EV and LMT are inherently rechargeable; the flag governs industrial_gt_2kwh only.",
+    reason:
+      "These performance fields come from the Art. 10(1) performance document (rechargeable industrial >2 kWh, EV, LMT). EV and LMT are inherently rechargeable; the flag governs industrial_gt_2kwh only.",
     decide: rechargeableOrEvLmt,
   },
   {
@@ -489,14 +490,11 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // non-rechargeable industrial battery). EV and LMT list them as required,
     // which is a gap there, never a block. EN 18223 has no member for them.
     // Note: 4(a)(iii) = dynamicEnergyRoundTripEfficiency is "if applicable" → not gated
-    keys: [
-      "dynamicRatedCapacity",
-      "dynamicPowerCapability",
-      "dynamicInternalResistance",
-    ],
+    keys: ["dynamicRatedCapacity", "dynamicPowerCapability", "dynamicInternalResistance"],
     article: "Annex XIII 4(a)(i/ii/iv), Art. 10(1)",
     promotes: false,
-    reason: "The dynamic performance values (Annex XIII 4(a)) apply to rechargeable batteries (industrial >2 kWh, EV, LMT). At placing on the market they equal the rated capacity, original power capability and initial internal resistance; these fields carry the values after a change in status.",
+    reason:
+      "The dynamic performance values (Annex XIII 4(a)) apply to rechargeable batteries (industrial >2 kWh, EV, LMT). At placing on the market they equal the rated capacity, original power capability and initial internal resistance; these fields carry the values after a change in status.",
     decide: rechargeableOrEvLmt,
   },
   {

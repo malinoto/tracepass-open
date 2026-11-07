@@ -33,9 +33,7 @@ export interface CountableField {
  * share of non-empty fields — a field that's pending_review or flagged is
  * *known about* but not yet confirmed, so it doesn't count as done.
  */
-export function derivePassportCounts(
-  fields: Record<string, CountableField>
-): PassportFieldsRollup {
+export function derivePassportCounts(fields: Record<string, CountableField>): PassportFieldsRollup {
   const values = Object.values(fields);
   const total = values.length;
   const fieldCounts: FieldCounts = {
@@ -45,7 +43,6 @@ export function derivePassportCounts(
     approved: values.filter((f) => f.status === "approved").length,
     flagged: values.filter((f) => f.status === "flagged").length,
   };
-  const completionPercentage =
-    total > 0 ? Math.round((fieldCounts.approved / total) * 100) : 0;
+  const completionPercentage = total > 0 ? Math.round((fieldCounts.approved / total) * 100) : 0;
   return { fieldCounts, completionPercentage };
 }

@@ -25,10 +25,7 @@
  *   - else            → "compliant"
  */
 
-export type ComplianceVerdict =
-  | "compliant"
-  | "compliant_with_warnings"
-  | "incomplete";
+export type ComplianceVerdict = "compliant" | "compliant_with_warnings" | "incomplete";
 
 /** Did per-category conditional rules actually run for this passport's
  *  category, or does no binding conditional exist yet (static-only)? */

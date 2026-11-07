@@ -56,11 +56,7 @@ export interface PublishCheck {
   blockerType?: "hard" | "gap" | "conditional";
 }
 
-const PUBLISHABLE_STATUSES = new Set<Passport["status"]>([
-  "draft",
-  "in_review",
-  "approved",
-]);
+const PUBLISHABLE_STATUSES = new Set<Passport["status"]>(["draft", "in_review", "approved"]);
 
 /**
  * Resolves whether a template field is effectively required for a specific
@@ -344,8 +340,11 @@ export function checkPublishReady(
     };
   }
 
-  const { missingFields, unapprovedFields, conditionalMissingFields } =
-    evaluateFieldRequirements(passport, template, applicabilityMap);
+  const { missingFields, unapprovedFields, conditionalMissingFields } = evaluateFieldRequirements(
+    passport,
+    template,
+    applicabilityMap,
+  );
 
   if (
     missingFields.length === 0 &&

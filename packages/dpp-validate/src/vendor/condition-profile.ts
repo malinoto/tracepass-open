@@ -27,14 +27,16 @@ import type { Passport, ConditionProfile } from "@tracepass/dpp-types";
  *   per-flag audit arrays) to the `ConditionProfile` shape with `audit: []`.
  * - If neither is set, return an empty object.
  */
-export function resolveConditionProfile(passport: Pick<Passport, "conditionProfile" | "batteryProfile">): ConditionProfile {
+export function resolveConditionProfile(
+  passport: Pick<Passport, "conditionProfile" | "batteryProfile">,
+): ConditionProfile {
   if (passport.conditionProfile !== undefined) {
     return passport.conditionProfile;
   }
   const bp = passport.batteryProfile;
   if (!bp) return {};
   const out: ConditionProfile = {};
-  for (const [key, flag] of Object.entries(bp) as [string, typeof bp[keyof typeof bp]][]) {
+  for (const [key, flag] of Object.entries(bp) as [string, (typeof bp)[keyof typeof bp]][]) {
     if (flag != null) {
       out[key] = {
         value: flag.value,

@@ -17,10 +17,7 @@ function field(value: unknown, status: "approved" | "pending_review" = "approved
   return { value, status, source: "manual" } as PassportField;
 }
 
-function makePassport(
-  category: string,
-  overrides: Partial<Passport> = {},
-): Passport {
+function makePassport(category: string, overrides: Partial<Passport> = {}): Passport {
   return {
     status: "published",
     fields: {
@@ -35,7 +32,10 @@ function makeTemplate(): Template {
     category: "battery",
     fields: [
       { key: "batteryCategory", label: { en: "Battery Category" } },
-      { key: "numberOfFullEquivalentChargingCycles", label: { en: "Full Equivalent Charging Cycles" } },
+      {
+        key: "numberOfFullEquivalentChargingCycles",
+        label: { en: "Full Equivalent Charging Cycles" },
+      },
       { key: "numberOfChargingEvents", label: { en: "Charging Events" } },
       { key: "negativeEvents", label: { en: "Negative Events" } },
       { key: "temperatureConditionsHistorical", label: { en: "Temperature History" } },

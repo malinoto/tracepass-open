@@ -163,11 +163,7 @@ describe("Digital Link", () => {
 describe("language", () => {
   it("parses an Accept-Language header into q-ordered tags, preserving the region", () => {
     // Sorted by q descending; the region subtag is kept verbatim (de-DE, not de).
-    expect(parseAcceptLanguage("en;q=0.8,de-DE,de;q=0.9")).toEqual([
-      "de-DE",
-      "de",
-      "en",
-    ]);
+    expect(parseAcceptLanguage("en;q=0.8,de-DE,de;q=0.9")).toEqual(["de-DE", "de", "en"]);
   });
 
   it("detects the top language from a Request's Accept-Language header", () => {

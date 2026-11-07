@@ -19,10 +19,7 @@ export type {
 
 export { isEuEeaCountry } from "./eu-countries.js";
 
-export {
-  CONDITIONAL_RULES,
-  CROSS_CUTTING_RULES,
-} from "./rules.js";
+export { CONDITIONAL_RULES, CROSS_CUTTING_RULES } from "./rules.js";
 export type { ConditionalRule } from "./rules.js";
 
 // The platform's own gates (vendor/, mirrored and hash-checked by
@@ -44,6 +41,11 @@ export { checkPublishReady } from "./vendor/publish-gate.js";
 export { effectiveRequired, effectiveRequiredForBattery } from "./vendor/publish-gate.js";
 export { isInScopeBatteryCategory } from "./vendor/battery-scope.js";
 export { isFieldAbsent, isFieldValueAbsent } from "./vendor/field-emptiness.js";
-export { getPartyRoles, isRequiredRole, allRolesForCategory, CATEGORY_PARTY_ROLES } from "./vendor/required-roles.js";
+export {
+  getPartyRoles,
+  isRequiredRole,
+  allRolesForCategory,
+  CATEGORY_PARTY_ROLES,
+} from "./vendor/required-roles.js";
 export type { CategoryKey } from "./vendor/required-roles.js";
 export { derivePassportCounts } from "./vendor/counts.js";

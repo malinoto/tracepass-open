@@ -56,7 +56,9 @@ function registry(source) {
   const marker = "CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {";
   const start = source.indexOf(marker);
   if (start === -1) {
-    throw new Error(`CONDITIONAL_RULES not found in ${RULES_TS} — the shape changed; fix this script.`);
+    throw new Error(
+      `CONDITIONAL_RULES not found in ${RULES_TS} — the shape changed; fix this script.`,
+    );
   }
   const body = source.slice(start + marker.length).split("\n};")[0];
 
@@ -69,7 +71,9 @@ function registry(source) {
       .filter(Boolean);
   }
   if (Object.keys(out).length === 0) {
-    throw new Error("CONDITIONAL_RULES parsed to zero categories — refusing to write an empty surface.");
+    throw new Error(
+      "CONDITIONAL_RULES parsed to zero categories — refusing to write an empty surface.",
+    );
   }
   return out;
 }

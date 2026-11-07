@@ -77,7 +77,11 @@ describe("dynamic Annex XIII 4(a) values", () => {
       conditionProfile: { rechargeable: { value: true, status: "approved" } },
     } as unknown as Passport;
     const map = categoryFieldApplicability(passport, "battery", NOW);
-    for (const key of ["dynamicRatedCapacity", "dynamicPowerCapability", "dynamicInternalResistance"]) {
+    for (const key of [
+      "dynamicRatedCapacity",
+      "dynamicPowerCapability",
+      "dynamicInternalResistance",
+    ]) {
       expect(map[key], key).toBeUndefined();
     }
     expect(map.powerFade).toBe("applies");

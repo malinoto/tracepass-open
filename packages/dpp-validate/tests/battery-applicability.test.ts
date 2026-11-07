@@ -11,7 +11,9 @@ function field(value: unknown): PassportField {
 }
 
 type FlagInput = boolean | { value: boolean; status: "approved" | "pending_review" };
-function buildProfile(p?: Partial<Record<keyof BatteryProfile, FlagInput>>): BatteryProfile | undefined {
+function buildProfile(
+  p?: Partial<Record<keyof BatteryProfile, FlagInput>>,
+): BatteryProfile | undefined {
   if (!p) return undefined;
   const out: BatteryProfile = {};
   for (const [k, v] of Object.entries(p)) {
@@ -36,7 +38,11 @@ function batteryPassport(
   } as unknown as Passport;
 }
 
-function gateResult(category: string | undefined, key: string, profile?: Partial<Record<keyof BatteryProfile, FlagInput>>) {
+function gateResult(
+  category: string | undefined,
+  key: string,
+  profile?: Partial<Record<keyof BatteryProfile, FlagInput>>,
+) {
   const map = batteryFieldApplicability(batteryPassport(category, profile), "battery");
   return map[key] ?? "applies"; // ungated fields not in the map
 }
@@ -56,11 +62,15 @@ describe("stateOfHealth gate (dpp-validate)", () => {
   });
 
   it("not_applicable on industrial non-SBESS (Art. 14 does not apply)", () => {
-    expect(gateResult("industrial_gt_2kwh", "stateOfHealth", { hasBMS: true, isStationaryBess: false })).toBe("not_applicable");
+    expect(
+      gateResult("industrial_gt_2kwh", "stateOfHealth", { hasBMS: true, isStationaryBess: false }),
+    ).toBe("not_applicable");
   });
 
   it("applies on industrial SBESS with BMS", () => {
-    expect(gateResult("industrial_gt_2kwh", "stateOfHealth", { hasBMS: true, isStationaryBess: true })).toBe("applies");
+    expect(
+      gateResult("industrial_gt_2kwh", "stateOfHealth", { hasBMS: true, isStationaryBess: true }),
+    ).toBe("applies");
   });
 
   it("unknown when industrial SBESS unset", () => {
@@ -68,10 +78,12 @@ describe("stateOfHealth gate (dpp-validate)", () => {
   });
 
   it("unknown when industrial SBESS pending_review", () => {
-    expect(gateResult("industrial_gt_2kwh", "stateOfHealth", {
-      hasBMS: true,
-      isStationaryBess: { value: true, status: "pending_review" },
-    })).toBe("unknown");
+    expect(
+      gateResult("industrial_gt_2kwh", "stateOfHealth", {
+        hasBMS: true,
+        isStationaryBess: { value: true, status: "pending_review" },
+      }),
+    ).toBe("unknown");
   });
 
   it("not_applicable on portable", () => {
@@ -110,7 +122,9 @@ describe("Part A cluster gate (Annex VII Part A)", () => {
 
   it("not_applicable on non-SBESS industrial", () => {
     for (const key of PART_A_KEYS) {
-      expect(gateResult("industrial_gt_2kwh", key, { isStationaryBess: false })).toBe("not_applicable");
+      expect(gateResult("industrial_gt_2kwh", key, { isStationaryBess: false })).toBe(
+        "not_applicable",
+      );
     }
   });
 
@@ -159,7 +173,9 @@ describe("Part B cluster gate (Annex VII Part B — expected lifetime)", () => {
 
   it("not_applicable on non-SBESS industrial", () => {
     for (const key of PART_B_KEYS) {
-      expect(gateResult("industrial_gt_2kwh", key, { isStationaryBess: false })).toBe("not_applicable");
+      expect(gateResult("industrial_gt_2kwh", key, { isStationaryBess: false })).toBe(
+        "not_applicable",
+      );
     }
   });
 
@@ -216,19 +232,28 @@ describe("recycled content — Art. 8(1) external-storage exemption is industria
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-02T00:00:00Z"));
     for (const cat of ["EV", "LMT", "industrial_gt_2kwh"]) {
-      const m = batteryFieldApplicability(batteryPassport(cat, { externalStorageOnly: true }), "battery");
+      const m = batteryFieldApplicability(
+        batteryPassport(cat, { externalStorageOnly: true }),
+        "battery",
+      );
       expect(m.recycledContentCobalt).toBe("unknown");
     }
   });
   it("exempts an industrial battery with exclusively external storage", () => {
     afterRecycledContentStart();
-    const m = batteryFieldApplicability(batteryPassport("industrial_gt_2kwh", { externalStorageOnly: true }), "battery");
+    const m = batteryFieldApplicability(
+      batteryPassport("industrial_gt_2kwh", { externalStorageOnly: true }),
+      "battery",
+    );
     expect(m.recycledContentCobalt).toBe("not_applicable");
   });
   it("never exempts EV or LMT batteries", () => {
     afterRecycledContentStart();
     for (const cat of ["EV", "LMT"]) {
-      const m = batteryFieldApplicability(batteryPassport(cat, { externalStorageOnly: true }), "battery");
+      const m = batteryFieldApplicability(
+        batteryPassport(cat, { externalStorageOnly: true }),
+        "battery",
+      );
       expect(m.recycledContentCobalt).toBe("applies");
       // The pre/post-consumer split is a voluntary breakdown, never gated.
       expect(m.postConsumerRecycledLithiumShare).toBeUndefined();

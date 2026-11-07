@@ -205,9 +205,7 @@ export function buildOwnershipObjectEvent(
     epcList: [productEpc],
     action: "OBSERVE",
     bizStep:
-      transfer.reason === "recycling"
-        ? CBV_BIZSTEP_URI.decommissioning
-        : CBV_BIZSTEP_URI.shipping,
+      transfer.reason === "recycling" ? CBV_BIZSTEP_URI.decommissioning : CBV_BIZSTEP_URI.shipping,
     disposition: mapOwnershipReasonDisposition(transfer.reason),
     "tracepass:ownershipReason": transfer.reason,
   };

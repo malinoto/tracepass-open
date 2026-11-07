@@ -39,10 +39,14 @@ const AI_SERIAL = "21";
  */
 function padToGtin14(gtin: string): string {
   switch (gtin.length) {
-    case 8:  return "000000" + gtin;
-    case 12: return "00"     + gtin;
-    case 13: return "0"      + gtin;
-    default: return gtin; // 14 digits: unchanged. Other lengths: pass through.
+    case 8:
+      return "000000" + gtin;
+    case 12:
+      return "00" + gtin;
+    case 13:
+      return "0" + gtin;
+    default:
+      return gtin; // 14 digits: unchanged. Other lengths: pass through.
   }
 }
 
@@ -54,11 +58,7 @@ function padToGtin14(gtin: string): string {
  * @param serialNumber - product serial number (percent-encoded if needed)
  * @returns full URI, e.g. "https://id.tracepass.eu/01/01234567890128/21/ABC-123"
  */
-export function buildDigitalLinkUri(
-  domain: string,
-  gtin: string,
-  serialNumber: string,
-): string {
+export function buildDigitalLinkUri(domain: string, gtin: string, serialNumber: string): string {
   const cleanDomain = domain.replace(/\/+$/, "");
   const gtin14 = padToGtin14(gtin);
   const encodedSerial = encodeURIComponent(serialNumber);
@@ -72,15 +72,11 @@ export function buildDigitalLinkUri(
  *
  * @returns parsed components or null if the URI doesn't match the expected pattern
  */
-export function parseDigitalLinkUri(
-  uri: string,
-): { gtin: string; serialNumber: string } | null {
+export function parseDigitalLinkUri(uri: string): { gtin: string; serialNumber: string } | null {
   // Strip scheme + authority to get the path.
   // Handles https://domain/01/…, http://domain/01/…, or bare path /01/…
   // Accepts any of the four valid GTIN lengths in the path segment.
-  const match = uri.match(
-    /\/01\/(\d{8}|\d{12}|\d{13}|\d{14})\/21\/([^/?#]+)/,
-  );
+  const match = uri.match(/\/01\/(\d{8}|\d{12}|\d{13}|\d{14})\/21\/([^/?#]+)/);
   if (!match) return null;
 
   return {
@@ -94,9 +90,6 @@ export function parseDigitalLinkUri(
  * Returns e.g. ["01", "01234567890128", "21", "ABC-123"]
  * GTIN is normalised to 14 digits.
  */
-export function buildDigitalLinkSegments(
-  gtin: string,
-  serialNumber: string,
-): string[] {
+export function buildDigitalLinkSegments(gtin: string, serialNumber: string): string[] {
   return [AI_GTIN, padToGtin14(gtin), AI_SERIAL, encodeURIComponent(serialNumber)];
 }

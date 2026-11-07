@@ -32,9 +32,7 @@ import type {
 import { normalizeGtin } from "@tracepass/gs1-utils";
 
 /** Validation result — either a normalised identifier or an error list. */
-export type ValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; errors: string[] };
+export type ValidationResult<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
 /** Options for {@link validateProductIdentifier}. */
 export interface ValidateProductOptions {
@@ -353,11 +351,16 @@ export function validateProductIdentifier(
   }
 
   switch (id.scheme) {
-    case "gs1":      return validateGs1(id);
-    case "iso15459": return validateIso15459(id);
-    case "iec61406": return validateIec61406(id);
-    case "did":      return validateDid(id);
-    case "doi":      return validateDoiId(id);
+    case "gs1":
+      return validateGs1(id);
+    case "iso15459":
+      return validateIso15459(id);
+    case "iec61406":
+      return validateIec61406(id);
+    case "did":
+      return validateDid(id);
+    case "doi":
+      return validateDoiId(id);
     default: {
       // Exhaustiveness guard — a new scheme added to the union without a
       // validator here becomes a compile error on the line below.

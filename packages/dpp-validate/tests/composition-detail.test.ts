@@ -24,18 +24,28 @@ function passport(fields: Record<string, unknown>): Passport {
 // default case is an in-scope EV battery evaluated after that day.
 const AFTER = new Date("2027-03-01T00:00:00Z");
 const BEFORE = new Date("2026-11-05T00:00:00Z");
-const findings = (fields: Record<string, unknown>, now: Date = AFTER, category: string | null = "EV") =>
+const findings = (
+  fields: Record<string, unknown>,
+  now: Date = AFTER,
+  category: string | null = "EV",
+) =>
   BAT_VAL.run(
     passport(category === null ? fields : { batteryCategory: category, ...fields }),
     template,
     { now },
   ).filter((f) =>
-    ["cathodeActiveMaterials", "anodeActiveMaterials", "electrolyteComposition"].includes(f.target ?? ""),
+    ["cathodeActiveMaterials", "anodeActiveMaterials", "electrolyteComposition"].includes(
+      f.target ?? "",
+    ),
   );
 
 // The shape the published sample passports carry (scripts/seed-sample-passport.ts).
 const SAMPLE_CATHODE = [
-  { substance: "Lithium Nickel Cobalt Aluminum Oxide", casNumber: "193214-24-3", massPercent: 32.5 },
+  {
+    substance: "Lithium Nickel Cobalt Aluminum Oxide",
+    casNumber: "193214-24-3",
+    massPercent: 32.5,
+  },
   { substance: "Nickel", casNumber: "7440-02-0", massPercent: 24.5 },
   { substance: "Cobalt", casNumber: "7440-48-4", massPercent: 4.8 },
   { substance: "Aluminum", casNumber: "7429-90-5", massPercent: 1.1 },
@@ -49,30 +59,53 @@ describe("analyzeComposition", () => {
   });
 
   it("a bare chemistry label names no material", () => {
-    expect(analyzeComposition(["LFP"])).toMatchObject({ entries: 1, materials: 0, chemistryLabels: 1 });
-    expect(analyzeComposition([{ name: "NMC811" }])).toMatchObject({ materials: 0, chemistryLabels: 1 });
-    expect(analyzeComposition([{ name: "Li-ion" }])).toMatchObject({ materials: 0, chemistryLabels: 1 });
+    expect(analyzeComposition(["LFP"])).toMatchObject({
+      entries: 1,
+      materials: 0,
+      chemistryLabels: 1,
+    });
+    expect(analyzeComposition([{ name: "NMC811" }])).toMatchObject({
+      materials: 0,
+      chemistryLabels: 1,
+    });
+    expect(analyzeComposition([{ name: "Li-ion" }])).toMatchObject({
+      materials: 0,
+      chemistryLabels: 1,
+    });
   });
 
   it("accepts every key alias in use", () => {
-    expect(analyzeComposition(SAMPLE_CATHODE)).toMatchObject({ entries: 4, materials: 4, withShare: 4 });
+    expect(analyzeComposition(SAMPLE_CATHODE)).toMatchObject({
+      entries: 4,
+      materials: 4,
+      withShare: 4,
+    });
     expect(analyzeComposition([{ name: "Graphite", weightPercent: 18.2 }])?.materials).toBe(1);
     // The canonical shape (battery.json entryProperties).
     expect(
-      analyzeComposition([{ substanceName: "Graphite", casNumber: "7782-42-5", massPercent: 18.2 }])?.withShare,
+      analyzeComposition([{ substanceName: "Graphite", casNumber: "7782-42-5", massPercent: 18.2 }])
+        ?.withShare,
     ).toBe(1);
     expect(analyzeComposition([{ material: "Graphite", sharePercent: "18.2" }])?.withShare).toBe(1);
-    expect(analyzeComposition([{ substanceName: "LiPF6", concentrationPercent: 1.5 }])?.withShare).toBe(1);
+    expect(
+      analyzeComposition([{ substanceName: "LiPF6", concentrationPercent: 1.5 }])?.withShare,
+    ).toBe(1);
   });
 
   it("names materials without shares (shares are optional)", () => {
-    expect(analyzeComposition([{ substanceName: "Graphite", casNumber: "7782-42-5" }, "Silicon"]))
-      .toMatchObject({ materials: 2, withShare: 0 });
+    expect(
+      analyzeComposition([{ substanceName: "Graphite", casNumber: "7782-42-5" }, "Silicon"]),
+    ).toMatchObject({ materials: 2, withShare: 0 });
   });
 
   it("counts shares outside (0, 100] and sums the valid ones", () => {
-    expect(analyzeComposition([{ name: "A", weightPercent: 0 }, { name: "B", weightPercent: 140 }, { name: "C", weightPercent: 60 }]))
-      .toMatchObject({ materials: 3, withShare: 1, outOfRange: 2, shareSum: 60 });
+    expect(
+      analyzeComposition([
+        { name: "A", weightPercent: 0 },
+        { name: "B", weightPercent: 140 },
+        { name: "C", weightPercent: 60 },
+      ]),
+    ).toMatchObject({ materials: 3, withShare: 1, outOfRange: 2, shareSum: 60 });
   });
 });
 
@@ -105,8 +138,17 @@ describe("BAT-VAL: detailed composition", () => {
   });
 
   it("named materials without any share pass: Annex XIII 2(a) asks for materials, not quantities", () => {
-    expect(findings({ anodeActiveMaterials: [{ name: "Graphite" }, { name: "Silicon" }] })).toEqual([]);
-    expect(findings({ electrolyteComposition: [{ substanceName: "LiPF6", casNumber: "21324-40-3" }, "ethylene carbonate"] })).toEqual([]);
+    expect(findings({ anodeActiveMaterials: [{ name: "Graphite" }, { name: "Silicon" }] })).toEqual(
+      [],
+    );
+    expect(
+      findings({
+        electrolyteComposition: [
+          { substanceName: "LiPF6", casNumber: "21324-40-3" },
+          "ethylene carbonate",
+        ],
+      }),
+    ).toEqual([]);
   });
 
   it("the sample passports' composition passes", () => {
@@ -114,21 +156,39 @@ describe("BAT-VAL: detailed composition", () => {
   });
 
   it("a mix of entries with and without shares passes", () => {
-    expect(findings({ electrolyteComposition: [{ name: "LiPF6", weightPercent: 1.5 }, "ethylene carbonate"] })).toEqual([]);
+    expect(
+      findings({
+        electrolyteComposition: [{ name: "LiPF6", weightPercent: 1.5 }, "ethylene carbonate"],
+      }),
+    ).toEqual([]);
   });
 
   it("a share outside 0–100 % is a warning", () => {
-    const f = findings({ cathodeActiveMaterials: [{ name: "A", weightPercent: 140 }, { name: "B" }] });
+    const f = findings({
+      cathodeActiveMaterials: [{ name: "A", weightPercent: 140 }, { name: "B" }],
+    });
     expect(f.map((x) => x.severity)).toEqual(["warning"]);
   });
 
   it("shares adding up to more than 100 % is a warning", () => {
-    const f = findings({ cathodeActiveMaterials: [{ name: "A", weightPercent: 70 }, { name: "B", weightPercent: 40 }] });
+    const f = findings({
+      cathodeActiveMaterials: [
+        { name: "A", weightPercent: 70 },
+        { name: "B", weightPercent: 40 },
+      ],
+    });
     expect(f.some((x) => x.severity === "warning" && /more than 100/.test(x.why))).toBe(true);
   });
 
   it("rounding within half a point is tolerated", () => {
-    expect(findings({ cathodeActiveMaterials: [{ name: "A", weightPercent: 60.3 }, { name: "B", weightPercent: 40.1 }] })).toEqual([]);
+    expect(
+      findings({
+        cathodeActiveMaterials: [
+          { name: "A", weightPercent: 60.3 },
+          { name: "B", weightPercent: 40.1 },
+        ],
+      }),
+    ).toEqual([]);
   });
 
   it("an absent field produces nothing (the required-field check owns absence)", () => {
