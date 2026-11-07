@@ -85,7 +85,7 @@ function isValidDidSegment(seg: string): boolean {
   let i = 0;
   while (i < seg.length) {
     const c = seg[i];
-    if (/[A-Za-z0-9._\-]/.test(c)) {
+    if (/[A-Za-z0-9._-]/.test(c)) {
       i++;
     } else if (
       c === "%" &&

@@ -103,7 +103,7 @@ function isCbvValueOrUri(value: unknown, tokens: Set<string>): boolean {
   // URI check — accept anything that looks like `scheme:path`.
   // Matches `https://ref.gs1.org/cbv/BizStep-shipping`,
   // `urn:epcglobal:cbv:bizstep:shipping`, `tracepass:cbv/bizstep/smelting`.
-  return /^[a-z][a-z0-9+.\-]*:\S+$/i.test(value);
+  return /^[a-z][a-z0-9+.-]*:\S+$/i.test(value);
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {
