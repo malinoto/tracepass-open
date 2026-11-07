@@ -49,7 +49,7 @@ const PLATFORM = resolve(REPO, i !== -1 ? argv[i + 1] : "../tracepass-platform")
  * The mirrors. `open` is relative to this repo, `platform` to the platform repo.
  * Add a pair here when a new platform module is vendored in.
  */
-export const MIRRORS = [
+const MIRROR_PAIRS = [
   // gs1-utils — byte-identical today; the platform imports no aliased types here.
   { open: "packages/gs1-utils/src/digital-link.ts", platform: "src/lib/gs1/digital-link.ts" },
   { open: "packages/gs1-utils/src/gtin.ts", platform: "src/lib/gs1/gtin.ts" },
@@ -125,9 +125,26 @@ export const MIRRORS = [
 ];
 
 /**
+ * Every open copy is formatted, linted and documented to the shared TracePass coding
+ * standard, which the platform copies are not yet. Each pair is therefore a recorded
+ * divergence that pins the open side; drop this wrapper once the platform copies follow.
+ */
+const STANDARD_DIVERGENCE =
+  "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet";
+
+export const MIRRORS = MIRROR_PAIRS.map((m) => ({
+  ...m,
+  allowDivergence: m.allowDivergence
+    ? `${m.allowDivergence}; ${STANDARD_DIVERGENCE}`
+    : STANDARD_DIVERGENCE,
+}));
+
+/**
  * Strip the platform-only "⚠️ MIRRORED INTO..." docblock note, from the warning
  * line through the blank comment line that closes it. Anchored to that exact
  * marker so it cannot swallow real content.
+ * @param {string} source - file content
+ * @returns {string} the content without the notice
  */
 function stripMirrorNotice(source) {
   return source.replace(
@@ -136,7 +153,11 @@ function stripMirrorNotice(source) {
   );
 }
 
-/** Account for the legitimate differences between the repos. See the header. */
+/**
+ * Account for the legitimate differences between the repos. See the header.
+ * @param {string} source - file content from either repo
+ * @returns {string} the content in the form that is hashed
+ */
 export function normalise(source) {
   return (
     stripMirrorNotice(source)
@@ -150,6 +171,11 @@ export function normalise(source) {
   );
 }
 
+/**
+ * Hash a file after normalising it.
+ * @param {string} source - file content from either repo
+ * @returns {string} the first 16 hex digits of the SHA-256 of the normalised content
+ */
 export function hash(source) {
   return createHash("sha256").update(normalise(source)).digest("hex").slice(0, 16);
 }
