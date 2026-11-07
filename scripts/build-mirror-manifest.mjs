@@ -21,8 +21,9 @@
  * NORMALISATION. These files are not byte-identical by design, and `normalise()`
  * accounts for exactly two differences and nothing else:
  *
- *   1. Import specifiers — the platform imports through its `@/` path alias,
- *      this repo through the published package names.
+ *   1. Import specifiers — the platform imports through its `@/` path alias
+ *      (and each GS1 helper from its own file), this repo through the published
+ *      package names.
  *   2. The ⚠️ MIRRORED-INTO block in each platform file's docblock. That note
  *      tells a platform developer to regenerate this manifest; it is meaningless
  *      to a consumer of the public package, so it is stripped rather than copied
@@ -49,7 +50,7 @@ const PLATFORM = resolve(REPO, i !== -1 ? argv[i + 1] : "../tracepass-platform")
  * The mirrors. `open` is relative to this repo, `platform` to the platform repo.
  * Add a pair here when a new platform module is vendored in.
  */
-const MIRROR_PAIRS = [
+export const MIRRORS = [
   // gs1-utils — byte-identical today; the platform imports no aliased types here.
   { open: "packages/gs1-utils/src/digital-link.ts", platform: "src/lib/gs1/digital-link.ts" },
   { open: "packages/gs1-utils/src/gtin.ts", platform: "src/lib/gs1/gtin.ts" },
@@ -106,38 +107,12 @@ const MIRROR_PAIRS = [
   // uri.ts and passport.ts are normalized to identical (import-path change only).
   { open: "packages/dpp-identifiers/src/uri.ts", platform: "src/lib/identifiers/uri.ts" },
   { open: "packages/dpp-identifiers/src/passport.ts", platform: "src/lib/identifiers/passport.ts" },
-  // product.ts and operator.ts have a remaining import-style difference:
-  // the platform imports relative siblings (./gtin, ./gln) while the open
-  // package imports the published @tracepass/gs1-utils. The normaliser handles
-  // the @/lib/... alias but not bare relative imports that refer to a sibling
-  // package. Recorded as allowDivergence until either the normaliser is extended
-  // or the open package re-exports the functions locally.
-  {
-    open: "packages/dpp-identifiers/src/product.ts",
-    platform: "src/lib/identifiers/product.ts",
-    allowDivergence: "platform uses relative ./gtin import; open uses @tracepass/gs1-utils",
-  },
-  {
-    open: "packages/dpp-identifiers/src/operator.ts",
-    platform: "src/lib/identifiers/operator.ts",
-    allowDivergence: "platform uses relative ./gln import; open uses @tracepass/gs1-utils",
-  },
+  // product.ts and operator.ts import the GS1 helpers: the platform from its own
+  // files (./gtin, ./gln), this repo from the published @tracepass/gs1-utils.
+  // normalise() collapses that one specifier pair, so they match like the rest.
+  { open: "packages/dpp-identifiers/src/product.ts", platform: "src/lib/identifiers/product.ts" },
+  { open: "packages/dpp-identifiers/src/operator.ts", platform: "src/lib/identifiers/operator.ts" },
 ];
-
-/**
- * Every open copy is formatted, linted and documented to the shared TracePass coding
- * standard, which the platform copies are not yet. Each pair is therefore a recorded
- * divergence that pins the open side; drop this wrapper once the platform copies follow.
- */
-const STANDARD_DIVERGENCE =
-  "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet";
-
-export const MIRRORS = MIRROR_PAIRS.map((m) => ({
-  ...m,
-  allowDivergence: m.allowDivergence
-    ? `${m.allowDivergence}; ${STANDARD_DIVERGENCE}`
-    : STANDARD_DIVERGENCE,
-}));
 
 /**
  * Strip the platform-only "⚠️ MIRRORED INTO..." docblock note, from the warning
@@ -162,6 +137,10 @@ export function normalise(source) {
   return (
     stripMirrorNotice(source)
       .replace(/from\s+"@\/types"/g, 'from "@tracepass/dpp-types"')
+      // The GS1 helpers: the platform imports each through its own file
+      // (`@/lib/gs1/gtin`), this repo through the published package that
+      // re-exports them all. Same functions, so collapse the platform side.
+      .replace(/from\s+"@\/lib\/gs1\/[\w-]+"/g, 'from "@tracepass/gs1-utils"')
       // A vendored module importing a sibling: the platform resolves it through
       // its `@/lib/...` alias, this repo through a relative ESM specifier. Both
       // name the same file, so collapse each to its basename.

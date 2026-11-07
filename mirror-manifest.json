@@ -4,128 +4,92 @@
     {
       "open": "packages/gs1-utils/src/digital-link.ts",
       "platform": "src/lib/gs1/digital-link.ts",
-      "platformHash": "142708eda3775424",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "d8e97cd347a2e8aa"
+      "platformHash": "d8e97cd347a2e8aa"
     },
     {
       "open": "packages/gs1-utils/src/gtin.ts",
       "platform": "src/lib/gs1/gtin.ts",
-      "platformHash": "68e142af9d237323",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "9217b90ed6ae6e5f"
+      "platformHash": "9217b90ed6ae6e5f"
     },
     {
       "open": "packages/gs1-utils/src/gln.ts",
       "platform": "src/lib/gs1/gln.ts",
-      "platformHash": "222da63e4621827f",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "f036f583e7b30d12"
+      "platformHash": "f036f583e7b30d12"
     },
     {
       "open": "packages/gs1-utils/src/language.ts",
       "platform": "src/lib/gs1/language.ts",
-      "platformHash": "9dc4eff5f4ccf0c5",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "efcd1d82ad3db92e"
+      "platformHash": "efcd1d82ad3db92e"
     },
     {
       "open": "packages/gs1-utils/src/qr.ts",
       "platform": "src/lib/gs1/qr.ts",
-      "platformHash": "f2754e53e3e604f5",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "010607569649732e"
+      "platformHash": "010607569649732e"
     },
     {
       "open": "packages/dpp-validate/src/vendor/required-roles.ts",
       "platform": "src/lib/parties/required-roles.ts",
-      "platformHash": "771cc26d8d38aa8c",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "aa509378fcafdfff"
+      "platformHash": "aa509378fcafdfff"
     },
     {
       "open": "packages/dpp-validate/src/vendor/counts.ts",
       "platform": "src/lib/passports/counts.ts",
-      "platformHash": "449de6a2b461e528",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "c2f3c2ce33748b29"
+      "platformHash": "c2f3c2ce33748b29"
     },
     {
       "open": "packages/dpp-validate/src/vendor/publish-gate.ts",
       "platform": "src/lib/passports/publish-gate.ts",
-      "platformHash": "cd7672021b767ab9",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "25748807712870bc"
+      "platformHash": "25748807712870bc"
     },
     {
       "open": "packages/dpp-validate/src/vendor/battery-scope.ts",
       "platform": "src/lib/compliance/battery-scope.ts",
-      "platformHash": "a012bef9a0c14266",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "2c07306db3f87557"
+      "platformHash": "2c07306db3f87557"
     },
     {
       "open": "packages/dpp-validate/src/vendor/composition-detail.ts",
       "platform": "src/lib/compliance/composition-detail.ts",
-      "platformHash": "12cd922cc3f83de2",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "9ba17a3d2511e51e"
+      "platformHash": "9ba17a3d2511e51e"
     },
     {
       "open": "packages/dpp-validate/src/vendor/field-emptiness.ts",
       "platform": "src/lib/passports/field-emptiness.ts",
-      "platformHash": "6fb72034bf97a240",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "0d60b6c074e3211a"
+      "platformHash": "0d60b6c074e3211a"
     },
     {
       "open": "packages/dpp-validate/src/vendor/subcategory.ts",
       "platform": "src/lib/passports/subcategory.ts",
-      "platformHash": "aa7793a2ec95759c",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "c417fe3e97c1ca40"
+      "platformHash": "c417fe3e97c1ca40"
     },
     {
       "open": "packages/dpp-validate/src/vendor/condition-profile.ts",
       "platform": "src/lib/compliance/condition-profile.ts",
-      "platformHash": "600e83a73d910c2e",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "d82285f40d6424dd"
+      "platformHash": "d82285f40d6424dd"
     },
     {
       "open": "packages/dpp-validate/src/vendor/battery-applicability.ts",
       "platform": "src/lib/compliance/battery-applicability.ts",
-      "platformHash": "f2889f42e0f8a5a6",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "592709f5bb0d0551"
+      "platformHash": "592709f5bb0d0551"
     },
     {
       "open": "packages/dpp-identifiers/src/uri.ts",
       "platform": "src/lib/identifiers/uri.ts",
-      "platformHash": "79e8b941c05b3c54",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "a75fbb3f874365cc"
+      "platformHash": "a75fbb3f874365cc"
     },
     {
       "open": "packages/dpp-identifiers/src/passport.ts",
       "platform": "src/lib/identifiers/passport.ts",
-      "platformHash": "8e8768a0f798bf70",
-      "allowDivergence": "open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "7054f59b1149692a"
+      "platformHash": "7054f59b1149692a"
     },
     {
       "open": "packages/dpp-identifiers/src/product.ts",
       "platform": "src/lib/identifiers/product.ts",
-      "platformHash": "e86f27cbb9d8f2a4",
-      "allowDivergence": "platform uses relative ./gtin import; open uses @tracepass/gs1-utils; open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "1b433d0e62c9facf"
+      "platformHash": "1b433d0e62c9facf"
     },
     {
       "open": "packages/dpp-identifiers/src/operator.ts",
       "platform": "src/lib/identifiers/operator.ts",
-      "platformHash": "cac6cccf872408c9",
-      "allowDivergence": "platform uses relative ./gln import; open uses @tracepass/gs1-utils; open copy follows the shared coding standard (formatting, JSDoc, lint fixes); platform copy does not yet",
-      "openHash": "eaae08938a3a6598"
+      "platformHash": "eaae08938a3a6598"
     }
   ]
 }
