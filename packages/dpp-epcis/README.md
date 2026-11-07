@@ -31,12 +31,12 @@ import {
 } from "@tracepass/dpp-epcis";
 
 const event = buildCommissioningEvent(
-  new Date("2026-01-01T00:00:00Z"),        // publishedAt
-  "urn:epc:id:sgtin:0952012.345678.SN1",   // product EPC
+  new Date("2026-01-01T00:00:00Z"), // publishedAt
+  "urn:epc:id:sgtin:0952012.345678.SN1", // product EPC
   "passport-1",
   {
-    facilityGln:  "5012345678900",          // GS1 AI 414 — physical location
-    operatorGln:  "5012345000000",          // GS1 AI 417 — owning economic operator
+    facilityGln: "5012345678900", // GS1 AI 414 — physical location
+    operatorGln: "5012345000000", // GS1 AI 417 — owning economic operator
   },
 );
 
@@ -48,7 +48,7 @@ const doc = {
   epcisBody: { eventList: [event] },
 };
 
-validateEpcisDocument(doc).valid;  // true
+validateEpcisDocument(doc).valid; // true
 
 // Build a party URI (PGLN / AI 417) independently
 partyUri("5012345000000");
@@ -60,6 +60,7 @@ CBV_SOURCE_DEST_TYPE_URI.owning_party;
 ```
 
 The commissioning event carries:
+
 - `bizLocation`: GS1 AI 414 SGLN URI for the **facility** (`facilityGln`)
 - `destinationList`: GS1 AI 417 PGLN URI for the **economic operator** (`operatorGln`),
   typed as `CBV_SOURCE_DEST_TYPE_URI.owning_party`
@@ -84,6 +85,7 @@ buildCommissioningEvent(date, epc, passportId, { operatorGln: "5012345000000" })
 ```
 
 **Which GLN goes where:**
+
 - `facilityGln` is for a **physical site** (factory, warehouse, specific location) — emitted
   as GS1 AI 414 SGLN in `bizLocation`.
 - `operatorGln` is for a **legal entity / economic operator** (the manufacturer as a company)

@@ -113,8 +113,8 @@ describe("BAT-VAL: detailed composition", () => {
   it('["LFP"] is critical', () => {
     const f = findings({ cathodeActiveMaterials: ["LFP"] });
     expect(f).toHaveLength(1);
-    expect(f[0].severity).toBe("critical");
-    expect(f[0].article).toBe("Annex XIII 2(a)");
+    expect(f[0]?.severity).toBe("critical");
+    expect(f[0]?.article).toBe("Annex XIII 2(a)");
   });
 
   it("a chemistry label in object form is critical", () => {

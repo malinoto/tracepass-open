@@ -252,7 +252,7 @@ export function evaluateFieldRequirements(
     // "unknown" (absent or pending_review FLAG) → skip here; the rules engine
     // emits an unverifiable_conditional warning via BAT-APP but never blocks.
     if (isGateRequired(tf, category, applicabilityMap)) {
-      if (isFieldAbsent(f)) {
+      if (f === undefined || isFieldAbsent(f)) {
         conditionalMissingFields.push(tf.key);
       } else if (f.status !== "approved") {
         // Field is present but not yet confirmed — same hard block as absent,
@@ -274,7 +274,7 @@ export function evaluateFieldRequirements(
     // Shared helper: `[]` stays a valid answer ("none apply"), while a
     // whitespace-only string now counts as missing — the inline `=== ""` it
     // replaces let "   " satisfy a required field and publish a blank.
-    if (isFieldAbsent(f)) {
+    if (f === undefined || isFieldAbsent(f)) {
       missingFields.push(tf.key);
     } else if (f.status !== "approved") {
       unapprovedFields.push(tf.key);

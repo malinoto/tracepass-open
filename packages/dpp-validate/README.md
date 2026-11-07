@@ -26,11 +26,11 @@ import { evaluateCompliance } from "@tracepass/dpp-validate";
 
 const result = evaluateCompliance(passport, batteryTemplate, "battery");
 
-result.verdict;               // "compliant" | "compliant_with_warnings" | "incomplete"
-result.critical;              // findings that block
-result.warnings;              // findings that don't
-result.conditionalCoverage;   // "evaluated" | "static-only"
-result.checkedRules;          // ["static:required-fields", ..., "BAT-1", "CC-1"]
+result.verdict; // "compliant" | "compliant_with_warnings" | "incomplete"
+result.critical; // findings that block
+result.warnings; // findings that don't
+result.conditionalCoverage; // "evaluated" | "static-only"
+result.checkedRules; // ["static:required-fields", ..., "BAT-1", "CC-1"]
 ```
 
 ## Three tiers
@@ -71,7 +71,7 @@ pass:
   "target": "batteryCategory",
   "article": "Art. 77(1)",
   "why": "Battery category isn't set, so battery-passport scope couldn't be evaluated.",
-  "fix": "Set batteryCategory. Portable and SLI batteries are out of scope; LMT, EV and industrial >2 kWh require a battery passport."
+  "fix": "Set batteryCategory. Portable and SLI batteries are out of scope; LMT, EV and industrial >2 kWh require a battery passport.",
 }
 ```
 
@@ -81,8 +81,8 @@ legally-required field.
 
 ## Not legal advice
 
-A `compliant` verdict means *this passport satisfies the rules encoded here* — not *this
-product may be placed on the market*. Delegated acts are still landing. Verify against
+A `compliant` verdict means _this passport satisfies the rules encoded here_ — not _this
+product may be placed on the market_. Delegated acts are still landing. Verify against
 [EUR-Lex](https://eur-lex.europa.eu).
 
 ## Battery identifier requirement (BAT-1)

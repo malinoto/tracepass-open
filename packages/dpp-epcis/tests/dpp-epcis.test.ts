@@ -74,8 +74,8 @@ describe("buildCommissioningEvent", () => {
     expect(ev.destinationList).toBeDefined();
     const dest = ev.destinationList as Array<Record<string, string>>;
     expect(dest).toHaveLength(1);
-    expect(dest[0].type).toBe(CBV_SOURCE_DEST_TYPE_URI.owning_party);
-    expect(dest[0].destination).toContain("id.gs1.org/417/");
+    expect(dest[0]?.type).toBe(CBV_SOURCE_DEST_TYPE_URI.owning_party);
+    expect(dest[0]?.destination).toContain("id.gs1.org/417/");
   });
 
   it("returns null when the timestamp is missing", () => {

@@ -37,13 +37,22 @@ id is; the passport logic doesn't need to care.
 schemes EN 18219 defines for Digital Product Passports:
 
 ```ts
-import type { ProductIdentifier, OperatorIdentifier, FacilityIdentifier } from "@tracepass/dpp-types";
+import type {
+  ProductIdentifier,
+  OperatorIdentifier,
+  FacilityIdentifier,
+} from "@tracepass/dpp-types";
 
 // GS1 Digital Link (scheme 1)
 const gs1: ProductIdentifier = { scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-001" };
 
 // ISO/IEC 15459 — any issuing agency (scheme 1)
-const iso: ProductIdentifier = { scheme: "iso15459", issuingAgencyCode: "MH", primaryId: "BAT-001", raw: "MHBAT-001" };
+const iso: ProductIdentifier = {
+  scheme: "iso15459",
+  issuingAgencyCode: "MH",
+  primaryId: "BAT-001",
+  raw: "MHBAT-001",
+};
 
 // IEC 61406 digital nameplate URL (scheme 2)
 const iec: ProductIdentifier = { scheme: "iec61406", uri: "https://id.example.com/asset/42" };
@@ -74,7 +83,7 @@ Validation is in [`@tracepass/dpp-identifiers`](../dpp-identifiers).
 type-checks without a cast.
 
 Optional values are `T | null`, not omitted. A field with no unit carries `unit: null`; a
-bound that doesn't apply carries `max: null`. Treat `null` as *no constraint* — and take
+bound that doesn't apply carries `max: null`. Treat `null` as _no constraint_ — and take
 care not to coerce it to `0`.
 
 ## Related

@@ -19,23 +19,27 @@ npm install @tracepass/gs1-utils
 
 ```ts
 import {
-  validateGtin, normalizeGtin, toGtin14,
-  validateGln, normalizeGln,
-  buildDigitalLinkUri, parseDigitalLinkUri,
+  validateGtin,
+  normalizeGtin,
+  toGtin14,
+  validateGln,
+  normalizeGln,
+  buildDigitalLinkUri,
+  parseDigitalLinkUri,
 } from "@tracepass/gs1-utils";
 
-validateGtin("09520123456788");   // true — mod-10 check digit, must be 14 digits
-validateGtin("09520123456780");   // false
+validateGtin("09520123456788"); // true — mod-10 check digit, must be 14 digits
+validateGtin("09520123456780"); // false
 
-validateGln("5012345678900");     // true — 13 digits, mod-10
+validateGln("5012345678900"); // true — 13 digits, mod-10
 
 // Normalise any GTIN length to 14 digits (left-pad then check check digit)
-normalizeGtin("5449000000996");   // "05449000000996" — GTIN-13 → GTIN-14
-normalizeGtin("012345678905");    // "00012345678905" — GTIN-12 → GTIN-14
-normalizeGtin("96385074");        // "00000096385074" — GTIN-8 → GTIN-14
-normalizeGtin("05449000000997");  // null — bad check digit
+normalizeGtin("5449000000996"); // "05449000000996" — GTIN-13 → GTIN-14
+normalizeGtin("012345678905"); // "00012345678905" — GTIN-12 → GTIN-14
+normalizeGtin("96385074"); // "00000096385074" — GTIN-8 → GTIN-14
+normalizeGtin("05449000000997"); // null — bad check digit
 
-toGtin14("5449000000996");        // alias for normalizeGtin
+toGtin14("5449000000996"); // alias for normalizeGtin
 
 buildDigitalLinkUri("id.example.com", "5449000000996", "SN-1");
 // "https://id.example.com/01/05449000000996/21/SN-1"  — GTIN-13 auto-normalised to 14

@@ -15,7 +15,7 @@ export function parseAcceptLanguage(header: string): string[] {
   return header
     .split(",")
     .map((part) => {
-      const [lang, qPart] = part.trim().split(";");
+      const [lang = "", qPart] = part.trim().split(";");
       const q = qPart ? parseFloat(qPart.replace(/^\s*q\s*=\s*/, "")) : 1;
       return { lang: lang.trim(), q: isNaN(q) ? 0 : q };
     })
@@ -41,7 +41,7 @@ export function detectLanguage(request: Request): string {
   const langParam = url.searchParams.get("lang");
 
   if (langParam && /^[a-z]{2}(-[A-Z]{2})?$/.test(langParam)) {
-    return langParam.split("-")[0];
+    return langParam.slice(0, 2); // the pattern above: two letters, then optionally -XX
   }
 
   const acceptLanguage = request.headers.get("accept-language");
@@ -49,7 +49,8 @@ export function detectLanguage(request: Request): string {
     const langs = parseAcceptLanguage(acceptLanguage);
     if (langs.length > 0) {
       // Return just the 2-letter code
-      return langs[0].split("-")[0].toLowerCase();
+      const best = langs[0] ?? "";
+      return best.replace(/-[\s\S]*$/, "").toLowerCase();
     }
   }
 

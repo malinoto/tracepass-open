@@ -56,7 +56,7 @@ function hasValue(passport: Passport, key: string): boolean {
  * @returns the field value, or undefined when absent or empty
  */
 function valueOf(passport: Passport, key: string): unknown {
-  return hasValue(passport, key) ? passport.fields[key].value : undefined;
+  return hasValue(passport, key) ? fieldAt(passport, key)?.value : undefined;
 }
 
 /**
@@ -243,14 +243,15 @@ const BAT_APP: ConditionalRule = {
     const applicability = categoryFieldApplicability(passport, "battery");
     for (const gate of BATTERY_FIELD_GATES) {
       // Every key in a gate shares the gate's verdict; sample the first.
-      const verdict = applicability[gate.keys[0]];
+      const firstKey = gate.keys[0];
+      const verdict = firstKey === undefined ? undefined : applicability[firstKey];
       if (verdict === "applies") continue;
 
       for (const key of gate.keys) {
         // A value the platform wrote (a template or product default, a derived
         // value) is not the user's entry: telling them to remove it, or to
         // classify the battery to justify it, points at data they never gave.
-        const filled = hasValue(passport, key) && passport.fields[key].source !== "system";
+        const filled = hasValue(passport, key) && fieldAt(passport, key)?.source !== "system";
         const label = fieldLabel(key, template);
         if (verdict === "not_applicable" && filled) {
           findings.push({
@@ -347,7 +348,7 @@ const BAT_INSERVICE: ConditionalRule = {
  */
 function numberOf(passport: Passport, key: string): number | undefined {
   if (!hasValue(passport, key)) return undefined;
-  const raw = passport.fields[key].value;
+  const raw = fieldAt(passport, key)?.value;
   const n = typeof raw === "number" ? raw : Number(raw);
   return Number.isFinite(n) ? n : undefined;
 }

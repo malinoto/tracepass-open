@@ -96,7 +96,7 @@ describe("evaluateCompliance — static tier", () => {
     const p = passport({ fields: { a: field("x", "pending_review") } });
     const r = evaluateCompliance(p, t, "furniture");
     expect(r.verdict).toBe("incomplete");
-    expect(r.critical[0].type).toBe("unapproved_field");
+    expect(r.critical[0]?.type).toBe("unapproved_field");
   });
 
   it("incomplete on a missing required party (battery needs manufacturer/recycler/PRO)", () => {
@@ -803,7 +803,7 @@ describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
       tpl,
     );
     expect(f).toHaveLength(1);
-    expect(f[0].severity).toBe("warning");
+    expect(f[0]?.severity).toBe("warning");
   });
 
   it("stays silent once trade name and postal address are set", () => {

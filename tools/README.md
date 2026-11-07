@@ -6,7 +6,7 @@ they live here so anyone can clone the repo and check our claims themselves.
 ## `gs1-conformance-check.ts`
 
 Exercises the functional requirements of the **GS1 Digital Link v2.0** spec against
-a *live* resolver over plain HTTP. It imports nothing from TracePass — only
+a _live_ resolver over plain HTTP. It imports nothing from TracePass — only
 `node:fs` and `node:path` — so it runs against any resolver, ours or a competitor's.
 
 ```bash

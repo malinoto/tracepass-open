@@ -153,7 +153,8 @@ export function identifierOwnUrl(id: ProductIdentifier): string | null {
  */
 export function parseResolverPath(path: string): ProductIdentifier | null {
   // Normalise: strip leading slash, strip query/fragment
-  const clean = path.replace(/^\//, "").split("?")[0].split("#")[0];
+  // Everything before the first "?" or "#" (the query and fragment are dropped).
+  const clean = path.replace(/^\//, "").replace(/[?#][\s\S]*$/, "");
   if (!clean) return null;
 
   const segments = clean.split("/");
@@ -166,10 +167,11 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
   if (/^\d+$/.test(first)) {
     // Only handle the /01/<gtin>/21/<serial> form we emit.
     if (first !== "01" || segments.length < 4 || segments[2] !== "21") return null;
-    const gtin = segments[1];
+    const [, gtin, , rawSerial] = segments;
+    if (gtin === undefined || rawSerial === undefined) return null; // length checked above
     let serial: string;
     try {
-      serial = decodeURIComponent(segments[3]);
+      serial = decodeURIComponent(rawSerial);
     } catch {
       // Malformed percent-sequence (e.g. bare %) → treat as not found, not 500.
       return null;
@@ -186,7 +188,7 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
     let serial: string | undefined;
     try {
       issuingAgencyCode = decodeURIComponent(first).toUpperCase();
-      primaryId = decodeURIComponent(segments[1]);
+      primaryId = decodeURIComponent(segments[1] ?? ""); // length checked above
       serial = segments[2] ? decodeURIComponent(segments[2]) : undefined;
     } catch {
       return null;
