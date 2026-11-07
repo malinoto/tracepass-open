@@ -48,6 +48,9 @@ export type LocalizedString = { en: string } & Partial<Record<Locale, string>>;
 
 // ─── Template (the field specification for a product category) ──────────────
 
+/**
+ * The kind of value a template field holds.
+ */
 export type FieldDataType =
   | "string"
   | "number"
@@ -87,6 +90,9 @@ export interface RegulationObligation {
   quote: string;
 }
 
+/**
+ * The instrument and article that mandate a template field.
+ */
 export interface RegulationRef {
   /** CELEX id of the instrument, e.g. `"32023R1542"`. */
   instrument?: string | null;
@@ -189,11 +195,17 @@ export interface FieldValidation {
   pattern?: string | null;
 }
 
+/**
+ * One allowed value of an enumerated template field, with its localised label.
+ */
 export interface EnumOption {
   value: string;
   label: LocalizedString;
 }
 
+/**
+ * One field of a category template: its key, labels, type, validation and legal basis.
+ */
 export interface TemplateField {
   /** Stable machine key, unique within the template. */
   key: string;
@@ -288,11 +300,20 @@ export interface Template {
 
 // ─── Passport (a filled-in template for one physical product) ───────────────
 
+/**
+ * Where a passport field value came from.
+ */
 export type FieldSource =
   "manual" | "ai_suggested" | "ai_approved" | "reference_db" | "supplier" | "system" | "company";
 
+/**
+ * The review state of a passport field.
+ */
 export type FieldStatus = "empty" | "pending_review" | "approved" | "flagged" | "rejected";
 
+/**
+ * The lifecycle state of a passport.
+ */
 export type PassportStatus =
   "draft" | "in_review" | "approved" | "published" | "suspended" | "expired" | "archived";
 
@@ -329,6 +350,9 @@ export type PartyRole =
 /** Parties do not have a `flagged` state, unlike fields. */
 export type PartyStatus = "approved" | "pending_review";
 
+/**
+ * An economic operator or other party named on a passport.
+ */
 export interface Party {
   /** GS1 Global Location Number — 13 digits with a mod-10 check digit. */
   gln?: string;
@@ -560,6 +584,9 @@ export type FacilityIdentifier =
   | { scheme: "did"; did: string }
   | { scheme: "doi"; doi: string };
 
+/**
+ * A filled-in template for one physical product: its identifier, fields, parties and lifecycle status.
+ */
 export interface Passport {
   /**
    * Scheme-tagged product identifier per EN 18219.
@@ -605,9 +632,15 @@ export interface Passport {
 
 // ─── Traceability events ───────────────────────────────────────────────────
 
+/**
+ * The kind of service work a service event records.
+ */
 export type ServiceEventType =
   "repair" | "warranty_claim" | "maintenance" | "inspection" | "replacement" | "recall";
 
+/**
+ * The progress of a service event.
+ */
 export type ServiceEventStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
 
 /**
@@ -633,6 +666,9 @@ export interface ServiceEvent {
   createdAt: string | Date;
 }
 
+/**
+ * The state of an ownership transfer; only `accepted` becomes an EPCIS event.
+ */
 export type OwnershipTransferStatus = "pending" | "accepted" | "rejected" | "expired";
 
 /** A change of custody. Only an `accepted` transfer becomes an EPCIS event. */

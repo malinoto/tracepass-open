@@ -10,6 +10,9 @@
 
 import type { FieldStatus } from "@tracepass/dpp-types";
 
+/**
+ * How many of a passport's fields are in each status.
+ */
 export interface FieldCounts {
   total: number;
   empty: number;
@@ -18,6 +21,9 @@ export interface FieldCounts {
   flagged: number;
 }
 
+/**
+ * The field counts of a passport and its completion percentage.
+ */
 export interface PassportFieldsRollup {
   fieldCounts: FieldCounts;
   completionPercentage: number;
@@ -31,7 +37,9 @@ export interface CountableField {
 /**
  * completionPercentage is explicitly the share of approved fields, not the
  * share of non-empty fields — a field that's pending_review or flagged is
- * *known about* but not yet confirmed, so it doesn't count as done.
+ * known about* but not yet confirmed, so it doesn't count as done.
+ * @param fields - the passport fields keyed by field key
+ * @returns the field counts and completion percentage
  */
 export function derivePassportCounts(fields: Record<string, CountableField>): PassportFieldsRollup {
   const values = Object.values(fields);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { analyzeComposition } from "../src/vendor/composition-detail.js";
-import { CONDITIONAL_RULES } from "../src/rules.js";
+import { ruleById } from "./helpers.js";
 import type { Passport, Template } from "@tracepass/dpp-types";
 
 /**
@@ -10,7 +10,7 @@ import type { Passport, Template } from "@tracepass/dpp-types";
  * both halves: a chemistry label is critical (in-scope battery, from 18 Feb 2027),
  * named materials without shares pass.
  */
-const BAT_VAL = CONDITIONAL_RULES.battery.find((r) => r.id === "BAT-VAL")!;
+const BAT_VAL = ruleById("battery", "BAT-VAL");
 const template = { category: "battery", fields: [] } as unknown as Template;
 function passport(fields: Record<string, unknown>): Passport {
   return {
@@ -177,7 +177,7 @@ describe("BAT-VAL: detailed composition", () => {
         { name: "B", weightPercent: 40 },
       ],
     });
-    expect(f.some((x) => x.severity === "warning" && /more than 100/.test(x.why))).toBe(true);
+    expect(f.some((x) => x.severity === "warning" && x.why.includes("more than 100"))).toBe(true);
   });
 
   it("rounding within half a point is tolerated", () => {

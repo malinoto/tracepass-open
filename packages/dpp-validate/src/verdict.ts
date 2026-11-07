@@ -20,7 +20,8 @@
  * from the template field's own `regulationRef`.
  */
 
-import type { Passport, Template, TemplateField } from "@tracepass/dpp-types";
+import type { Passport, Regulation, Template, TemplateField } from "@tracepass/dpp-types";
+import { fieldAt } from "./vendor/field-emptiness.js";
 import { evaluateFieldRequirements } from "./vendor/publish-gate.js";
 import { getPartyRoles } from "./vendor/required-roles.js";
 import { derivePassportCounts } from "./vendor/counts.js";
@@ -33,10 +34,30 @@ import type {
   ConditionalCoverage,
 } from "./types.js";
 
-/** Validate a filled value against a template field's format rules.
+/** The part of a template that names its regulation, with `regulation` allowed to be missing. */
+interface MaybeRegulated {
+  regulation?: Regulation;
+}
+
+/**
+ * The regulation number a template cites. A template written by hand may leave
+ * `regulation` out even though the type requires it.
+ * @param template - the template to read
+ * @returns the regulation number, or undefined when the template has none
+ */
+function regulationNumber(template: MaybeRegulated): string | undefined {
+  return template.regulation?.number;
+}
+
+/**
+ * Validate a filled value against a template field's format rules.
  *  Returns a finding (warning) on mismatch, or null when clean. Empty
  *  values are NOT checked here — presence is the static field check's
- *  job; this only judges the SHAPE of values that ARE set. */
+ *  job; this only judges the SHAPE of values that ARE set.
+ * @param tf - the template field with its format rules
+ * @param value - the value to check
+ * @returns a warning finding on mismatch, otherwise null
+ */
 function checkFieldFormat(tf: TemplateField, value: unknown): ComplianceFinding | null {
   const v = tf.validation;
   const base = {
@@ -71,15 +92,15 @@ function checkFieldFormat(tf: TemplateField, value: unknown): ComplianceFinding 
     if (v.minLength != null && value.length < v.minLength) {
       return {
         ...base,
-        why: `${tf.key} is shorter than the required ${v.minLength} characters.`,
-        fix: `Provide at least ${v.minLength} characters.`,
+        why: `${tf.key} is shorter than the required ${String(v.minLength)} characters.`,
+        fix: `Provide at least ${String(v.minLength)} characters.`,
       };
     }
     if (v.maxLength != null && value.length > v.maxLength) {
       return {
         ...base,
-        why: `${tf.key} exceeds the maximum ${v.maxLength} characters.`,
-        fix: `Shorten to at most ${v.maxLength} characters.`,
+        why: `${tf.key} exceeds the maximum ${String(v.maxLength)} characters.`,
+        fix: `Shorten to at most ${String(v.maxLength)} characters.`,
       };
     }
     if (v.pattern) {
@@ -105,15 +126,15 @@ function checkFieldFormat(tf: TemplateField, value: unknown): ComplianceFinding 
     if (v.min != null && value < v.min) {
       return {
         ...base,
-        why: `${tf.key} (${value}) is below the minimum ${v.min}.`,
-        fix: `Use a value ≥ ${v.min}.`,
+        why: `${tf.key} (${String(value)}) is below the minimum ${String(v.min)}.`,
+        fix: `Use a value ≥ ${String(v.min)}.`,
       };
     }
     if (v.max != null && value > v.max) {
       return {
         ...base,
-        why: `${tf.key} (${value}) is above the maximum ${v.max}.`,
-        fix: `Use a value ≤ ${v.max}.`,
+        why: `${tf.key} (${String(value)}) is above the maximum ${String(v.max)}.`,
+        fix: `Use a value ≤ ${String(v.max)}.`,
       };
     }
   }
@@ -126,6 +147,11 @@ function checkFieldFormat(tf: TemplateField, value: unknown): ComplianceFinding 
  * assess; returns an `incomplete` verdict with a single explanatory
  * critical finding (mirrors checkPublishReady's "template missing" hard
  * blocker rather than throwing).
+ * @param passport - the passport to evaluate
+ * @param template - the passport's template; without one the verdict is incomplete
+ * @param category - the template category
+ * @param now - the evaluation time for date-gated rules
+ * @returns the verdict with its findings, coverage and the rules checked
  */
 export function evaluateCompliance(
   passport: Passport,
@@ -179,7 +205,7 @@ export function evaluateCompliance(
       type: "missing_field",
       severity: "critical",
       target: key,
-      regulation: ref ? template.regulation?.number : undefined,
+      regulation: ref ? regulationNumber(template) : undefined,
       article: ref?.article ?? undefined,
       why: `Required field "${key}" has no value.`,
       fix: `Provide a value for ${key}.`,
@@ -204,14 +230,14 @@ export function evaluateCompliance(
   }
   for (const key of conditionalMissingFields) {
     const ref = fieldRef(key);
-    const f = passport.fields[key];
-    const isAbsent = f == null || f.value === null || f.value === undefined || f.value === "";
+    const f = fieldAt(passport, key);
+    const isAbsent = f?.value == null || f.value === "";
     critical.push({
       type: "missing_field",
       severity: "critical",
       ruleId: "gate:conditional",
       target: key,
-      regulation: ref ? template.regulation?.number : undefined,
+      regulation: ref ? regulationNumber(template) : undefined,
       article: ref?.article ?? undefined,
       why: isAbsent
         ? `Conditional field "${key}" is required because an approved condition flag confirms the duty applies, but the field has no value.`
@@ -240,8 +266,8 @@ export function evaluateCompliance(
   // ── Static tier 3: format of filled values (warnings) ──────────────
   checkedRules.push("static:format");
   for (const tf of template.fields) {
-    const f = passport.fields[tf.key];
-    if (!f || f.value === null || f.value === undefined || f.value === "") continue;
+    const f = fieldAt(passport, tf.key);
+    if (f?.value == null || f.value === "") continue;
     const bad = checkFieldFormat(tf, f.value);
     if (bad) warnings.push(bad);
   }

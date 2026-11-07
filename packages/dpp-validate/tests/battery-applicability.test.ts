@@ -1,22 +1,23 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
-  batteryFieldApplicability,
+  categoryFieldApplicability,
   GATED_FIELD_KEYS,
 } from "../src/vendor/battery-applicability.js";
 import type { Passport, PassportField, BatteryProfile } from "@tracepass/dpp-types";
 
 // ── Tiny builders ─────────────────────────────────────────────────
 function field(value: unknown): PassportField {
-  return { value, status: "approved" } as PassportField;
+  return { value, status: "approved" };
 }
 
 type FlagInput = boolean | { value: boolean; status: "approved" | "pending_review" };
-function buildProfile(
-  p?: Partial<Record<keyof BatteryProfile, FlagInput>>,
-): BatteryProfile | undefined {
+type FlagMap = Partial<Record<keyof BatteryProfile, FlagInput | undefined>>;
+function buildProfile(p?: FlagMap): BatteryProfile | undefined {
   if (!p) return undefined;
   const out: BatteryProfile = {};
-  for (const [k, v] of Object.entries(p)) {
+  // Callers may pass an explicit `undefined`, which `Object.entries` does not show in its type.
+  const entries: [string, FlagInput | undefined][] = Object.entries(p);
+  for (const [k, v] of entries) {
     if (v === undefined) continue;
     const flag = typeof v === "boolean" ? { value: v, status: "approved" as const } : v;
     (out as Record<string, unknown>)[k] = flag;
@@ -24,10 +25,7 @@ function buildProfile(
   return out;
 }
 
-function batteryPassport(
-  category: string | undefined,
-  profile?: Partial<Record<keyof BatteryProfile, FlagInput>>,
-): Passport {
+function batteryPassport(category: string | undefined, profile?: FlagMap): Passport {
   const built = buildProfile(profile);
   return {
     status: "draft",
@@ -38,12 +36,8 @@ function batteryPassport(
   } as unknown as Passport;
 }
 
-function gateResult(
-  category: string | undefined,
-  key: string,
-  profile?: Partial<Record<keyof BatteryProfile, FlagInput>>,
-) {
-  const map = batteryFieldApplicability(batteryPassport(category, profile), "battery");
+function gateResult(category: string | undefined, key: string, profile?: FlagMap) {
+  const map = categoryFieldApplicability(batteryPassport(category, profile), "battery");
   return map[key] ?? "applies"; // ungated fields not in the map
 }
 
@@ -209,7 +203,7 @@ it("GATED_FIELD_KEYS includes Part A + Part B + SOCE keys", () => {
 
 // ── safety: pending_review never hard-gates ────────────────────────
 it("pending_review isStationaryBess never hard-gates the Part A cluster", () => {
-  const map = batteryFieldApplicability(
+  const map = categoryFieldApplicability(
     batteryPassport("industrial_gt_2kwh", {
       isStationaryBess: { value: false, status: "pending_review" },
     }),
@@ -232,7 +226,7 @@ describe("recycled content — Art. 8(1) external-storage exemption is industria
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-02T00:00:00Z"));
     for (const cat of ["EV", "LMT", "industrial_gt_2kwh"]) {
-      const m = batteryFieldApplicability(
+      const m = categoryFieldApplicability(
         batteryPassport(cat, { externalStorageOnly: true }),
         "battery",
       );
@@ -241,7 +235,7 @@ describe("recycled content — Art. 8(1) external-storage exemption is industria
   });
   it("exempts an industrial battery with exclusively external storage", () => {
     afterRecycledContentStart();
-    const m = batteryFieldApplicability(
+    const m = categoryFieldApplicability(
       batteryPassport("industrial_gt_2kwh", { externalStorageOnly: true }),
       "battery",
     );
@@ -250,7 +244,7 @@ describe("recycled content — Art. 8(1) external-storage exemption is industria
   it("never exempts EV or LMT batteries", () => {
     afterRecycledContentStart();
     for (const cat of ["EV", "LMT"]) {
-      const m = batteryFieldApplicability(
+      const m = categoryFieldApplicability(
         batteryPassport(cat, { externalStorageOnly: true }),
         "battery",
       );

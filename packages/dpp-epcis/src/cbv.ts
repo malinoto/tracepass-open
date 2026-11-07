@@ -127,8 +127,10 @@ export const TRACEPASS_BIZSTEP_URI = {
 export interface BizStepMapping {
   /** The bizStep URI to put on the event. Always a URI. */
   bizStep: string;
-  /** True when `bizStep` is a ratified CBV value; false when it is a
-   *  TracePass extension URI. */
+  /**
+   * True when `bizStep` is a ratified CBV value; false when it is a
+   *  TracePass extension URI.
+   */
   standard: boolean;
 }
 
@@ -136,6 +138,8 @@ export interface BizStepMapping {
  * Normalise a free-text event-type string into a lookup token:
  * lower-cased, trimmed, internal whitespace + hyphens collapsed to a
  * single underscore. "Heat Treatment" / "heat-treatment" → "heat_treatment".
+ * @param raw - the free-text event-type string to normalise
+ * @returns the lookup token, possibly empty when nothing usable remains
  */
 export function normalizeStepToken(raw: string): string {
   return raw
@@ -160,6 +164,8 @@ export function normalizeStepToken(raw: string): string {
  *
  * Never throws — an EPCIS document builder must not fail on an
  * unexpected production-step string.
+ * @param eventType - the free-text production or lifecycle step, such as "smelting" or "Heat Treatment"
+ * @returns the bizStep URI and whether it is a standard CBV step
  */
 export function mapEventTypeToBizStep(eventType: string): BizStepMapping {
   const token = normalizeStepToken(eventType);
@@ -189,6 +195,8 @@ export function mapEventTypeToBizStep(eventType: string): BizStepMapping {
  * pair. ServiceEvents become EPCIS ObjectEvents in the Layer A export.
  * Unlike production steps these map cleanly onto standard CBV — repair
  * and inspection are first-class CBV business steps.
+ * @param type - the service event type to map
+ * @returns the CBV bizStep and disposition URIs for that type
  */
 export function mapServiceEventType(type: ServiceEventType): {
   bizStep: string;
@@ -226,7 +234,6 @@ export function mapServiceEventType(type: ServiceEventType): {
       // Exhaustiveness guard — a new ServiceEventType added to the
       // union without a mapping here is a compile error on this line.
       const _exhaustive: never = type;
-      void _exhaustive;
       return {
         bizStep: CBV_BIZSTEP_URI.inspecting,
         disposition: CBV_DISPOSITION_URI.active,
@@ -241,6 +248,8 @@ export function mapServiceEventType(type: ServiceEventType): {
  * ObjectEvents; "returned" maps to the CBV `returned` disposition,
  * everything else (sale, resale, donation) is a plain ownership
  * change with the object still `active`.
+ * @param reason - the reason recorded on the ownership transfer
+ * @returns the CBV disposition URI: `returned` for a return, otherwise `active`
  */
 export function mapOwnershipReasonDisposition(reason: string): string {
   if (reason === "return") return CBV_DISPOSITION_URI.returned;

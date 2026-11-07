@@ -42,7 +42,11 @@ const PLATFORM = resolve(
 const RULES_TS = join(PLATFORM, "src/lib/compliance/rules.ts");
 const OUT = join(REPO, "rule-surface.json");
 
-/** Pull `id: "XXX-N"` declarations — the rule identifiers the engine emits. */
+/**
+ * Pull `id: "XXX-N"` declarations — the rule identifiers the engine emits.
+ * @param {string} source - the platform's `rules.ts` source
+ * @returns {string[]} the sorted, de-duplicated rule ids
+ */
 function ruleIds(source) {
   const ids = [...source.matchAll(/\bid:\s*"([A-Z]+-[A-Z0-9]+)"/g)].map((m) => m[1]);
   if (ids.length === 0) {
@@ -51,7 +55,11 @@ function ruleIds(source) {
   return [...new Set(ids)].sort();
 }
 
-/** Pull the category keys of CONDITIONAL_RULES, plus which rules each carries. */
+/**
+ * Pull the category keys of CONDITIONAL_RULES, plus which rules each carries.
+ * @param {string} source - the platform's `rules.ts` source
+ * @returns {Record<string, string[]>} the const names in each category's rule list
+ */
 function registry(source) {
   const marker = "CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {";
   const start = source.indexOf(marker);
@@ -82,6 +90,8 @@ function registry(source) {
  * Resolve `const NAME: ConditionalRule = { id: "X-1"` so the snapshot records
  * rule IDs rather than local variable names — the variable name is an
  * implementation detail, the ID is what a consumer sees in a finding.
+ * @param {string} source - the platform's `rules.ts` source
+ * @returns {Record<string, string>} each rule const name mapped to its rule id
  */
 function constToId(source) {
   const map = {};

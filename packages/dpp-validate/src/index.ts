@@ -6,6 +6,10 @@
  * database and makes no network calls.
  */
 
+import type { Passport } from "@tracepass/dpp-types";
+import { categoryFieldApplicability } from "./vendor/battery-applicability.js";
+import type { Applicability } from "./vendor/battery-applicability.js";
+
 export { evaluateCompliance } from "./verdict.js";
 
 export type {
@@ -28,10 +32,29 @@ export { IN_SCOPE_BATTERY_CATEGORIES } from "./vendor/battery-scope.js";
 export {
   BATTERY_FIELD_GATES,
   GATED_FIELD_KEYS,
-  batteryFieldApplicability,
   gateForKey,
 } from "./vendor/battery-applicability.js";
 export type { Applicability, FieldGate } from "./vendor/battery-applicability.js";
+
+/**
+ * Full map for the gated fields only (callers default everything else to
+ * "applies"). The verdict engine iterates this to emit findings; the
+ * editor reads it once per render and looks up per field.
+ *
+ * Returns an empty map for non-battery passports — `category` here is the
+ * template category, NOT batteryCategory; callers pass it so this is a
+ * no-op outside battery and the predicate stays battery-scoped.
+ * @param passport - the passport to evaluate
+ * @param category - the template category
+ * @returns the applicability of each gated field key
+ * @deprecated Use `categoryFieldApplicability` instead. Kept for backward compat.
+ */
+export function batteryFieldApplicability(
+  passport: Passport,
+  category: string,
+): Record<string, Applicability> {
+  return categoryFieldApplicability(passport, category);
+}
 
 // Re-exported because a passport's publish-readiness and required economic
 // operators are part of judging whether it is compliant, not separate concerns.

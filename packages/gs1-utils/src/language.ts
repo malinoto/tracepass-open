@@ -6,6 +6,8 @@
  * Parse an Accept-Language header into a sorted array of language codes.
  *
  * Example: "en-US,en;q=0.9,de;q=0.7" → ["en-US", "en", "de"]
+ * @param header - the Accept-Language header value
+ * @returns the language tags ordered by quality factor
  */
 export function parseAcceptLanguage(header: string): string[] {
   if (!header) return [];
@@ -31,6 +33,8 @@ export function parseAcceptLanguage(header: string): string[] {
  * 3. Fallback to "en"
  *
  * Returns a 2-letter ISO 639-1 code (e.g. "en", "de", "fr").
+ * @param request - the incoming request
+ * @returns the two-letter language code
  */
 export function detectLanguage(request: Request): string {
   const url = new URL(request.url);

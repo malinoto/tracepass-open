@@ -36,23 +36,34 @@
 import type { Passport } from "@tracepass/dpp-types";
 import { resolveConditionProfile } from "./condition-profile.js";
 import { IN_SCOPE_BATTERY_CATEGORIES } from "./battery-scope.js";
-import { SUBCATEGORY_FIELD } from "./subcategory.js";
+import { passportSubcategory } from "./subcategory.js";
+import { fieldAt, optionalFieldValue } from "./field-emptiness.js";
 
+/**
+ * Whether a gated field applies to a passport: `unknown` when the deciding flag is missing or unconfirmed.
+ */
 export type Applicability = "applies" | "not_applicable" | "unknown";
 
-/** Battery categories that are *in scope* for a battery passport at all.
+/**
+ * Battery categories that are *in scope* for a battery passport at all.
  *  Re-exported from the shared definition so this module's consumers keep
- *  importing it from here; the passport-level scope gate is rules.ts BAT-1. */
+ *  importing it from here; the passport-level scope gate is rules.ts BAT-1.
+ */
 export { IN_SCOPE_BATTERY_CATEGORIES };
 
-/** Field keys whose applicability is conditional, with a short reason +
+/**
+ * Field keys whose applicability is conditional, with a short reason +
  *  the deck article they map to. Everything NOT listed here is always
  *  "applies". Kept as data so the rules engine + editor can enumerate the
- *  conditional set and so a reader can audit each gate against the deck. */
+ *  conditional set and so a reader can audit each gate against the deck.
+ */
 /** Remediation for the gates that depend on `isStationaryBess`. */
 const SBESS_FIX_HINT =
   "For an industrial (>2 kWh) battery, confirm whether it is a stationary battery energy storage system: Art. 14 state-of-health and Annex VII expected-lifetime data apply only to stationary storage systems, LMT and (for state of health) EV batteries.";
 
+/**
+ * A rule that decides whether a set of fields applies to a passport, with the article that mandates it.
+ */
 export interface FieldGate {
   /** Template field keys this gate governs. */
   keys: string[];
@@ -137,25 +148,24 @@ interface Triggers {
  *
  * Accepts any object with `value: boolean` and `status: string` — works for
  * both the legacy `BatteryProfileFlag` and the new `ConditionFlag`.
+ * @param flag - the profile flag to resolve
+ * @returns the flag value when approved, otherwise undefined
  */
 function confirmed(flag: { value: boolean; status: string } | undefined): boolean | undefined {
   if (!flag) return undefined;
   return flag.status === "approved" ? flag.value : undefined;
 }
 
-function readTriggers(passport: Passport, templateCategory: string = "battery"): Triggers {
-  // Sub-category field key (batteryCategory / detergentUserType / …) from the
-  // SUBCATEGORY_FIELD map. Falls back to undefined for categories with no map entry (e.g. toys).
-  const subcatFieldKey = SUBCATEGORY_FIELD[templateCategory];
-  const catField = subcatFieldKey ? passport.fields[subcatFieldKey] : undefined;
+function readTriggers(passport: Passport, templateCategory = "battery"): Triggers {
+  // Sub-category value (batteryCategory / detergentUserType / …) read through the
+  // SUBCATEGORY_FIELD map; undefined for categories with no map entry (e.g. toys).
+  const category = passportSubcategory(templateCategory, passport.fields);
+  const serviceEntry = optionalFieldValue(passport.fields, "dateOfServiceEntry");
   // Use the canonical accessor so conditionProfile (new) and batteryProfile
   // (legacy) both work through the same path.
   const profile = resolveConditionProfile(passport);
   return {
-    category:
-      catField && catField.value != null && catField.value !== ""
-        ? String(catField.value)
-        : undefined,
+    category,
     // Battery flags
     hasBMS: confirmed(profile["hasBMS"]),
     // A stationary battery energy storage system stores energy from and
@@ -176,14 +186,11 @@ function readTriggers(passport: Passport, templateCategory: string = "battery"):
     // In-service signal: any measurement received (dynamicDataAsOf set by the
     // measurements materialiser) OR the dateOfServiceEntry field has a value.
     // This is a plain boolean — absent field or no measurement = false (pre-service).
-    isInService:
-      passport.dynamicDataAsOf != null ||
-      (!!passport.fields?.dateOfServiceEntry?.value &&
-        passport.fields.dateOfServiceEntry.value !== ""),
+    isInService: passport.dynamicDataAsOf != null || (!!serviceEntry && serviceEntry !== ""),
     // Field-derived tri-state: approved non-empty → true; pending_review → undefined; absent → false
     fieldPresent: (key: string): boolean | undefined => {
-      const f = passport.fields[key];
-      if (!f || f.value == null || f.value === "") return false;
+      const f = fieldAt(passport, key);
+      if (f?.value == null || f.value === "") return false;
       return f.status === "approved" ? true : undefined;
     },
   };
@@ -200,6 +207,8 @@ function readTriggers(passport: Passport, templateCategory: string = "battery"):
  *   undefined — category absent (cannot determine) or
  *               industrial_gt_2kwh with isStationaryBess unconfirmed
  *   false     — any other category (portable, SLI, industrial_lte_2kwh)
+ * @param t - the triggers read from the passport
+ * @returns whether the battery is an Art. 14(1) subject, or undefined when it cannot be determined
  */
 function art14Subject(t: Triggers): boolean | undefined {
   if (t.category === undefined) return undefined;
@@ -211,6 +220,8 @@ function art14Subject(t: Triggers): boolean | undefined {
 /**
  * The Art. 10(1) subjects: EV and LMT batteries are rechargeable by definition,
  * so the flag is irrelevant for them; for industrial_gt_2kwh it is decisive.
+ * @param t - the triggers read from the passport
+ * @returns the applicability of the Art. 10(1) fields
  */
 function rechargeableOrEvLmt(t: Triggers): Applicability {
   if (t.category === "EV" || t.category === "LMT") return "applies";
@@ -226,6 +237,8 @@ function rechargeableOrEvLmt(t: Triggers): Applicability {
  * Used for: the Annex VII Part A cluster (remaining capacity, pack resistance,
  * etc.) and the Annex VII Part B cluster (expected-lifetime: capacity/energy
  * throughput, date of service entry).
+ * @param t - the triggers read from the passport
+ * @returns the applicability of the Annex VII fields
  */
 function sbessOrLmt(t: Triggers): Applicability {
   if (t.category === undefined) return "unknown";
@@ -273,7 +286,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     keys: ["capacityThresholdForExhaustion"],
     article: "Annex XIII 1(k)",
     reason: "Capacity threshold for exhaustion applies only to electric-vehicle (EV) batteries.",
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.category === undefined) return "unknown";
       return t.category === "EV" ? "applies" : "not_applicable";
     },
@@ -295,7 +308,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     fixHint: SBESS_FIX_HINT,
     reason:
       "State of health (Art. 14) applies only to stationary battery energy storage systems, LMT, and EV batteries that have a battery management system (BMS). A plain industrial (>2 kWh) battery that is not a stationary storage system does not owe this data.",
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       const a14 = art14Subject(t);
       // Either axis definitively false → field does not apply.
       if (a14 === false || t.hasBMS === false) return "not_applicable";
@@ -321,7 +334,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     ],
     article: "Annex XIII 1(c) / Art. 7",
     reason: "Carbon-footprint declaration applies only to rechargeable batteries.",
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.rechargeable === undefined) return "unknown";
       return t.rechargeable ? "applies" : "not_applicable";
     },
@@ -350,7 +363,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     // act enters into force, whichever is later (LMT: 18 Aug 2033). Before the
     // earliest date the duty cannot apply, so the gate cannot block.
     mandatoryFrom: BATTERY_RECYCLED_CONTENT_EARLIEST,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       // Art. 8(1) exempts only "industrial batteries … except those with
       // exclusively external storage"; EV and LMT batteries owe it regardless.
       if (t.category !== undefined && t.category !== "industrial_gt_2kwh") return "applies";
@@ -365,7 +378,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
     article: "Annex XIII 4(b) / Art. 14",
     reason:
       "State of certified energy (SOCE) applies only to electric-vehicle (EV) batteries that have a battery management system (BMS).",
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.category === undefined) return "unknown";
       if (t.category !== "EV") return "not_applicable";
       // SOCE is Art. 14 state-of-health data, held in the BMS; FAQ §8.5.
@@ -518,7 +531,7 @@ export const BATTERY_FIELD_GATES: FieldGate[] = [
       "Use data (Annex XIII 4(d)) applies once the battery is in service. Before the in-service signal these fields are not yet applicable — no warning, no publish block.",
     promotes: false,
     temporal: true,
-    decide: (t): Applicability => {
+    decide: (t: Triggers): Applicability => {
       // isInService is always set by readTriggers; treat absent as false (pre-service).
       if (t.isInService) return "applies";
       return "not_applicable";
@@ -538,6 +551,9 @@ export const GATED_FIELD_KEYS: ReadonlySet<string> = new Set(KEY_TO_GATE.keys())
 /**
  * Applicability for a single battery field key. Ungated keys are always
  * "applies". This is the granular accessor the editor uses per-field.
+ * @param passport - the passport to evaluate
+ * @param key - the field key
+ * @returns the applicability of that field
  */
 export function fieldApplicability(passport: Passport, key: string): Applicability {
   const gate = KEY_TO_GATE.get(key);
@@ -546,23 +562,10 @@ export function fieldApplicability(passport: Passport, key: string): Applicabili
 }
 
 /**
- * Full map for the gated fields only (callers default everything else to
- * "applies"). The verdict engine iterates this to emit findings; the
- * editor reads it once per render and looks up per field.
- *
- * Returns an empty map for non-battery passports — `category` here is the
- * template category, NOT batteryCategory; callers pass it so this is a
- * no-op outside battery and the predicate stays battery-scoped.
+ * Look up the gate metadata (article + reason) for a gated field key.
+ * @param key - the field key
+ * @returns the gate that governs the key, or undefined for an ungated field
  */
-/** @deprecated Use `categoryFieldApplicability` instead. Kept for backward compat. */
-export function batteryFieldApplicability(
-  passport: Passport,
-  category: string,
-): Record<string, Applicability> {
-  return categoryFieldApplicability(passport, category);
-}
-
-/** Look up the gate metadata (article + reason) for a gated field key. */
 export function gateForKey(key: string): FieldGate | undefined {
   return KEY_TO_GATE.get(key);
 }
@@ -586,7 +589,7 @@ const DETERGENTS_FIELD_GATES: FieldGate[] = [
     reason:
       "The list of micro-organisms is required only where micro-organisms are intentionally added to the detergent formulation.",
     mandatoryFrom: DETERGENTS_PASSPORT_MANDATORY_FROM,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.microorganismsAdded === undefined) return "unknown";
       return t.microorganismsAdded ? "applies" : "not_applicable";
     },
@@ -600,7 +603,7 @@ const DETERGENTS_FIELD_GATES: FieldGate[] = [
     reason:
       "The full ingredients list for an industrial/institutional detergent is required in the passport unless a Safety Data Sheet covering that information has been provided separately.",
     mandatoryFrom: DETERGENTS_PASSPORT_MANDATORY_FROM,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.sdsProvided === undefined) return "unknown";
       // SDS provided → the duty is discharged via SDS, not the passport.
       return t.sdsProvided ? "not_applicable" : "applies";
@@ -620,7 +623,7 @@ const TOYS_FIELD_GATES: FieldGate[] = [
     reason:
       "A list of allergen-listed fragrances is required in the toy passport only when such fragrances are present in the toy.",
     mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.containsAllergenicFragrances === undefined) return "unknown";
       return t.containsAllergenicFragrances ? "applies" : "not_applicable";
     },
@@ -634,7 +637,7 @@ const TOYS_FIELD_GATES: FieldGate[] = [
     reason:
       "Information on compliance with other applicable Union acts (Annex XI / RoHS) is required only when the toy falls under one of those acts.",
     mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       if (t.alsoUnderOtherActs === undefined) return "unknown";
       return t.alsoUnderOtherActs ? "applies" : "not_applicable";
     },
@@ -649,7 +652,7 @@ const TOYS_FIELD_GATES: FieldGate[] = [
     reason:
       "The notified-body certificate reference is required only when a notified body was involved in the conformity assessment (indicated by the notifiedBody field being filled).",
     mandatoryFrom: TOYS_PASSPORT_MANDATORY_FROM,
-    decide: (t) => {
+    decide: (t: Triggers): Applicability => {
       // fieldPresent is optional in Triggers (backward compat); treat absent as false.
       const present = t.fieldPresent ? t.fieldPresent("notifiedBody") : false;
       if (present === undefined) return "unknown"; // pending_review → warn, no block
@@ -664,7 +667,8 @@ const TOYS_FIELD_GATES: FieldGate[] = [
  * Phase 1: battery only. Phase 2: detergents and toys added.
  *
  * Callers that need to enumerate gates for a category use this registry.
- * The battery-specific `batteryFieldApplicability` is now a thin wrapper.
+ * The battery-specific `batteryFieldApplicability` is now a thin wrapper, defined in the
+ * package entry point.
  */
 export const CATEGORY_FIELD_GATES: Record<string, FieldGate[]> = {
   battery: BATTERY_FIELD_GATES,
@@ -680,20 +684,24 @@ export const CATEGORY_FIELD_GATES: Record<string, FieldGate[]> = {
  * generic path: every category that has gates in CATEGORY_FIELD_GATES is handled,
  * everything else is a no-op. `batteryFieldApplicability` is kept as a
  * backward-compat alias.
- *
- * @param now  Optional reference date for `mandatoryFrom` enforcement. Defaults
- *             to the current wall clock. Callers should pass a fixed date in tests.
- *             When a gate's `mandatoryFrom` is in the future relative to `now`,
- *             ALL keys governed by that gate resolve to "unknown" (warning only,
- *             never a hard publish block) — keeping the provision from creating
- *             obligations before it legally applies.
+ * @param passport - the passport to evaluate
+ * @param category - the template category
+ * @param now - optional reference date for `mandatoryFrom` enforcement. Defaults
+ *   to the current wall clock. Callers should pass a fixed date in tests.
+ *   When a gate's `mandatoryFrom` is in the future relative to `now`,
+ *   ALL keys governed by that gate resolve to "unknown" (warning only,
+ *   never a hard publish block) — keeping the provision from creating
+ *   obligations before it legally applies.
+ * @returns the applicability of each gated field key; empty for a category without gates
  */
 export function categoryFieldApplicability(
   passport: Passport,
   category: string,
   now?: Date,
 ): Record<string, Applicability> {
-  const gates = CATEGORY_FIELD_GATES[category];
+  // Typed as possibly missing: the category is a free string, not a known key.
+  const gatesByCategory: Readonly<Record<string, FieldGate[] | undefined>> = CATEGORY_FIELD_GATES;
+  const gates = gatesByCategory[category];
   if (!gates || gates.length === 0) return {};
   const triggers = readTriggers(passport, category);
   const effectiveNow = now ?? new Date();

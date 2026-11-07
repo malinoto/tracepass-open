@@ -9,12 +9,12 @@
 
 import { describe, it, expect } from "vitest";
 import type { Passport, PassportField, Template, TemplateField } from "@tracepass/dpp-types";
-import { CONDITIONAL_RULES } from "../src/rules.js";
+import { ruleById } from "./helpers.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function field(value: unknown, status: "approved" | "pending_review" = "approved"): PassportField {
-  return { value, status, source: "manual" } as PassportField;
+  return { value, status, source: "manual" };
 }
 
 function makePassport(category: string, overrides: Partial<Passport> = {}): Passport {
@@ -44,14 +44,13 @@ function makeTemplate(): Template {
   } as unknown as Template;
 }
 
-const BAT_INSERVICE = CONDITIONAL_RULES["battery"]?.find((r) => r.id === "BAT-INSERVICE");
+const BAT_INSERVICE = ruleById("battery", "BAT-INSERVICE");
 
 // ── Registration ──────────────────────────────────────────────────────────
 
 describe("BAT-INSERVICE registration", () => {
   it("is registered in battery CONDITIONAL_RULES", () => {
-    expect(BAT_INSERVICE).toBeDefined();
-    expect(BAT_INSERVICE?.id).toBe("BAT-INSERVICE");
+    expect(ruleById("battery", "BAT-INSERVICE").id).toBe("BAT-INSERVICE");
   });
 });
 
@@ -60,12 +59,12 @@ describe("BAT-INSERVICE registration", () => {
 describe("BAT-INSERVICE — pre-service: no findings", () => {
   it("returns no findings when dynamicDataAsOf is null (EV)", () => {
     const passport = makePassport("EV", { dynamicDataAsOf: null });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 
   it("returns no findings when dynamicDataAsOf is undefined (LMT)", () => {
     const passport = makePassport("LMT");
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 
   it("returns no findings when dateOfServiceEntry is empty string (industrial)", () => {
@@ -75,7 +74,7 @@ describe("BAT-INSERVICE — pre-service: no findings", () => {
         dateOfServiceEntry: field(""),
       },
     });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 });
 
@@ -84,7 +83,7 @@ describe("BAT-INSERVICE — pre-service: no findings", () => {
 describe("BAT-INSERVICE — in-service via dynamicDataAsOf", () => {
   it("warns on all 5 empty 4(d) fields for EV", () => {
     const passport = makePassport("EV", { dynamicDataAsOf: new Date() });
-    const findings = BAT_INSERVICE!.run(passport, makeTemplate());
+    const findings = BAT_INSERVICE.run(passport, makeTemplate());
     expect(findings.length).toBe(5);
     findings.forEach((f) => {
       expect(f.severity).toBe("warning");
@@ -95,13 +94,13 @@ describe("BAT-INSERVICE — in-service via dynamicDataAsOf", () => {
 
   it("warns for LMT", () => {
     const passport = makePassport("LMT", { dynamicDataAsOf: new Date() });
-    const findings = BAT_INSERVICE!.run(passport, makeTemplate());
+    const findings = BAT_INSERVICE.run(passport, makeTemplate());
     expect(findings.length).toBe(5);
   });
 
   it("warns for industrial_gt_2kwh", () => {
     const passport = makePassport("industrial_gt_2kwh", { dynamicDataAsOf: new Date() });
-    const findings = BAT_INSERVICE!.run(passport, makeTemplate());
+    const findings = BAT_INSERVICE.run(passport, makeTemplate());
     expect(findings.length).toBe(5);
   });
 
@@ -117,7 +116,7 @@ describe("BAT-INSERVICE — in-service via dynamicDataAsOf", () => {
         currentStateOfCharge: field(85),
       },
     });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 });
 
@@ -131,9 +130,11 @@ describe("BAT-INSERVICE — in-service via dateOfServiceEntry", () => {
         dateOfServiceEntry: field("2026-01-15"),
       },
     });
-    const findings = BAT_INSERVICE!.run(passport, makeTemplate());
+    const findings = BAT_INSERVICE.run(passport, makeTemplate());
     expect(findings.length).toBe(5);
-    findings.forEach((f) => expect(f.severity).toBe("warning"));
+    findings.forEach((f) => {
+      expect(f.severity).toBe("warning");
+    });
   });
 });
 
@@ -142,17 +143,17 @@ describe("BAT-INSERVICE — in-service via dateOfServiceEntry", () => {
 describe("BAT-INSERVICE — out-of-scope categories", () => {
   it("no findings for portable", () => {
     const passport = makePassport("portable", { dynamicDataAsOf: new Date() });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 
   it("no findings for SLI", () => {
     const passport = makePassport("SLI", { dynamicDataAsOf: new Date() });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 
   it("no findings for industrial_lte_2kwh", () => {
     const passport = makePassport("industrial_lte_2kwh", { dynamicDataAsOf: new Date() });
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 
   it("no findings when category is absent (safety)", () => {
@@ -161,6 +162,6 @@ describe("BAT-INSERVICE — out-of-scope categories", () => {
       fields: {},
       dynamicDataAsOf: new Date(),
     } as unknown as Passport;
-    expect(BAT_INSERVICE!.run(passport, makeTemplate())).toHaveLength(0);
+    expect(BAT_INSERVICE.run(passport, makeTemplate())).toHaveLength(0);
   });
 });

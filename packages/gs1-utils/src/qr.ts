@@ -13,6 +13,8 @@ import QRCode from "qrcode";
  *
  * Only the scheme + authority are uppercased; the path is left as-is because
  * serial numbers may be case-sensitive.
+ * @param uri - the URI to transform
+ * @returns the URI with scheme and domain in uppercase
  */
 function uppercaseSchemeAndDomain(uri: string): string {
   try {
@@ -32,7 +34,6 @@ function uppercaseSchemeAndDomain(uri: string): string {
  * - Margin: 4 modules
  * - Width: 300 px
  * - Scheme + domain uppercased for smaller QR
- *
  * @param uri - full GS1 Digital Link URI
  * @returns PNG image as a Node.js Buffer
  */

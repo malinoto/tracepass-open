@@ -36,6 +36,9 @@ export const COMPOSITION_FIELDS = [
   "electrolyteComposition",
 ] as const;
 
+/**
+ * What a composition list contains: how many entries name a real material and how many only a chemistry label.
+ */
 export interface CompositionAnalysis {
   /** Number of entries in the list. */
   entries: number;
@@ -74,7 +77,11 @@ function readShare(entry: unknown): number | undefined {
   return undefined;
 }
 
-/** `undefined` when the value is not a non-empty list (nothing to judge). */
+/**
+ * `undefined` when the value is not a non-empty list (nothing to judge).
+ * @param value - the raw composition field value
+ * @returns the analysis, or undefined when the value is not a non-empty list
+ */
 export function analyzeComposition(value: unknown): CompositionAnalysis | undefined {
   if (!Array.isArray(value) || value.length === 0) return undefined;
   const out: CompositionAnalysis = {

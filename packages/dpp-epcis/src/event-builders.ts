@@ -3,8 +3,8 @@
  *
  * Each function takes a TracePass domain object and returns a plain
  * JSON-LD-shaped EPCIS event object. No IO, no template lookups, no
- * @context (the document builder in `document.ts` adds the single
- * shared @context once for the whole document).
+ * `@context` (the document builder in `document.ts` adds the single
+ * shared `@context` once for the whole document).
  *
  * Three event sources, per the [Q1] decision (all three in Layer A,
  * `supplyChainEvents` first):
@@ -55,8 +55,10 @@ export interface SupplyChainEventInput {
   location?: string;
   country?: string;
   operator?: string;
-  /** A pre-existing EPCIS event id, if the source system already had
-   *  one. When present we reuse it instead of minting our own. */
+  /**
+   * A pre-existing EPCIS event id, if the source system already had
+   *  one. When present we reuse it instead of minting our own.
+   */
   epcisEventId?: string;
   /** GLN of the physical facility — emitted as AI 414 readPoint/bizLocation. */
   facilityGln?: string;
@@ -68,6 +70,8 @@ export interface SupplyChainEventInput {
  * Convert an ISO-ish timestamp string (or Date) to an EPCIS
  * `eventTime` string. Returns null when the value can't be parsed —
  * the caller drops the event rather than emit an invalid time.
+ * @param value - an ISO-8601 string, a `Date`, or nothing
+ * @returns the ISO-8601 instant for `eventTime`, or null when the value is missing or unparseable
  */
 export function toEventTime(value: string | Date | undefined | null): string | null {
   if (!value) return null;
@@ -87,6 +91,11 @@ export function toEventTime(value: string | Date | undefined | null): string | n
  *
  * Returns null when the entry has no usable timestamp (an EPCIS event
  * without `eventTime` is invalid).
+ * @param entry - the supply-chain event entry to convert
+ * @param productEpc - the EPC URI of the product the event produced
+ * @param passportId - the passport id, used to mint a stable `eventID`
+ * @param index - the position of the entry in its list, used when no event id is supplied
+ * @returns the TransformationEvent, or null when the entry has no usable timestamp
  */
 export function buildTransformationEvent(
   entry: SupplyChainEventInput,
@@ -101,7 +110,10 @@ export function buildTransformationEvent(
 
   const event: Record<string, unknown> = {
     type: "TransformationEvent",
-    eventID: entry.epcisEventId || buildEventId(passportId, `sce-${index}`),
+    eventID:
+      typeof entry.epcisEventId === "string" && entry.epcisEventId !== ""
+        ? entry.epcisEventId
+        : buildEventId(passportId, `sce-${String(index)}`),
     eventTime,
     eventTimeZoneOffset: UTC_OFFSET,
     outputEPCList: [productEpc],
@@ -142,6 +154,10 @@ export function buildTransformationEvent(
  * for the time; falls back to `createdAt` when the service wasn't
  * marked performed (a scheduled-but-not-done service still has a
  * record time). Returns null when neither timestamp is usable.
+ * @param service - the service event to convert
+ * @param productEpc - the EPC URI of the serviced product
+ * @param passportId - the passport id, used to mint a stable `eventID`
+ * @returns the ObjectEvent, or null when neither `performedAt` nor `createdAt` is usable
  */
 export function buildServiceObjectEvent(
   service: Pick<
@@ -158,7 +174,7 @@ export function buildServiceObjectEvent(
 
   const event: Record<string, unknown> = {
     type: "ObjectEvent",
-    eventID: buildEventId(passportId, `service-${service._id.toString()}`),
+    eventID: buildEventId(passportId, `service-${service._id}`),
     eventTime,
     eventTimeZoneOffset: UTC_OFFSET,
     epcList: [productEpc],
@@ -183,6 +199,10 @@ export function buildServiceObjectEvent(
  * expected to filter, but the builder also guards.
  *
  * Returns null when the transfer isn't accepted or has no usable time.
+ * @param transfer - the ownership transfer to convert
+ * @param productEpc - the EPC URI of the product that changed hands
+ * @param passportId - the passport id, used to mint a stable `eventID`
+ * @returns the ObjectEvent, or null when the transfer is not accepted or has no usable time
  */
 export function buildOwnershipObjectEvent(
   transfer: Pick<
@@ -199,7 +219,7 @@ export function buildOwnershipObjectEvent(
 
   const event: Record<string, unknown> = {
     type: "ObjectEvent",
-    eventID: buildEventId(passportId, `ownership-${transfer._id.toString()}`),
+    eventID: buildEventId(passportId, `ownership-${transfer._id}`),
     eventTime,
     eventTimeZoneOffset: UTC_OFFSET,
     epcList: [productEpc],
@@ -233,6 +253,11 @@ export function buildOwnershipObjectEvent(
  *
  * Returns null when there is no publish timestamp (an unpublished
  * passport shouldn't be EPCIS-exported in the first place).
+ * @param publishedAt - when the passport was published
+ * @param productEpc - the EPC URI of the product
+ * @param passportId - the passport id, used to mint a stable `eventID`
+ * @param glns - the facility and operator GLNs to name on the event, when known
+ * @returns the commissioning ObjectEvent, or null when there is no usable publish timestamp
  */
 export function buildCommissioningEvent(
   publishedAt: Date | string | undefined | null,
@@ -303,6 +328,11 @@ export interface SupplierReportedEvent {
  * dedupes rather than piling up duplicates.
  *
  * Returns null when the report has no usable timestamp.
+ * @param report - the supplier-reported supply-chain event
+ * @param productEpc - the EPC URI of the product the component belongs to
+ * @param passportId - the passport id, used to mint a stable `eventID`
+ * @param index - the position of the submission, which makes the `eventID` deterministic
+ * @returns the ObjectEvent, or null when the report has no usable timestamp
  */
 export function buildSupplierObjectEvent(
   report: SupplierReportedEvent,
@@ -313,11 +343,14 @@ export function buildSupplierObjectEvent(
   const eventTime = toEventTime(report.timestamp);
   if (!eventTime) return null;
 
-  const { bizStep } = mapEventTypeToBizStep(report.eventType ?? "");
+  // `eventType` is required by the type, but a JavaScript caller may omit it
+  // or send a non-string; read it as `unknown` so the guard stays honest.
+  const reportedType: unknown = report.eventType;
+  const { bizStep } = mapEventTypeToBizStep(typeof reportedType === "string" ? reportedType : "");
 
   const event: Record<string, unknown> = {
     type: "ObjectEvent",
-    eventID: buildEventId(passportId, `supplier-${index}`),
+    eventID: buildEventId(passportId, `supplier-${String(index)}`),
     eventTime,
     eventTimeZoneOffset: UTC_OFFSET,
     epcList: [productEpc],

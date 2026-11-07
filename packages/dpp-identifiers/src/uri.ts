@@ -48,26 +48,13 @@
  * emitted (`/<AGENCY>/<primaryId>`) was a TracePass vendor route, not conformant with
  * the ISO/IEC 18975 resolver query form that EN 18219 §5.2.2 references. The query form
  * `/?` `.25P=<IAC+primaryId>[&.S=<serial>]` is what EN 18219 Table B.12 shows as the
- * conformant non-GS1 web URI. The old path form still parses and resolves as an alias
- * (zero live iso15459 passports in prod as of this change, so no migration needed).
- *
- * ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE @tracepass/dpp-identifiers.
- * `tracepass-open/packages/dpp-identifiers/src/uri.ts` is a hand-copy of this
- * file — nothing generates one from the other, and a stale copy fails silently
- * (it still compiles and still returns a plausible answer). tracepass-open
- * gates on a hash of this file in CI, so after changing it:
- *
- *   cd ../tracepass-open && node scripts/build-mirror-manifest.mjs \
- *     && npm run check:mirrors
- *
- * and commit `mirror-manifest.json` with the code.
+ * conformant non-GS1 web URI. The old path form still parses and resolves as an alias.
  */
 
 import type { ProductIdentifier } from "@tracepass/dpp-types";
 
 /**
  * Build a resolver URL for a `ProductIdentifier`.
- *
  * @param id           - the (validated, normalised) identifier
  * @param resolverBase - the resolver's bare domain, e.g. `"id.example.com"`
  * @returns the full resolver URL, or `null` for schemes that carry their own URL
@@ -102,7 +89,6 @@ export function identifierToUri(id: ProductIdentifier, resolverBase: string): st
 
     default: {
       const _exhaustive: never = id;
-      void _exhaustive;
       return null;
     }
   }
@@ -111,6 +97,8 @@ export function identifierToUri(id: ProductIdentifier, resolverBase: string): st
 /**
  * Return the identifier's own canonical URL, when it has one.
  * `null` when the identifier type does not define its own URL form.
+ * @param id - the product identifier
+ * @returns the identifier's own URL, or null when its scheme defines none
  */
 export function identifierOwnUrl(id: ProductIdentifier): string | null {
   switch (id.scheme) {
@@ -132,7 +120,6 @@ export function identifierOwnUrl(id: ProductIdentifier): string | null {
 
     default: {
       const _exhaustive: never = id;
-      void _exhaustive;
       return null;
     }
   }
@@ -161,6 +148,8 @@ export function identifierOwnUrl(id: ProductIdentifier): string | null {
  * The first path segment determines the scheme: a digit-only segment is a GS1
  * Application Identifier (we only emit `01`); a 1–3 char uppercase segment is
  * an ISO/IEC 15459 issuing agency code.
+ * @param path - the resolver path, starting with a slash
+ * @returns the identifier the path encodes, or null when it matches no scheme
  */
 export function parseResolverPath(path: string): ProductIdentifier | null {
   // Normalise: strip leading slash, strip query/fragment
@@ -227,6 +216,8 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
  * The `concatenated25P` value is the raw decoded string — IAC + primaryId, with
  * no separator. Use `diQueryCandidateKeys` to split it into candidate identifierKey
  * strings for a DB lookup.
+ * @param queryString - the query string, with or without the leading `?`
+ * @returns the concatenated `.25P` value and the optional serial, or null when `.25P` is missing or empty
  */
 export function parseDiQuery(
   queryString: string,
@@ -257,9 +248,9 @@ export function parseDiQuery(
  *   - zero matches → not found
  *
  * Returns `[]` when the input does not start with a letter (invalid for any IAC length).
- *
  * @param concatenated25P - the decoded `.25P` value, e.g. `"QCELMI12345"` or `"MI12345"`
- * @param serial           - the decoded `.S` value, if present (same as Iso15459Identifier.serial)
+ * @param serial - the decoded `.S` value, if present (same as Iso15459Identifier.serial)
+ * @returns the candidate identifier keys, shortest agency code first; empty when the value cannot be split
  */
 export function diQueryCandidateKeys(concatenated25P: string, serial?: string): string[] {
   if (!concatenated25P || !/^[A-Z]/.test(concatenated25P)) return [];
@@ -286,6 +277,8 @@ export function diQueryCandidateKeys(concatenated25P: string, serial?: string): 
  *
  * The key is stable and unique within its scheme domain. DOI keys are
  * lower-cased (DOI identifiers are case-insensitive per the DOI Handbook).
+ * @param id - the product identifier
+ * @returns the stable key string
  */
 export function identifierKey(id: ProductIdentifier): string {
   switch (id.scheme) {
@@ -306,7 +299,6 @@ export function identifierKey(id: ProductIdentifier): string {
 
     default: {
       const _exhaustive: never = id;
-      void _exhaustive;
       return `unknown:${JSON.stringify(id)}`;
     }
   }

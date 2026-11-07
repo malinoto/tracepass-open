@@ -1,10 +1,7 @@
 /**
  * The passport's sub-category, read from the field its template category names.
  *
- * Mirrors `SUBCATEGORY_FIELD` in `@tracepass/extraction-core` without importing
- * the core, because this runs in client components (the passport editor) and the
- * core pulls in server-only modules. `tests/passports/subcategory.test.ts` pins
- * the two maps equal, so they cannot drift.
+ * The map lives here, with no dependencies, so it can run anywhere this package does.
  *
  * `requiredBy` maps are keyed by these values; `effectiveRequiredFor` resolves
  * them. Unset → undefined → the field's plain `required` flag applies.
@@ -15,6 +12,13 @@ export const SUBCATEGORY_FIELD: Readonly<Record<string, string>> = {
   detergents: "detergentUserType",
 };
 
+/**
+ * Read the passport's sub-category value (battery category, FMCG sub-category,
+ * detergent user type) from the field the template category designates.
+ * @param templateCategory - the template's category
+ * @param fields - the passport fields keyed by field key
+ * @returns the sub-category value, or undefined when the category has none or the field is unset
+ */
 export function passportSubcategory(
   templateCategory: string | undefined,
   fields: Readonly<Record<string, { value?: unknown } | undefined>> | undefined,
@@ -22,5 +26,7 @@ export function passportSubcategory(
   const key = templateCategory ? SUBCATEGORY_FIELD[templateCategory] : undefined;
   if (!key) return undefined;
   const v = fields?.[key]?.value;
-  return v != null && v !== "" ? String(v) : undefined;
+  if (typeof v === "string") return v === "" ? undefined : v;
+  if (typeof v === "number" || typeof v === "boolean" || typeof v === "bigint") return String(v);
+  return undefined;
 }

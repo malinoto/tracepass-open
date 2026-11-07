@@ -8,6 +8,7 @@ import {
 } from "../src/vendor/required-roles.js";
 import { effectiveRequired, effectiveRequiredForBattery } from "../src/vendor/publish-gate.js";
 import { CONDITIONAL_RULES } from "../src/rules.js";
+import { ruleById } from "./helpers.js";
 import type { Passport, Template, TemplateField, PassportField, Party } from "@tracepass/dpp-types";
 
 // ── Tiny builders ─────────────────────────────────────────────────
@@ -15,7 +16,7 @@ import type { Passport, Template, TemplateField, PassportField, Party } from "@t
 // (cast partials, don't construct full Mongo docs).
 
 function field(value: unknown, status: PassportField["status"] = "approved"): PassportField {
-  return { value, status } as PassportField;
+  return { value, status };
 }
 
 function party(country?: string): Party {
@@ -299,7 +300,7 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
   it("BAT-1 remediation text cites ISO/IEC 15459 and Art. 77(3), naming GS1 only as an example", () => {
     const p = passport({ parties, fields: { batteryCategory: field("EV") } });
     const r = evaluateCompliance(p, t(), "battery");
-    const findings = [...r.critical, ...(r.warnings ?? [])];
+    const findings = [...r.critical, ...r.warnings];
     // Sanity: the fixture must produce the BAT-1 finding.
     const bat1 = findings.find((f) => f.ruleId === "BAT-1");
     expect(bat1).toBeDefined();
@@ -307,7 +308,7 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     expect(bat1?.fix).toMatch(/ISO\/IEC 15459/);
     expect(bat1?.fix).toMatch(/Art\. 77\(3\)/);
     // GS1 must appear only as an example (preceded by "e.g.").
-    if (bat1?.fix && /GS1/.test(bat1.fix)) {
+    if (bat1?.fix?.includes("GS1")) {
       expect(bat1.fix).toMatch(/e\.g\.\s+a GS1/i);
     }
 
@@ -317,7 +318,7 @@ describe("evaluateCompliance — BAT-1 battery passport scope", () => {
     for (const f of findings.filter((f) => f.ruleId !== "BAT-1")) {
       expect(
         NON_BAT1_SCHEME_NAMES.test(f.fix ?? ""),
-        `${f.ruleId} remediation names an identifier scheme but the rule only checks presence: ${f.fix}`,
+        `${f.ruleId ?? "(no id)"} remediation names an identifier scheme but the rule only checks presence: ${f.fix ?? ""}`,
       ).toBe(false);
     }
   });
@@ -583,20 +584,19 @@ describe("effectiveRequired — requiredBy resolution", () => {
 // requiredBy is resolved from each category's own sub-category field, not only
 // batteryCategory (vendor/subcategory.ts, mirrored from the platform).
 describe("evaluateCompliance — requiredBy outside batteries", () => {
-  const t = () =>
-    ({
-      ...template([
-        tf("detergentUserType"),
-        tf("ingredients", {
-          dataType: "array",
-          validation: {
-            required: false,
-            requiredBy: { consumer: "required", industrial_institutional: "conditional" },
-          },
-        } as Partial<TemplateField>),
-      ]),
-      category: "detergents",
-    }) as unknown as Template;
+  const t = () => ({
+    ...template([
+      tf("detergentUserType"),
+      tf("ingredients", {
+        dataType: "array",
+        validation: {
+          required: false,
+          requiredBy: { consumer: "required", industrial_institutional: "conditional" },
+        },
+      }),
+    ]),
+    category: "detergents",
+  });
   const missing = (r: ReturnType<typeof evaluateCompliance>) =>
     r.critical.some((c) => c.target === "ingredients");
 
@@ -620,7 +620,7 @@ describe("evaluateCompliance — requiredBy outside batteries", () => {
 });
 
 describe("BAT-APP — platform-written values and remediation text", () => {
-  const BAT_APP = CONDITIONAL_RULES.battery.find((r) => r.id === "BAT-APP")!;
+  const BAT_APP = ruleById("battery", "BAT-APP");
   const tmpl = { category: "battery", fields: [] } as unknown as Template;
   function battery(
     category: string,
@@ -640,7 +640,7 @@ describe("BAT-APP — platform-written values and remediation text", () => {
   it("does not flag a system default the user never entered", () => {
     const p = battery(
       "industrial_gt_2kwh",
-      { stateOfHealth: { value: 100, status: "approved", source: "system" } as PassportField },
+      { stateOfHealth: { value: 100, status: "approved", source: "system" } },
       { hasBMS: true, isStationaryBess: false },
     );
     expect(BAT_APP.run(p, tmpl).find((f) => f.target === "stateOfHealth")).toBeUndefined();
@@ -649,7 +649,7 @@ describe("BAT-APP — platform-written values and remediation text", () => {
   it("flags the same value once a user entered it", () => {
     const p = battery(
       "industrial_gt_2kwh",
-      { stateOfHealth: { value: 100, status: "approved", source: "manual" } as PassportField },
+      { stateOfHealth: { value: 100, status: "approved", source: "manual" } },
       { hasBMS: true, isStationaryBess: false },
     );
     expect(BAT_APP.run(p, tmpl).find((f) => f.target === "stateOfHealth")?.fix).toMatch(
@@ -671,6 +671,8 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
    * Build a minimal battery template with a field that is conditionally
    * required for industrial_gt_2kwh (requiredBy.industrial_gt_2kwh = "conditional")
    * — mirrors the real rechargeable-gated fields in battery.json.
+   * @param extraFields - further fields to add to the template
+   * @returns the template
    */
   function batteryTemplate(extraFields: TemplateField[] = []): Template {
     return {
@@ -779,7 +781,7 @@ describe("evaluateCompliance — gate:conditional critical finding", () => {
 });
 
 describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
-  const imp1 = CONDITIONAL_RULES.battery.find((r) => r.id === "IMP-1")!;
+  const imp1 = ruleById("battery", "IMP-1");
   const tpl = { fields: [] } as unknown as Template;
   const passportWith = (parties: Partial<Record<string, Party>>) =>
     ({ fields: {}, parties }) as unknown as Passport;
@@ -795,7 +797,7 @@ describe("IMP-1 — importer contact details (Battery Reg Art. 41(3))", () => {
       tpl,
     );
     expect(f).toHaveLength(1);
-    expect(f[0]!.severity).toBe("warning");
+    expect(f[0].severity).toBe("warning");
   });
 
   it("stays silent once trade name and postal address are set", () => {

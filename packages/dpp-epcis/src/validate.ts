@@ -28,6 +28,9 @@ export interface EpcisValidationIssue {
   message: string;
 }
 
+/**
+ * The outcome of validating an EPCIS document: `valid` is true only when `issues` is empty.
+ */
 export interface EpcisValidationResult {
   valid: boolean;
   issues: EpcisValidationIssue[];
@@ -153,6 +156,9 @@ const CBV_DISPOSITION_TOKENS = new Set([
  * Permissive on URIs — the spec allows any URI (and OpenEPCIS does too).
  *
  * Used by both bizStep + disposition; pass the corresponding token set.
+ * @param value - the bizStep or disposition value to test
+ * @param tokens - the CBV short-form tokens accepted for this field
+ * @returns whether the value is an accepted token or looks like a URI
  */
 function isCbvValueOrUri(value: unknown, tokens: Set<string>): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
@@ -163,6 +169,20 @@ function isCbvValueOrUri(value: unknown, tokens: Set<string>): boolean {
   return /^[a-z][a-z0-9+.-]*:\S+$/i.test(value);
 }
 
+/**
+ * Render an offending value for an issue message: strings as they are,
+ * other primitives through `String`, objects and arrays as JSON.
+ * @param value - the value found in the event
+ * @returns a readable form of the value, never "[object Object]"
+ */
+function describeValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  return typeof value === "object" ? JSON.stringify(value) : typeof value;
+}
+
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -170,6 +190,9 @@ function isObject(v: unknown): v is Record<string, unknown> {
 /**
  * Validate one EPCIS event object. Pushes issues onto `issues` with
  * paths rooted at `basePath`.
+ * @param event - the event to check
+ * @param basePath - the JSON path of the event, prefixed to every issue
+ * @param issues - the list the problems found are appended to
  */
 function validateEvent(event: unknown, basePath: string, issues: EpcisValidationIssue[]): void {
   if (!isObject(event)) {
@@ -233,7 +256,7 @@ function validateEvent(event: unknown, basePath: string, issues: EpcisValidation
     issues.push({
       path: `${basePath}.bizStep`,
       message:
-        `bizStep "${String(event.bizStep)}" is not a CBV short-form token ` +
+        `bizStep "${describeValue(event.bizStep)}" is not a CBV short-form token ` +
         `(e.g. "shipping", "receiving") or a URI ` +
         `(e.g. "https://ref.gs1.org/cbv/BizStep-shipping"). ` +
         "OpenEPCIS will reject it.",
@@ -246,7 +269,7 @@ function validateEvent(event: unknown, basePath: string, issues: EpcisValidation
     issues.push({
       path: `${basePath}.disposition`,
       message:
-        `disposition "${String(event.disposition)}" is not a CBV short-form ` +
+        `disposition "${describeValue(event.disposition)}" is not a CBV short-form ` +
         `token (e.g. "in_transit", "active") or a URI. ` +
         "OpenEPCIS will reject it.",
     });
@@ -256,6 +279,8 @@ function validateEvent(event: unknown, basePath: string, issues: EpcisValidation
 /**
  * Validate a full EPCISDocument structure. Returns `{ valid, issues }`
  * — `valid` is true only when `issues` is empty.
+ * @param doc - the parsed EPCIS document to check
+ * @returns the validity flag and every issue found
  */
 export function validateEpcisDocument(doc: unknown): EpcisValidationResult {
   const issues: EpcisValidationIssue[] = [];
@@ -294,7 +319,7 @@ export function validateEpcisDocument(doc: unknown): EpcisValidationResult {
       });
     } else {
       eventList.forEach((ev, i) => {
-        validateEvent(ev, `$.epcisBody.eventList[${i}]`, issues);
+        validateEvent(ev, `$.epcisBody.eventList[${String(i)}]`, issues);
       });
     }
   }

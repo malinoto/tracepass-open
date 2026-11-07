@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
+import type { SupplierReportedEvent, SupplyChainEventInput } from "../src/index.js";
 import {
   buildCommissioningEvent,
   buildEventId,
+  buildSupplierObjectEvent,
+  buildTransformationEvent,
   mapEventTypeToBizStep,
   normalizeStepToken,
   validateEpcisDocument,
@@ -36,11 +39,9 @@ describe("event ids", () => {
 
 describe("buildCommissioningEvent", () => {
   it("builds an ObjectEvent with the CBV commissioning bizStep", () => {
-    const ev = buildCommissioningEvent(
-      "2026-07-19T10:00:00Z",
-      "urn:epc:id:sgtin:demo",
-      "p-123",
-    ) as Record<string, unknown>;
+    const ev =
+      buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123") ??
+      expect.unreachable("no event built");
 
     expect(ev).not.toBeNull();
     expect(ev.type).toBe("ObjectEvent");
@@ -54,19 +55,21 @@ describe("buildCommissioningEvent", () => {
   });
 
   it("adds a bizLocation when a facilityGln is supplied", () => {
-    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
-      facilityGln: "5412345000013",
-    }) as Record<string, unknown>;
+    const ev =
+      buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
+        facilityGln: "5412345000013",
+      }) ?? expect.unreachable("no event built");
     expect(ev.bizLocation).toBeDefined();
     // no operatorGln → no destinationList
     expect(ev.destinationList).toBeUndefined();
   });
 
   it("adds a destinationList owning_party entry when operatorGln is supplied", () => {
-    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
-      facilityGln: "5412345000013",
-      operatorGln: "5412345000013",
-    }) as Record<string, unknown>;
+    const ev =
+      buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123", {
+        facilityGln: "5412345000013",
+        operatorGln: "5412345000013",
+      }) ?? expect.unreachable("no event built");
     expect(ev.bizLocation).toBeDefined();
     expect(ev.destinationList).toBeDefined();
     const dest = ev.destinationList as Array<Record<string, string>>;
@@ -147,5 +150,64 @@ describe("validateEpcisDocument", () => {
     const result = validateEpcisDocument(doc);
     expect(result.valid).toBe(false);
     expect(result.issues.some((i) => i.path === "$.epcisBody.eventList")).toBe(true);
+  });
+});
+
+describe("validateEpcisDocument issue messages", () => {
+  it("shows an object-valued bizStep as JSON, not [object Object]", () => {
+    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123");
+    const result = validateEpcisDocument(epcisDocument([{ ...ev, bizStep: { a: 1 } }]));
+    const issue =
+      result.issues.find((i) => i.path.endsWith(".bizStep")) ??
+      expect.unreachable("no bizStep issue was reported");
+    expect(issue.message).toContain('bizStep "{"a":1}"');
+  });
+
+  it("shows an object-valued disposition as JSON, not [object Object]", () => {
+    const ev = buildCommissioningEvent("2026-07-19T10:00:00Z", "urn:epc:id:sgtin:demo", "p-123");
+    const result = validateEpcisDocument(epcisDocument([{ ...ev, disposition: ["x"] }]));
+    const issue =
+      result.issues.find((i) => i.path.endsWith(".disposition")) ??
+      expect.unreachable("no disposition issue was reported");
+    expect(issue.message).toContain('disposition "["x"]"');
+  });
+});
+
+describe("event builders tolerate input that ignores the types", () => {
+  it("buildSupplierObjectEvent maps a missing or non-string eventType to the unspecified step", () => {
+    const missing = JSON.parse(
+      '{"timestamp":"2026-07-19T10:00:00Z"}',
+    ) as unknown as SupplierReportedEvent;
+    const numeric = JSON.parse(
+      '{"eventType":42,"timestamp":"2026-07-19T10:00:00Z"}',
+    ) as unknown as SupplierReportedEvent;
+    for (const report of [missing, numeric]) {
+      const ev =
+        buildSupplierObjectEvent(report, "urn:epc:id:sgtin:demo", "p-1", 0) ??
+        expect.unreachable("no event built");
+      expect(ev.bizStep).toBe(mapEventTypeToBizStep("").bizStep);
+    }
+  });
+
+  it("buildTransformationEvent mints an id when epcisEventId is null, empty or absent", () => {
+    const t = '"timestamp":"2026-07-19T10:00:00Z"';
+    for (const raw of [`{"epcisEventId":null,${t}}`, `{"epcisEventId":"",${t}}`, `{${t}}`]) {
+      const entry = JSON.parse(raw) as unknown as SupplyChainEventInput;
+      const ev =
+        buildTransformationEvent(entry, "urn:epc:id:sgtin:demo", "p-1", 3) ??
+        expect.unreachable("no event built");
+      expect(ev.eventID).toBe("urn:tracepass:epcis:p-1:sce-3");
+    }
+  });
+
+  it("buildTransformationEvent reuses a supplied epcisEventId", () => {
+    const ev =
+      buildTransformationEvent(
+        { timestamp: "2026-07-19T10:00:00Z", epcisEventId: "urn:x:1" },
+        "urn:epc:id:sgtin:demo",
+        "p-1",
+        3,
+      ) ?? expect.unreachable("no event built");
+    expect(ev.eventID).toBe("urn:x:1");
   });
 });

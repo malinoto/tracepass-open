@@ -49,14 +49,21 @@ export type CategoryKey =
   | "toys"
   | "tyres";
 
+/**
+ * The party roles a category requires and the ones it only allows.
+ */
 export interface CategoryPartyRoles {
-  /** Roles that MUST be set before the passport is considered complete.
+  /**
+   * Roles that MUST be set before the passport is considered complete.
    *  The publish flow warns (not blocks) when these are missing — a
    *  user can still publish via the existing "I acknowledge incomplete"
-   *  ack, which sets `publishedIncomplete: true`. */
+   *  ack, which sets `publishedIncomplete: true`.
+   */
   required: readonly PartyRole[];
-  /** Roles that the editor surfaces but doesn't require. Order matters —
-   *  the UI renders them in this order under the required block. */
+  /**
+   * Roles that the editor surfaces but doesn't require. Order matters —
+   *  the UI renders them in this order under the required block.
+   */
   optional: readonly PartyRole[];
 }
 
@@ -175,9 +182,14 @@ export const CATEGORY_PARTY_ROLES: Record<CategoryKey, CategoryPartyRoles> = {
  * `null` when the category isn't one of the 13 modeled categories,
  * so callers can early-return rather than crash on legacy / unknown
  * category strings.
+ * @param category - the template category
+ * @returns the required and optional roles, or null for an unknown category
  */
 export function getPartyRoles(category: string): CategoryPartyRoles | null {
-  return CATEGORY_PARTY_ROLES[category as CategoryKey] ?? null;
+  // Typed as possibly missing: the category is a free string, not a known key.
+  const rolesByCategory: Readonly<Partial<Record<string, CategoryPartyRoles>>> =
+    CATEGORY_PARTY_ROLES;
+  return rolesByCategory[category] ?? null;
 }
 
 /**
@@ -185,6 +197,9 @@ export function getPartyRoles(category: string): CategoryPartyRoles | null {
  * publish-precondition check + the editor's red-asterisk render.
  * Unknown categories return false (don't block on what we can't
  * interpret).
+ * @param category - the template category
+ * @param role - the party role
+ * @returns whether the role is required for the category
  */
 export function isRequiredRole(category: string, role: PartyRole): boolean {
   const roles = getPartyRoles(category);
@@ -195,6 +210,8 @@ export function isRequiredRole(category: string, role: PartyRole): boolean {
  * Combined role list (required first, then optional, in declaration
  * order). Returns `[]` for unknown categories. Convenience for UI
  * iteration when both sets need to render.
+ * @param category - the template category
+ * @returns the required roles followed by the optional ones
  */
 export function allRolesForCategory(category: string): readonly PartyRole[] {
   const roles = getPartyRoles(category);

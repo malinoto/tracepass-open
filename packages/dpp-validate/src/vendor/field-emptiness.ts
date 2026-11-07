@@ -31,6 +31,8 @@
  * in the publish gate.
  */
 
+import type { Passport, PassportField } from "@tracepass/dpp-types";
+
 /**
  * True when the field holds no value.
  *
@@ -40,6 +42,8 @@
  * Note `[]` and `{}` count as PRESENT. An empty collection is a declaration
  * that the collection is empty; callers that need "no entries" should test
  * `.length` themselves, which reads as the different question it is.
+ * @param value - the field value to test
+ * @returns whether the value counts as absent
  */
 export function isFieldValueAbsent(value: unknown): boolean {
   if (value === null || value === undefined) return true;
@@ -47,7 +51,36 @@ export function isFieldValueAbsent(value: unknown): boolean {
   return false;
 }
 
-/** Convenience for the common `!field || absent(field.value)` shape. */
+/**
+ * Convenience for the common `!field || absent(field.value)` shape.
+ * @param field - the field, if it exists
+ * @returns whether the field is missing or holds an absent value
+ */
 export function isFieldAbsent(field: { value?: unknown } | undefined | null): boolean {
   return !field || isFieldValueAbsent(field.value);
+}
+
+/**
+ * Look up a passport field by key. The type promises every key is present, but
+ * a passport read from JSON need not have it, so the result may be undefined.
+ * @param passport - the passport to read
+ * @param key - the field key
+ * @returns the field, or undefined when the passport has none under that key
+ */
+export function fieldAt(passport: Passport, key: string): PassportField | undefined {
+  return passport.fields[key];
+}
+
+/**
+ * Read one field's value from a field map that may itself be missing, such as
+ * the `fields` of a passport built by hand.
+ * @param fields - the field map, if any
+ * @param key - the field key
+ * @returns the field's value, or undefined when the map or the field is absent
+ */
+export function optionalFieldValue(
+  fields: Readonly<Record<string, { value?: unknown } | undefined>> | undefined,
+  key: string,
+): unknown {
+  return fields?.[key]?.value;
 }

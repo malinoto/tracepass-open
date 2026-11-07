@@ -6,17 +6,6 @@
  *
  * One rule, one implementation. If the product policy for publishing
  * changes (e.g. "warnings block", "min coverage %"), change it here.
- *
- * ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE @tracepass/dpp-validate.
- * `tracepass-open/packages/dpp-validate/src/vendor/publish-gate.ts` is a hand-copy of this
- * file — nothing generates one from the other, and a stale copy fails silently
- * (it still compiles and still returns a plausible answer). tracepass-open
- * gates on a hash of this file in CI, so after changing it:
- *
- *   cd ../tracepass-open && node scripts/build-mirror-manifest.mjs \
- *     && npm run check:mirrors
- *
- * and commit `mirror-manifest.json` with the code.
  */
 
 import { passportSubcategory } from "./subcategory.js";
@@ -27,6 +16,9 @@ import { isFieldAbsent } from "./field-emptiness.js";
 /** Applicability value returned by the condition-gate engine. */
 export type GateApplicability = "applies" | "not_applicable" | "unknown";
 
+/**
+ * The result of the publish check: whether the passport may be published and, when not, why.
+ */
 export interface PublishCheck {
   ready: boolean;
   /** Field keys that have no value set. */
@@ -73,10 +65,10 @@ const PUBLISHABLE_STATUSES = new Set<Passport["status"]>(["draft", "in_review", 
  * is what a portable or SLI battery would otherwise land on — see
  * `effectiveRequiredForBattery`, which callers holding a battery passport should
  * use instead.
- *
- * @param tf        A template field (from the template's `fields` array).
- * @param category  The resolved `batteryCategory` value from the passport, or
- *                  `undefined` when the field is unset.
+ * @param tf - a template field (from the template's `fields` array)
+ * @param category - the resolved `batteryCategory` value from the passport, or
+ *   `undefined` when the field is unset
+ * @returns whether the field is required for that category
  */
 export function effectiveRequired(
   tf: Pick<TemplateField, "validation">,
@@ -110,6 +102,9 @@ export function effectiveRequired(
  *
  * Non-battery templates never reach the scope branch — they carry no
  * `batteryCategory`, so `category` is `undefined` and behaviour is unchanged.
+ * @param tf - the template field
+ * @param category - the battery category, if set
+ * @returns whether the field is required for that battery category
  */
 export function effectiveRequiredForBattery(
   tf: Pick<TemplateField, "validation">,
@@ -125,6 +120,10 @@ export function effectiveRequiredForBattery(
  * `effectiveRequired` for any template: the battery scope rule
  * (`effectiveRequiredForBattery`) applies to battery templates only, since a
  * non-battery sub-category such as "laundry" is not an out-of-scope battery.
+ * @param templateCategory - the template's category
+ * @param tf - the template field
+ * @param subcategory - the passport's sub-category, if set
+ * @returns whether the field is required
  */
 export function effectiveRequiredFor(
   templateCategory: string,
@@ -150,6 +149,9 @@ export function effectiveRequiredFor(
  *
  * Returns false when the category is unset or the field carries no map —
  * absence of information is never grounds for asserting non-applicability.
+ * @param tf - the template field
+ * @param category - the passport's category, if set
+ * @returns whether the template marks the field as not applicable
  */
 export function notApplicableForCategory(
   tf: Pick<TemplateField, "validation">,
@@ -171,6 +173,10 @@ export interface FieldRequirements {
  * Whether a gate's APPROVED flag has made a conditional field required for
  * this passport. Shared by the publish gate and the guard that refuses to
  * empty a required field on a published passport, so the two never disagree.
+ * @param tf - the template field
+ * @param category - the passport's category, if set
+ * @param applicabilityMap - the gate applicability per field key
+ * @returns whether an approved flag makes the field required
  */
 export function isGateRequired(
   tf: TemplateField,
@@ -209,6 +215,10 @@ export function isGateRequired(
  * `categoryFieldApplicability(passport, template.category)`. Pass `{}` for
  * non-battery categories — the gate branch is then a no-op. Keeping it
  * injected preserves the IO-free/pure contract of this function.
+ * @param passport - the passport to check
+ * @param template - the template that defines the requirements
+ * @param applicabilityMap - the gate applicability per field key; empty when no gates apply
+ * @returns the missing, unapproved and conditional-missing field keys
  */
 export function evaluateFieldRequirements(
   passport: Passport,
@@ -288,17 +298,20 @@ export function evaluateFieldRequirements(
  *     as a structural blocker).
  *
  * `undefined` template means we can't evaluate — treat as not-ready.
- *
+ * @param passport - the passport to check
+ * @param template - the passport's template; without one the passport is not ready
  * @param applicabilityMap  Pre-computed gate-applicability map (field key →
  *   "applies" | "not_applicable" | "unknown"). Computed by the caller using
  *   `categoryFieldApplicability(passport, template.category)`. Pass `{}` or
  *   omit for non-battery passports (no change in behaviour). Keeping it
  *   injected preserves the IO-free/pure contract of this function.
+ * @param opts - options for the check
  * @param opts.republish  The single-publish route only: a suspended passport
  *   may be published again (suspend is the reversible way to take a passport
  *   offline). Bulk publish and the list's publishReady leave it off, so a
  *   suspended passport, perhaps under a recall, never comes back in a batch.
  *   Archived and expired stay refused either way.
+ * @returns whether the passport may be published, with the blockers when it may not
  */
 export function checkPublishReady(
   passport: Passport,
@@ -361,9 +374,9 @@ export function checkPublishReady(
 
   const parts: string[] = [];
   if (conditionalMissingFields.length > 0)
-    parts.push(`${conditionalMissingFields.length} conditional-required missing`);
-  if (missingFields.length > 0) parts.push(`${missingFields.length} missing`);
-  if (unapprovedFields.length > 0) parts.push(`${unapprovedFields.length} not approved`);
+    parts.push(`${String(conditionalMissingFields.length)} conditional-required missing`);
+  if (missingFields.length > 0) parts.push(`${String(missingFields.length)} missing`);
+  if (unapprovedFields.length > 0) parts.push(`${String(unapprovedFields.length)} not approved`);
 
   // Hard block when any conditional-required field is missing; soft gap otherwise.
   const blockerType: "hard" | "gap" | "conditional" =

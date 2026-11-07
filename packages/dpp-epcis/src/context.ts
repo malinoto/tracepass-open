@@ -1,9 +1,9 @@
 /**
- * EPCIS 2.0 JSON-LD @context for TracePass-emitted EPCIS documents.
+ * EPCIS 2.0 JSON-LD `@context` for TracePass-emitted EPCIS documents.
  *
  * An EPCIS 2.0 document is JSON-LD — the same linked-data family as the
  * schema.org JSON-LD the public passport viewer already emits. The
- * @context tells a consumer which vocabularies the document's terms
+ * `@context` tells a consumer which vocabularies the document's terms
  * come from.
  *
  * Four vocabularies compose here:

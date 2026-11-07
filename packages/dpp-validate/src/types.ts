@@ -25,14 +25,25 @@
  *   - else            → "compliant"
  */
 
+/**
+ * The overall verdict of a compliance evaluation, from the findings' severities.
+ */
 export type ComplianceVerdict = "compliant" | "compliant_with_warnings" | "incomplete";
 
-/** Did per-category conditional rules actually run for this passport's
- *  category, or does no binding conditional exist yet (static-only)? */
+/**
+ * Did per-category conditional rules actually run for this passport's
+ *  category, or does no binding conditional exist yet (static-only)?
+ */
 export type ConditionalCoverage = "evaluated" | "static-only";
 
+/**
+ * How a finding affects the verdict: `critical` blocks, `warning` does not.
+ */
 export type FindingSeverity = "critical" | "warning";
 
+/**
+ * The kind of problem a compliance finding reports.
+ */
 export type FindingType =
   /** A required template field has no value (static tier). */
   | "missing_field"
@@ -44,17 +55,24 @@ export type FindingType =
   | "invalid_format"
   /** A conditional rule fired and its required field/party is missing. */
   | "conditional_missing"
-  /** A conditional rule should apply but its trigger field is absent, so the
-   *  engine couldn't evaluate it — surfaced as a warning, never silent. */
+  /**
+   * A conditional rule should apply but its trigger field is absent, so the
+   *  engine couldn't evaluate it — surfaced as a warning, never silent.
+   */
   | "unverifiable_conditional";
 
+/**
+ * One regulation-cited problem found while evaluating a passport.
+ */
 export interface ComplianceFinding {
   type: FindingType;
   severity: FindingSeverity;
   /** Field key or party role this finding concerns, when applicable. */
   target?: string;
-  /** Regulation number, e.g. "(EU) 2023/1542". Present for conditional
-   *  findings and for static findings whose field carries a regulationRef. */
+  /**
+   * Regulation number, e.g. "(EU) 2023/1542". Present for conditional
+   *  findings and for static findings whose field carries a regulationRef.
+   */
   regulation?: string;
   /** Article / annex citation, e.g. "Art. 77" / "Annex VI". */
   article?: string;
@@ -66,6 +84,9 @@ export interface ComplianceFinding {
   fix?: string;
 }
 
+/**
+ * The result of evaluating a passport: the verdict, the findings behind it, and what the engine checked.
+ */
 export interface ComplianceResult {
   verdict: ComplianceVerdict;
   category: string;
@@ -74,8 +95,10 @@ export interface ComplianceResult {
   critical: ComplianceFinding[];
   /** Findings that downgrade to "compliant_with_warnings" but don't block. */
   warnings: ComplianceFinding[];
-  /** Rule ids that actually ran (static checks + every conditional rule
-   *  evaluated). Lets an agent see WHAT was checked, not just the result. */
+  /**
+   * Rule ids that actually ran (static checks + every conditional rule
+   *  evaluated). Lets an agent see WHAT was checked, not just the result.
+   */
   checkedRules: string[];
   /** Completion metric, mirrors the passport's approved/total field ratio. */
   completionPercentage: number;

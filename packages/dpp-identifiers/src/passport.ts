@@ -12,6 +12,15 @@
 import type { Passport, ProductIdentifier, Gs1Identifier } from "@tracepass/dpp-types";
 
 /**
+ * The deprecated `gs1` alias on a passport. Reading it through this structural
+ * view, rather than through `Passport`, keeps the one place that deliberately
+ * reads the alias from being reported as a use of a deprecated property.
+ */
+interface LegacyGs1Carrier {
+  gs1?: { gtin: string; serialNumber: string; digitalLinkUri?: string };
+}
+
+/**
  * Return the canonical `ProductIdentifier` for a passport.
  *
  * Prefers the scheme-tagged `identifier` field (EN 18219). Falls back to
@@ -21,7 +30,8 @@ import type { Passport, ProductIdentifier, Gs1Identifier } from "@tracepass/dpp-
  * Use this instead of reading `passport.identifier ?? liftGs1(passport.gs1)`
  * directly — it centralises the precedence rule so callers stay correct when
  * new fallback logic is added.
- *
+ * @param passport - the passport to read the identifier from
+ * @returns the product identifier, or undefined when the passport carries none
  * @example
  * ```ts
  * const id = resolveProductIdentifier(passport);
@@ -33,14 +43,15 @@ export function resolveProductIdentifier(passport: Passport): ProductIdentifier 
   if (passport.identifier) return passport.identifier;
 
   // 2. Legacy GS1-only field — lifted into the ProductIdentifier union.
-  if (passport.gs1) {
+  const { gs1 }: LegacyGs1Carrier = passport;
+  if (gs1) {
     const lifted: Gs1Identifier = {
       scheme: "gs1",
-      gtin: passport.gs1.gtin,
-      serialNumber: passport.gs1.serialNumber,
+      gtin: gs1.gtin,
+      serialNumber: gs1.serialNumber,
     };
-    if (passport.gs1.digitalLinkUri !== undefined) {
-      lifted.digitalLinkUri = passport.gs1.digitalLinkUri;
+    if (gs1.digitalLinkUri !== undefined) {
+      lifted.digitalLinkUri = gs1.digitalLinkUri;
     }
     return lifted;
   }

@@ -3,17 +3,6 @@
  *
  * A GTIN-14 is a 14-digit string. The last digit is a check digit computed
  * using the GS1 modulo-10 algorithm (alternating ×3/×1 from the right).
- *
- * ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE @tracepass/gs1-utils.
- * `tracepass-open/packages/gs1-utils/src/gtin.ts` is a hand-copy of this
- * file — nothing generates one from the other, and a stale copy fails silently
- * (it still compiles and still returns a plausible answer). tracepass-open
- * gates on a hash of this file in CI, so after changing it:
- *
- *   cd ../tracepass-open && node scripts/build-mirror-manifest.mjs \
- *     && npm run check:mirrors
- *
- * and commit `mirror-manifest.json` with the code.
  */
 
 /**
@@ -42,6 +31,8 @@ export function calculateCheckDigit(gtin13: string): string {
  * Validate a 14-digit GTIN string (GTIN-14).
  * Returns true only when the string is 14 numeric characters and the check
  * digit matches.
+ * @param gtin - the string to check
+ * @returns whether it is a 14-digit GTIN with a correct check digit
  */
 export function validateGtin(gtin: string): boolean {
   if (!/^\d{14}$/.test(gtin)) {
@@ -61,6 +52,8 @@ export function validateGtin(gtin: string): boolean {
  *   - the input is not a string or not all digits
  *   - the length is not one of 8, 12, 13, or 14
  *   - the mod-10 check digit does not match after padding
+ * @param input - a GTIN-8, -12, -13 or -14
+ * @returns the 14-digit GTIN, or null when the input is not valid
  */
 export function normalizeGtin(input: string): string | null {
   if (typeof input !== "string") return null;

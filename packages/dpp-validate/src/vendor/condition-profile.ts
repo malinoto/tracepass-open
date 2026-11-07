@@ -26,6 +26,8 @@ import type { Passport, ConditionProfile } from "@tracepass/dpp-types";
  * - Otherwise, adapt `passport.batteryProfile` (the legacy shape, which lacks
  *   per-flag audit arrays) to the `ConditionProfile` shape with `audit: []`.
  * - If neither is set, return an empty object.
+ * @param passport - the passport holding the profile
+ * @returns the effective condition profile
  */
 export function resolveConditionProfile(
   passport: Pick<Passport, "conditionProfile" | "batteryProfile">,

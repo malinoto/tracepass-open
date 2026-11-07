@@ -34,6 +34,8 @@ import { normalizeDoi } from "./product.js";
  *
  * Processing in digit-by-digit chunks avoids BigInt or a full string-to-number
  * conversion (a 20-char LEI expands to up to 34 decimal digits).
+ * @param lei - the 20-character LEI to check
+ * @returns whether the check digits are correct
  */
 function verifyLeiCheckDigits(lei: string): boolean {
   // Build the full digit string (letters → 2-digit ordinals, digits → as-is)
@@ -48,8 +50,8 @@ function verifyLeiCheckDigits(lei: string): boolean {
 
   // Compute the large number mod 97 by iterating one digit at a time
   let remainder = 0;
-  for (let i = 0; i < digits.length; i++) {
-    remainder = (remainder * 10 + Number(digits[i])) % 97;
+  for (const digit of digits) {
+    remainder = (remainder * 10 + Number(digit)) % 97;
   }
   return remainder === 1;
 }
@@ -158,6 +160,8 @@ function validateIso6523(
 /**
  * Validate a `OperatorIdentifier` against EN 18219 rules.
  * Returns the normalised identifier on success or an error list on failure.
+ * @param id - the operator identifier to validate
+ * @returns the normalised identifier, or the list of problems found
  */
 export function validateOperatorIdentifier(
   id: OperatorIdentifier,
@@ -198,7 +202,6 @@ export function validateOperatorIdentifier(
     default: {
       // Exhaustiveness guard
       const _exhaustive: never = id;
-      void _exhaustive;
       return { ok: false, errors: ["unknown operator identifier scheme"] };
     }
   }
@@ -210,6 +213,8 @@ export function validateOperatorIdentifier(
  * EN 18219 §6.1–6.5 specifies the same four schemes for facilities as for
  * operators: ISO/IEC 6523, GLN/ISO 15418, DID, and DOI. All four are validated
  * here. The GLN `extension` field is a GS1 SGLN sub-location component.
+ * @param id - the facility identifier to validate
+ * @returns the normalised identifier, or the list of problems found
  */
 export function validateFacilityIdentifier(
   id: FacilityIdentifier,
@@ -228,7 +233,7 @@ export function validateFacilityIdentifier(
     }
 
     case "iso6523":
-      return validateIso6523(id.icd, id.value) as ValidationResult<FacilityIdentifier>;
+      return validateIso6523(id.icd, id.value);
 
     case "did": {
       const didErrors = validateDidString(id.did);
@@ -249,7 +254,6 @@ export function validateFacilityIdentifier(
 
     default: {
       const _exhaustive: never = id;
-      void _exhaustive;
       return { ok: false, errors: ["unknown facility identifier scheme"] };
     }
   }

@@ -516,7 +516,7 @@ describe("identifierToUri", () => {
       serial: "S/1 2",
       raw: "MHABC123.S/1 2",
     };
-    const uri = identifierToUri(id, RESOLVER)!;
+    const uri = identifierToUri(id, RESOLVER) ?? expect.unreachable("no URI was built");
     const url = new URL(uri);
     // URLSearchParams.get decodes; the raw URI should have encoded the slash+space
     expect(url.searchParams.get(".25P")).toBe("MHABC123");
@@ -585,7 +585,7 @@ describe("parseResolverPath", () => {
       gtin: "05449000000996",
       serialNumber: "SN/1 2",
     };
-    const uri = identifierToUri(id, RESOLVER)!;
+    const uri = identifierToUri(id, RESOLVER) ?? expect.unreachable("no URI was built");
     const path = new URL(uri).pathname;
     const parsed = parseResolverPath(path);
     expect(parsed).not.toBeNull();
@@ -608,14 +608,13 @@ describe("parseResolverPath", () => {
       serial: "S/1 2",
       raw: "MHABC123.S/1 2",
     };
-    const uri = identifierToUri(id, RESOLVER)!;
+    const uri = identifierToUri(id, RESOLVER) ?? expect.unreachable("no URI was built");
     const search = new URL(uri).search;
-    const parsed = parseDiQuery(search);
-    expect(parsed).not.toBeNull();
-    expect(parsed?.concatenated25P).toBe("MHABC123");
-    expect(parsed?.serial).toBe("S/1 2");
+    const parsed = parseDiQuery(search) ?? expect.unreachable("the query did not parse");
+    expect(parsed.concatenated25P).toBe("MHABC123");
+    expect(parsed.serial).toBe("S/1 2");
     // The stored identifierKey "iso15459:MH:ABC123:S/1 2" should be among candidates.
-    const candidates = diQueryCandidateKeys(parsed!.concatenated25P, parsed?.serial);
+    const candidates = diQueryCandidateKeys(parsed.concatenated25P, parsed.serial);
     expect(candidates).toContain("iso15459:MH:ABC123:S/1 2");
   });
 

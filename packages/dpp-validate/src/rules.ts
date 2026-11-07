@@ -23,12 +23,13 @@
  * `warning`, never a blocker.
  */
 
-import type { Passport, Template } from "@tracepass/dpp-types";
+import type { LocalizedString, Passport, Template } from "@tracepass/dpp-types";
 import { isEuEeaCountry } from "./eu-countries.js";
+import { fieldAt, optionalFieldValue } from "./vendor/field-emptiness.js";
 import {
   ANNEX_XIII_4D_KEYS,
   BATTERY_FIELD_GATES,
-  batteryFieldApplicability,
+  categoryFieldApplicability,
 } from "./vendor/battery-applicability.js";
 import {
   COMPOSITION_FIELDS,
@@ -37,19 +38,31 @@ import {
 } from "./vendor/composition-detail.js";
 import type { ComplianceFinding } from "./types.js";
 
-/** A field counts as "present" when it exists with a non-empty value. */
+/**
+ * A field counts as "present" when it exists with a non-empty value.
+ * @param passport - the passport to read
+ * @param key - the field key
+ * @returns whether the field has a non-empty value
+ */
 function hasValue(passport: Passport, key: string): boolean {
-  const f = passport.fields[key];
+  const f = fieldAt(passport, key);
   return !!f && f.value !== null && f.value !== undefined && f.value !== "";
 }
 
-/** Read a field's raw value (or undefined when absent/empty). */
+/**
+ * Read a field's raw value (or undefined when absent/empty).
+ * @param passport - the passport to read
+ * @param key - the field key
+ * @returns the field value, or undefined when absent or empty
+ */
 function valueOf(passport: Passport, key: string): unknown {
   return hasValue(passport, key) ? passport.fields[key].value : undefined;
 }
 
-/** What a rule may know besides the passport: the evaluation time, passed in
- *  by the caller so date-gated rules are testable and flip without a release. */
+/**
+ * What a rule may know besides the passport: the evaluation time, passed in
+ *  by the caller so date-gated rules are testable and flip without a release.
+ */
 export interface RuleContext {
   now: Date;
 }
@@ -60,12 +73,27 @@ export interface ConditionalRule {
   run(passport: Passport, template: Template, ctx?: RuleContext): ComplianceFinding[];
 }
 
-/** English label for `key` from the template, with the raw key in parentheses for
+/**
+ * The English label of a template field. A template written by hand may leave
+ * `label` out even though the type requires it.
+ * @param field - the template field, if found
+ * @returns the English label, or undefined when there is none
+ */
+function englishLabel(field: { label?: LocalizedString } | undefined): string | undefined {
+  return field?.label?.en;
+}
+
+/**
+ * English label for `key` from the template, with the raw key in parentheses for
  *  traceability. Falls back to the raw key alone when the template has no matching
- *  field or no English label — so the message is always actionable. */
+ *  field or no English label — so the message is always actionable.
+ * @param key - the field key
+ * @param template - the template that may label the field
+ * @returns the label with the key in parentheses, or the key alone
+ */
 function fieldLabel(key: string, template: Template): string {
   const field = template.fields.find((f) => f.key === key);
-  const en = field?.label?.en;
+  const en = englishLabel(field);
   return en ? `${en} (${key})` : key;
 }
 
@@ -83,7 +111,7 @@ const CC1: ConditionalRule = {
   run(passport) {
     const mfr = passport.parties?.manufacturer;
     // Trigger field absent → can't evaluate. Warn, don't assert.
-    if (!mfr || !mfr.country) {
+    if (!mfr?.country) {
       return [
         {
           type: "unverifiable_conditional",
@@ -135,6 +163,12 @@ const BATTERY_PASSPORT_FIELDS = ["batteryUniqueIdentifier"] as const;
 // critical. Implemented inside BAT-1 because it changes BAT-1's severity and has
 // no finding of its own. Midnight UTC is the flip.
 export const BATTERY_PASSPORT_MANDATORY_FROM = "2027-02-18";
+/**
+ * Whether battery passports are mandatory at `now`: false before the date in
+ * `BATTERY_PASSPORT_MANDATORY_FROM`, true from midnight UTC on that day.
+ * @param now - the time to evaluate at
+ * @returns whether battery passports are mandatory at that time
+ */
 export function batteryPassportMandatory(now: Date): boolean {
   return now.getTime() >= Date.parse(`${BATTERY_PASSPORT_MANDATORY_FROM}T00:00:00Z`);
 }
@@ -158,7 +192,7 @@ const BAT1: ConditionalRule = {
       ];
     }
     // Out-of-scope categories (portable, SLI, industrial_lte_2kwh) → no obligation.
-    if (!IN_SCOPE_BATTERY.has(String(cat))) return [];
+    if (typeof cat !== "string" || !IN_SCOPE_BATTERY.has(cat)) return [];
 
     const mandatory = batteryPassportMandatory(ctx?.now ?? new Date());
     const findings: ComplianceFinding[] = [];
@@ -172,8 +206,8 @@ const BAT1: ConditionalRule = {
           article: "Art. 77(1)",
           ruleId: "BAT-1",
           why: mandatory
-            ? `This is an in-scope battery (${String(cat)}); a battery passport with its unique identifier is mandatory.`
-            : `This is an in-scope battery (${String(cat)}); the battery passport becomes mandatory on 18 February 2027 (Art. 77(1)), and its unique identifier is not set yet.`,
+            ? `This is an in-scope battery (${cat}); a battery passport with its unique identifier is mandatory.`
+            : `This is an in-scope battery (${cat}); the battery passport becomes mandatory on 18 February 2027 (Art. 77(1)), and its unique identifier is not set yet.`,
           // Battery Regulation Art. 77(3) requires ISO/IEC 15459; a GS1 Digital
           // Link URI is one conformant form. DID, DOI and IEC 61406 are not
           // 15459 identifiers, so they are not valid here until a delegated act
@@ -206,7 +240,7 @@ const BAT_APP: ConditionalRule = {
     const findings: ComplianceFinding[] = [];
     // Reuse the shared predicate so the verdict + editor read applicability
     // through ONE path (incl. the "pending AI flag = unknown" safety rule).
-    const applicability = batteryFieldApplicability(passport, "battery");
+    const applicability = categoryFieldApplicability(passport, "battery");
     for (const gate of BATTERY_FIELD_GATES) {
       // Every key in a gate shares the gate's verdict; sample the first.
       const verdict = applicability[gate.keys[0]];
@@ -261,16 +295,14 @@ const IN_SERVICE_CATEGORIES = new Set(["EV", "LMT", "industrial_gt_2kwh"]);
 const BAT_INSERVICE: ConditionalRule = {
   id: "BAT-INSERVICE",
   run(passport, template) {
-    const inService =
-      passport.dynamicDataAsOf != null ||
-      (!!passport.fields?.dateOfServiceEntry?.value &&
-        passport.fields.dateOfServiceEntry.value !== "");
+    const serviceEntry = optionalFieldValue(passport.fields, "dateOfServiceEntry");
+    const inService = passport.dynamicDataAsOf != null || (!!serviceEntry && serviceEntry !== "");
 
     if (!inService) return [];
 
     const cat = valueOf(passport, "batteryCategory");
     if (cat === undefined) return [];
-    if (!IN_SERVICE_CATEGORIES.has(String(cat))) return [];
+    if (typeof cat !== "string" || !IN_SERVICE_CATEGORIES.has(cat)) return [];
 
     const findings: ComplianceFinding[] = [];
     for (const key of ANNEX_XIII_4D_KEYS) {
@@ -283,7 +315,7 @@ const BAT_INSERVICE: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Annex XIII 4(d)",
           ruleId: "BAT-INSERVICE",
-          why: `${label} is expected now that this ${String(cat)} battery is in service (Annex XIII 4(d): use data shall be recorded).`,
+          why: `${label} is expected now that this ${cat} battery is in service (Annex XIII 4(d): use data shall be recorded).`,
           fix: `Provide ${key} via the measurements API or directly. This battery has received a service signal and Annex XIII 4(d) data is expected.`,
         });
       }
@@ -307,7 +339,12 @@ const BAT_INSERVICE: ConditionalRule = {
 // Absent fields are skipped here (presence is BAT-1 / the static tier's
 // job) so this rule stays additive and can't double-count.
 
-/** Parse a field value as a finite number, or undefined if not numeric. */
+/**
+ * Parse a field value as a finite number, or undefined if not numeric.
+ * @param passport - the passport to read
+ * @param key - the field key
+ * @returns the value as a finite number, or undefined when it is not numeric
+ */
 function numberOf(passport: Passport, key: string): number | undefined {
   if (!hasValue(passport, key)) return undefined;
   const raw = passport.fields[key].value;
@@ -351,7 +388,7 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Annex XIII",
           ruleId: "BAT-VAL",
-          why: `${label} is ${n}, outside the valid 0–100% range.`,
+          why: `${label} is ${String(n)}, outside the valid 0–100% range.`,
           fix: `Correct ${label} to a percentage between 0 and 100.`,
         });
       }
@@ -369,7 +406,7 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Art. 7",
           ruleId: "BAT-VAL",
-          why: `${label} is ${n}; a carbon-footprint value cannot be negative.`,
+          why: `${label} is ${String(n)}; a carbon-footprint value cannot be negative.`,
           fix: `Correct ${label} to a non-negative value (kg CO2e/kWh).`,
         });
       }
@@ -386,7 +423,7 @@ const BAT_VAL: ConditionalRule = {
     // is unknown, critical from that day for an in-scope battery. Shares are
     // optional and are only checked when given.
     const cat = valueOf(passport, "batteryCategory");
-    const outOfScope = cat !== undefined && !IN_SCOPE_BATTERY.has(String(cat));
+    const outOfScope = cat !== undefined && !(typeof cat === "string" && IN_SCOPE_BATTERY.has(cat));
     const compositionCritical =
       cat !== undefined && !outOfScope && batteryPassportMandatory(ctx?.now ?? new Date());
     for (const key of COMPOSITION_FIELDS) {
@@ -415,7 +452,7 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Annex XIII 2(a)",
           ruleId: "BAT-VAL",
-          why: `${a.outOfRange} of the ${a.entries} entries in ${label} give a weight share outside 0–100 %.`,
+          why: `${String(a.outOfRange)} of the ${String(a.entries)} entries in ${label} give a weight share outside 0–100 %.`,
           fix: `Correct those shares to a value between 0 and 100 %, or remove them; a share is optional.`,
         });
       }
@@ -427,7 +464,7 @@ const BAT_VAL: ConditionalRule = {
           regulation: "(EU) 2023/1542",
           article: "Annex XIII 2(a)",
           ruleId: "BAT-VAL",
-          why: `The weight shares in ${label} add up to ${Math.round(a.shareSum * 10) / 10} %, more than 100 %.`,
+          why: `The weight shares in ${label} add up to ${String(Math.round(a.shareSum * 10) / 10)} %, more than 100 %.`,
           fix: `Check the shares in ${label}; they are percentages of the battery's mass and cannot exceed 100 % in total.`,
         });
       }
@@ -631,7 +668,7 @@ const CE1: ConditionalRule = {
           target: "ceMarking",
           article: "CE marking",
           ruleId: "CE-1",
-          why: `CE marking status is "${String(status)}", so whether the product bears the CE mark must be recorded.`,
+          why: `CE marking status is "${status}", so whether the product bears the CE mark must be recorded.`,
           fix: "Set ceMarking to true or false.",
         },
       ];

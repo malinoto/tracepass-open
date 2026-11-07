@@ -44,6 +44,8 @@ const AI_PARTY = "417";
  *
  * Returns null when the passport has no Digital Link URI (should not
  * happen for a published passport, but the builder must not throw).
+ * @param digitalLinkUri - the passport's Digital Link URI
+ * @returns the URI to use as the event's EPC, or null when there is none
  */
 export function passportEpc(digitalLinkUri: string | undefined | null): string | null {
   if (typeof digitalLinkUri !== "string" || digitalLinkUri.length === 0) {
@@ -60,6 +62,8 @@ export function passportEpc(digitalLinkUri: string | undefined | null): string |
  * an invalid GLN must not produce a malformed location URI. The
  * caller omits the readPoint/bizLocation rather than emitting a
  * broken one.
+ * @param gln - a 13-digit GLN
+ * @returns the `id.gs1.org/414/<gln>` URI, or null when the GLN is absent or invalid
  */
 export function locationUri(gln: string | undefined | null): string | null {
   if (typeof gln !== "string") return null;
@@ -71,6 +75,8 @@ export function locationUri(gln: string | undefined | null): string | null {
  * Build the `id` object EPCIS uses for a readPoint / bizLocation:
  * `{ id: "<uri>" }`. Returns null when the GLN is missing or invalid
  * so the event builder can cleanly omit the key.
+ * @param gln - a 13-digit GLN
+ * @returns the `{ id }` reference, or null when the GLN is absent or invalid
  */
 export function locationRef(gln: string | undefined | null): { id: string } | null {
   const uri = locationUri(gln);
@@ -87,6 +93,8 @@ export function locationRef(gln: string | undefined | null): { id: string } | nu
  *
  * Returns null when the GLN is absent or fails the mod-10 check — an
  * invalid GLN must not produce a malformed party URI.
+ * @param gln - the operator's 13-digit GLN
+ * @returns the party URI built with AI 417, or null when the GLN is absent or invalid
  */
 export function partyUri(gln: string | undefined | null): string | null {
   if (typeof gln !== "string") return null;
@@ -103,6 +111,9 @@ export function partyUri(gln: string | undefined | null): string | null {
  * Shape: a TracePass URN namespacing the passport id + an event-local
  * discriminator (the source collection + its row id, or a synthetic
  * index for inline supplyChainEvents which have no own id).
+ * @param passportId - the passport id
+ * @param discriminator - a value that tells this event apart within the passport
+ * @returns the TracePass event id URN
  */
 export function buildEventId(passportId: string, discriminator: string): string {
   const safe = discriminator.replace(/[^a-zA-Z0-9._-]/g, "-");

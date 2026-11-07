@@ -45,6 +45,8 @@ export function calculateCheckDigit(gln12: string): string {
  * Validate a 13-digit GLN string.
  * Returns true only when the string is 13 numeric characters and the check
  * digit matches.
+ * @param gln - the string to check
+ * @returns whether it is a 13-digit GLN with a correct check digit
  */
 export function validateGln(gln: string): boolean {
   if (!/^\d{13}$/.test(gln)) {
@@ -68,6 +70,8 @@ export function validateGln(gln: string): boolean {
  *
  * Does NOT auto-fix typos — the check digit must validate. A 13-digit string
  * with a wrong check digit returns null, not a "corrected" GLN.
+ * @param input - a GLN as typed or exported, possibly with a prefix, spaces or hyphens
+ * @returns the clean 13-digit GLN, or null when it is not valid
  */
 export function normalizeGln(input: string): string | null {
   if (typeof input !== "string") return null;

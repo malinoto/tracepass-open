@@ -56,6 +56,8 @@ const EU_EEA_SET = new Set<string>([...EU_27, ...EEA_EXTRA]);
  * undefined / empty / unknown codes — callers treat "unknown origin" as
  * NOT-confirmed-EU and let the engine emit a warning rather than assert
  * compliance on a country it can't place.
+ * @param country - an ISO 3166-1 alpha-2 country code
+ * @returns whether the code is an EU or EEA member state
  */
 export function isEuEeaCountry(country: string | undefined | null): boolean {
   if (!country) return false;

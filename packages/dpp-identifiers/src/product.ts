@@ -48,6 +48,8 @@ export interface ValidateProductOptions {
 /**
  * True when every character in `s` is a printable ASCII character (0x20–0x7E).
  * EN 18219 clause 4.3.2 requires ISO/IEC 646 characters for all identifier fields.
+ * @param s - the string to test
+ * @returns whether every character is printable ASCII
  */
 function isAsciiPrintable(s: string): boolean {
   for (let i = 0; i < s.length; i++) {
@@ -62,6 +64,8 @@ function isAsciiPrintable(s: string): boolean {
  * (available in Node ≥ 18, browsers and Deno) as a lightweight proxy — it
  * throws on obvious syntax errors. The check is intentionally permissive:
  * percent-encoded bytes are accepted so long as the `URL` constructor accepts them.
+ * @param s - the string to test
+ * @returns whether the string parses as a URL
  */
 function isRfc3986Valid(s: string): boolean {
   try {
@@ -77,6 +81,8 @@ function isRfc3986Valid(s: string): boolean {
 /**
  * True when `seg` is a valid DID method-specific-id segment.
  * Per W3C DID Core: idchar = ALPHA / DIGIT / "." / "-" / "_" / pct-encoded.
+ * @param seg - one colon-separated segment of a DID
+ * @returns whether the segment uses only allowed characters
  */
 function isValidDidSegment(seg: string): boolean {
   if (!seg) return false;
@@ -149,6 +155,8 @@ function validateDidString(did: string): string[] {
  * Returns `null` when:
  *   - the input contains non-ASCII characters (EN 18219 clause 4.3.2 / ISO/IEC 646)
  *   - the bare form does not match DOI Handbook syntax (`10.<4–9 digits>/<suffix>`)
+ * @param input - a DOI, bare or with a `doi:` or resolver-URL prefix
+ * @returns the bare DOI, or null when the input is not a valid DOI
  */
 export function normalizeDoi(input: string): string | null {
   // EN 18219 clause 4.3.2: all identifier content must be ISO/IEC 646 (printable ASCII)
@@ -333,6 +341,9 @@ const BATTERY_ALLOWED_SCHEMES = new Set<ProductIdentifier["scheme"]>(["gs1", "is
  * Pass `{ category: "battery" }` to apply the additional Battery Regulation
  * Art. 77(3) restriction: only `gs1` and `iso15459` are accepted, because
  * DID, DOI and IEC 61406 are not ISO/IEC 15459 identifiers.
+ * @param id - the product identifier to validate
+ * @param options - validation options, such as the product category
+ * @returns the normalised identifier, or the list of problems found
  */
 export function validateProductIdentifier(
   id: ProductIdentifier,
@@ -365,7 +376,6 @@ export function validateProductIdentifier(
       // Exhaustiveness guard — a new scheme added to the union without a
       // validator here becomes a compile error on the line below.
       const _exhaustive: never = id;
-      void _exhaustive;
       return { ok: false, errors: ["unknown scheme"] };
     }
   }

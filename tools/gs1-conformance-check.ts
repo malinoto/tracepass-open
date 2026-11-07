@@ -50,7 +50,7 @@ function parseArgs(argv: string[]): {
   gtin: string;
   serial: string;
 } {
-  const out: Record<string, string> = {};
+  const out: Partial<Record<string, string>> = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith("--")) {
@@ -98,7 +98,7 @@ async function main() {
   checks.push(
     await check("well-known.exists", "GET /.well-known/gs1resolver returns 200", async () => {
       const r = await fetch(`${base}/.well-known/gs1resolver`);
-      return { pass: r.status === 200, detail: `status=${r.status}` };
+      return { pass: r.status === 200, detail: `status=${String(r.status)}` };
     }),
   );
   checks.push(
@@ -107,13 +107,13 @@ async function main() {
       "Self-description carries supportedPrimaryKeys + specVersion",
       async () => {
         const r = await fetch(`${base}/.well-known/gs1resolver`);
-        if (r.status !== 200) return { pass: false, detail: `status=${r.status}` };
+        if (r.status !== 200) return { pass: false, detail: `status=${String(r.status)}` };
         const j = (await r.json()) as Record<string, unknown>;
         const okKeys = Array.isArray(j.supportedPrimaryKeys);
         const okVer = typeof j.specVersion === "string";
         return {
           pass: okKeys && okVer,
-          detail: `supportedPrimaryKeys=${okKeys} specVersion=${okVer}`,
+          detail: `supportedPrimaryKeys=${String(okKeys)} specVersion=${String(okVer)}`,
         };
       },
     ),
@@ -132,7 +132,7 @@ async function main() {
         const ct = r.headers.get("content-type") ?? "";
         return {
           pass: r.status === 200 && ct.includes("text/html"),
-          detail: `status=${r.status} content-type=${ct}`,
+          detail: `status=${String(r.status)} content-type=${ct}`,
         };
       },
     ),
@@ -159,7 +159,7 @@ async function main() {
         }
         return {
           pass: r.status === 200 && isLdJson && validJson,
-          detail: `status=${r.status} content-type=${ct} parses=${validJson}`,
+          detail: `status=${String(r.status)} content-type=${ct} parses=${String(validJson)}`,
         };
       },
     ),
@@ -178,7 +178,7 @@ async function main() {
         const ok = ct.includes("application/linkset+json");
         return {
           pass: r.status === 200 && ok,
-          detail: `status=${r.status} content-type=${ct}`,
+          detail: `status=${String(r.status)} content-type=${ct}`,
         };
       },
     ),
@@ -204,8 +204,8 @@ async function main() {
         const typeOk = j["@type"] === "Product";
         const idOk = typeof j.identifier === "string";
         return {
-          pass: !!(ctxOk && typeOk && idOk),
-          detail: `@context=${ctxOk} @type=${typeOk} identifier=${idOk}`,
+          pass: ctxOk && typeOk && idOk,
+          detail: `@context=${String(ctxOk)} @type=${String(typeOk)} identifier=${String(idOk)}`,
         };
       },
     ),
@@ -247,7 +247,7 @@ async function main() {
         });
         return {
           pass: allOk,
-          detail: `count=${parties.length} all-well-formed=${allOk}`,
+          detail: `count=${String(parties.length)} all-well-formed=${String(allOk)}`,
         };
       },
     ),
@@ -270,7 +270,7 @@ async function main() {
   checks.push(
     await check("passport.unknown-404", "Unknown serial returns 404", async () => {
       const r = await fetch(`${base}/01/${gtin}/21/__definitely-not-a-real-serial__`);
-      return { pass: r.status === 404, detail: `status=${r.status}` };
+      return { pass: r.status === 404, detail: `status=${String(r.status)}` };
     }),
   );
 
@@ -297,7 +297,7 @@ async function main() {
     }
   }
   console.log("=".repeat(64));
-  console.log(`${passed} passed, ${failed} failed`);
+  console.log(`${String(passed)} passed, ${String(failed)} failed`);
 
   // Write result to disk for committing to the repo + linking from
   // /trust on the marketing site.
@@ -310,4 +310,4 @@ async function main() {
   process.exit(failed === 0 ? 0 : 1);
 }
 
-main();
+void main();
