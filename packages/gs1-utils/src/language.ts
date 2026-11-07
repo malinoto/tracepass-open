@@ -49,7 +49,7 @@ export function detectLanguage(request: Request): string {
     const langs = parseAcceptLanguage(acceptLanguage);
     if (langs.length > 0) {
       // Return just the 2-letter code
-      const best = langs[0] ?? "";
+      const best = langs.at(0) ?? "";
       return best.replace(/-[\s\S]*$/, "").toLowerCase();
     }
   }

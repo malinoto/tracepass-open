@@ -167,7 +167,8 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
   if (/^\d+$/.test(first)) {
     // Only handle the /01/<gtin>/21/<serial> form we emit.
     if (first !== "01" || segments.length < 4 || segments[2] !== "21") return null;
-    const [, gtin, , rawSerial] = segments;
+    const gtin = segments.at(1);
+    const rawSerial = segments.at(3);
     if (gtin === undefined || rawSerial === undefined) return null; // length checked above
     let serial: string;
     try {
@@ -188,7 +189,7 @@ export function parseResolverPath(path: string): ProductIdentifier | null {
     let serial: string | undefined;
     try {
       issuingAgencyCode = decodeURIComponent(first).toUpperCase();
-      primaryId = decodeURIComponent(segments[1] ?? ""); // length checked above
+      primaryId = decodeURIComponent(segments.at(1) ?? ""); // length checked above
       serial = segments[2] ? decodeURIComponent(segments[2]) : undefined;
     } catch {
       return null;

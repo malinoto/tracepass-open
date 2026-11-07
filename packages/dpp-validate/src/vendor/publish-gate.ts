@@ -11,7 +11,7 @@
 import { passportSubcategory } from "./subcategory.js";
 import type { Passport, Template, TemplateField } from "@tracepass/dpp-types";
 import { isInScopeBatteryCategory } from "./battery-scope.js";
-import { isFieldAbsent } from "./field-emptiness.js";
+import { fieldAt, isFieldAbsent } from "./field-emptiness.js";
 
 /** Applicability value returned by the condition-gate engine. */
 export type GateApplicability = "applies" | "not_applicable" | "unknown";
@@ -241,7 +241,7 @@ export function evaluateFieldRequirements(
     // publication. Skip them before the required check.
     if (tf.validation.anticipated) continue;
 
-    const f = passport.fields[tf.key];
+    const f = fieldAt(passport, tf.key);
 
     // ── Gate-aware conditional check ────────────────────────────────────────
     // A field with requiredBy[category] === "conditional" is normally not

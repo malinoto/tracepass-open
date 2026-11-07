@@ -67,7 +67,8 @@ export function parseDigitalLinkUri(uri: string): { gtin: string; serialNumber: 
   // Handles https://domain/01/…, http://domain/01/…, or bare path /01/…
   // Accepts any of the four valid GTIN lengths in the path segment.
   const match = /\/01\/(\d{8}|\d{12}|\d{13}|\d{14})\/21\/([^/?#]+)/.exec(uri);
-  const [, gtin, serial] = match ?? [];
+  const gtin = match?.at(1);
+  const serial = match?.at(2);
   if (gtin === undefined || serial === undefined) return null;
 
   return {
