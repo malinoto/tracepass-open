@@ -29,7 +29,7 @@ import type { ProductIdentifier } from "@tracepass/dpp-types";
 // GS1 Digital Link — normalises GTIN-8/12/13 to 14 digits
 const gs1: ProductIdentifier = {
   scheme: "gs1",
-  gtin: "5449000000996", // GTIN-13 — normalised to "05449000000996"
+  gtin: "5449000000996",   // GTIN-13 — normalised to "05449000000996"
   serialNumber: "SN-001",
 };
 const r = validateProductIdentifier(gs1);
@@ -38,34 +38,34 @@ const r = validateProductIdentifier(gs1);
 // ISO/IEC 15459 — required for battery passports (Art. 77(3))
 const iso15459: ProductIdentifier = {
   scheme: "iso15459",
-  issuingAgencyCode: "MH", // starts with a letter (GS1 holds the digit range)
+  issuingAgencyCode: "MH",   // starts with a letter (GS1 holds the digit range)
   primaryId: "BATT-2026-001",
   raw: "MHBATT-2026-001",
 };
-validateProductIdentifier(iso15459).ok; // true
+validateProductIdentifier(iso15459).ok;  // true
 
 // Battery passports: only gs1 and iso15459 are allowed
 validateProductIdentifier(
   { scheme: "did", did: "did:web:example.com", method: "web" },
   { category: "battery" },
-).ok; // false — Battery Regulation Art. 77(3) requires ISO/IEC 15459
+).ok;  // false — Battery Regulation Art. 77(3) requires ISO/IEC 15459
 ```
 
 ### Supported schemes (EN 18219)
 
-| `scheme`   | EN 18219 | Notes                                                                                                                                               |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gs1`      | scheme 1 | GTIN-8/12/13/14 accepted; always normalised to 14 digits                                                                                            |
-| `iso15459` | scheme 1 | Non-GS1 issuing agency. Agency code first char must be a letter                                                                                     |
-| `iec61406` | scheme 2 | https URL, ASCII-only, RFC 3986-valid                                                                                                               |
-| `did`      | scheme 3 | W3C DID Core syntax only; no method allow-list                                                                                                      |
-| `doi`      | scheme 5 | `10.<registrant>/<suffix>`; accepts `doi:` / `https://doi.org/` prefixes. `granularity` (`model` \| `batch` \| `item`) is required: clause 5.6.2(b) |
+| `scheme`    | EN 18219 | Notes |
+|---|---|---|
+| `gs1`       | scheme 1 | GTIN-8/12/13/14 accepted; always normalised to 14 digits |
+| `iso15459`  | scheme 1 | Non-GS1 issuing agency. Agency code first char must be a letter |
+| `iec61406`  | scheme 2 | https URL, ASCII-only, RFC 3986-valid |
+| `did`       | scheme 3 | W3C DID Core syntax only; no method allow-list |
+| `doi`       | scheme 5 | `10.<registrant>/<suffix>`; accepts `doi:` / `https://doi.org/` prefixes. `granularity` (`model` \| `batch` \| `item`) is required: clause 5.6.2(b) |
 
 **Battery passports** accept only `gs1` and `iso15459`: Battery Regulation Art. 77(3)
 requires ISO/IEC 15459 until a delegated act replaces it with EN 18219.
 
 **LEI is not a product identifier.** EN 18219 clause 5.1 names schemes 1–5 for
-products; LEI does not appear. Pass LEI as an _operator_ identifier instead:
+products; LEI does not appear. Pass LEI as an *operator* identifier instead:
 `{ scheme: "iso6523", icd: "0199", value: "<20-char LEI>" }`.
 
 ## Validate operator and facility identifiers
@@ -74,26 +74,20 @@ products; LEI does not appear. Pass LEI as an _operator_ identifier instead:
 import { validateOperatorIdentifier, validateFacilityIdentifier } from "@tracepass/dpp-identifiers";
 
 // ISO 7064 MOD 97-10 check for LEI
-validateOperatorIdentifier({ scheme: "iso6523", icd: "0199", value: "5493001KJTIIGC8Y1R12" }).ok; // true
+validateOperatorIdentifier({ scheme: "iso6523", icd: "0199", value: "5493001KJTIIGC8Y1R12" }).ok;  // true
 
 // GLN (icd 0088) validated with GS1 mod-10
-validateOperatorIdentifier({ scheme: "iso6523", icd: "0088", value: "5412345000013" }).ok; // true
+validateOperatorIdentifier({ scheme: "iso6523", icd: "0088", value: "5412345000013" }).ok;  // true
 
 // Facility — the same four schemes as operators (EN 18219 clauses 6.2–6.5)
-validateFacilityIdentifier({ scheme: "gln", gln: "5412345000013", extension: "DOCK-1" }).ok; // true
-validateFacilityIdentifier({ scheme: "did", did: "did:web:plant.example.com" }).ok; // true
+validateFacilityIdentifier({ scheme: "gln", gln: "5412345000013", extension: "DOCK-1" }).ok;  // true
+validateFacilityIdentifier({ scheme: "did", did: "did:web:plant.example.com" }).ok;  // true
 ```
 
 ## Build and parse resolver paths
 
 ```ts
-import {
-  identifierToUri,
-  identifierOwnUrl,
-  parseResolverPath,
-  diQueryCandidateKeys,
-  identifierKey,
-} from "@tracepass/dpp-identifiers";
+import { identifierToUri, identifierOwnUrl, parseResolverPath, diQueryCandidateKeys, identifierKey } from "@tracepass/dpp-identifiers";
 
 const gs1 = { scheme: "gs1", gtin: "05449000000996", serialNumber: "SN-001" } as const;
 
@@ -107,13 +101,7 @@ parseResolverPath("/01/05449000000996/21/SN-001");
 
 // ISO/IEC 15459 → the ISO/IEC 18975 query form (EN 18219 Table B.12)
 identifierToUri(
-  {
-    scheme: "iso15459",
-    issuingAgencyCode: "QC",
-    primaryId: "ELMI12345",
-    serial: "654321",
-    raw: "QC/ELMI12345/654321",
-  },
+  { scheme: "iso15459", issuingAgencyCode: "QC", primaryId: "ELMI12345", serial: "654321", raw: "QC/ELMI12345/654321" },
   "id.example.com",
 );
 // "https://id.example.com/?.25P=QCELMI12345&.S=654321"
@@ -127,7 +115,7 @@ identifierOwnUrl({ scheme: "doi", doi: "10.1234/my-passport", granularity: "mode
 // "https://doi.org/10.1234/my-passport"
 
 // Canonical key for deduplication
-identifierKey(gs1); // "gs1:05449000000996:SN-001"
+identifierKey(gs1);  // "gs1:05449000000996:SN-001"
 ```
 
 `identifierToUri` returns `null` for `iec61406`, `did` and `doi` — those carry their own
@@ -140,12 +128,12 @@ already printed in that form keeps resolving. `identifierToUri` no longer emits 
 enforces the ISO/IEC 15459 agency-code shape: the first path segment
 must be 1–3 uppercase chars matching `[A-Z][A-Z0-9]{0,2}`. This rejects common app routes:
 
-| Path              | Result                                                               |
-| ----------------- | -------------------------------------------------------------------- |
-| `/about/team`     | `null` — "about" is 5 chars                                          |
-| `/mh/ABC`         | `null` — "mh" is lowercase; `identifierToUri` always emits uppercase |
-| `/MH/BAT-001`     | `{scheme: "iso15459", …}` ✓                                          |
-| `/01/0544…/21/SN` | `{scheme: "gs1", …}` ✓                                               |
+| Path | Result |
+|---|---|
+| `/about/team` | `null` — "about" is 5 chars |
+| `/mh/ABC` | `null` — "mh" is lowercase; `identifierToUri` always emits uppercase |
+| `/MH/BAT-001` | `{scheme: "iso15459", …}` ✓ |
+| `/01/0544…/21/SN` | `{scheme: "gs1", …}` ✓ |
 
 **Short uppercase routes are still ambiguous.** `/P/x` parses as `{issuingAgencyCode: "P",
 primaryId: "x"}` because `"P"` is a valid 1-char agency code. Consumers MUST match their
