@@ -596,6 +596,7 @@ export interface Passport {
    */
   identifier?: ProductIdentifier;
   /**
+   * The passport's GS1 identifier under its older field name.
    * @deprecated Use `identifier` with `scheme: "gs1"` instead. Kept
    * indefinitely as a read alias; the platform's v1 API accepts both.
    *
