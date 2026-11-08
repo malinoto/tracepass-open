@@ -5,6 +5,17 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.22.1 — 2026-11-08
+
+### All packages
+
+- **No API change.** The code meets the shared `@tracepass/code-standard`: index lookups
+  admit a missing value (`noUncheckedIndexedAccess`), guards are explicit instead of
+  asserted, and number formatting is explicit. Tooling moved to Node 24. The
+  `dpp-types` range in `dpp-validate`, `dpp-epcis` and `dpp-identifiers` is `^0.22.1`.
+
+---
+
 ## 0.22.0 — 2026-11-05
 
 ### `@tracepass/dpp-validate`
