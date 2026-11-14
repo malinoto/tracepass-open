@@ -81,6 +81,12 @@ export const MIRRORS = [
     open: "packages/dpp-validate/src/vendor/composition-detail.ts",
     platform: "src/lib/compliance/composition-detail.ts",
   },
+  // The battery cross-field consistency checks behind BAT-CONS. Import-free,
+  // so the copy is byte-identical.
+  {
+    open: "packages/dpp-validate/src/vendor/battery-consistency.ts",
+    platform: "src/lib/compliance/battery-consistency.ts",
+  },
   {
     open: "packages/dpp-validate/src/vendor/field-emptiness.ts",
     platform: "src/lib/passports/field-emptiness.ts",

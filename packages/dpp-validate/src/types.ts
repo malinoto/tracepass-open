@@ -59,7 +59,9 @@ export type FindingType =
    * A conditional rule should apply but its trigger field is absent, so the
    *  engine couldn't evaluate it — surfaced as a warning, never silent.
    */
-  | "unverifiable_conditional";
+  | "unverifiable_conditional"
+  /** Values that are each plausible contradict one another (BAT-CONS). */
+  | "inconsistent_values";
 
 /**
  * One regulation-cited problem found while evaluating a passport.

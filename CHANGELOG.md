@@ -5,6 +5,46 @@ marked **BREAKING** and require a major or minor bump as appropriate.
 
 ---
 
+## 0.23.0 — 2026-11-14
+
+### `@tracepass/dpp-validate`
+
+- **New battery rule BAT-CONS: values that contradict each other,** as the platform
+  runs it. Ten checks, each a `warning` with the new finding type
+  **`inconsistent_values`**:
+  - energy vs nominal voltage × rated capacity (off by more than 10 %);
+  - energy density vs energy ÷ weight (more than 10 %);
+  - minimum < nominal < maximum voltage;
+  - each temperature range's min < max;
+  - the nominal power implied by the Annex IV Part B(2) ratio vs the maximum allowed
+    power (more than 5 % above it);
+  - in-service capacity, energy and power vs their original values (more than 5 %
+    above);
+  - capacity fade vs remaining ÷ rated capacity (more than 3 points);
+  - the Art. 8(1) recycled cobalt, lithium and nickel share vs its pre- and
+    post-consumer parts (more than 1 point);
+  - a physical quantity of exactly 0;
+  - a GS1 Digital Link or element string in the passport that names another GTIN or
+    serial than the passport's own.
+
+  A check runs only when all its values are present. When the energy itself
+  contradicts V × Ah, the checks computed from it are skipped, so one error gives one
+  finding. The checks are a platform mirror, `vendor/battery-consistency.ts`, hashed
+  in `mirror-manifest.json`.
+
+- **`FindingType` gains `"inconsistent_values"`.** A consumer with an exhaustive
+  `switch` over finding types needs a new case. New findings and a wider union, hence
+  MINOR.
+
+### All packages
+
+- Version 0.23.0; the `dpp-types` range in `dpp-validate`, `dpp-epcis` and
+  `dpp-identifiers` is `^0.23.0`, and the `gs1-utils` range in `dpp-epcis` and
+  `dpp-identifiers` is `^0.23.0`. It stood at `^0.22.0`, which a 0.23 release would not
+  have matched.
+
+---
+
 ## 0.22.1 — 2026-11-08
 
 ### All packages
@@ -148,6 +188,7 @@ required to carry Art. 14 state-of-health data.
   system", and recital 333 scopes it to batteries "using a battery management system". The
   Commission battery FAQ (1st ed., Sep 2026) §8.5 says state-of-health requirements apply only
   where the battery has a BMS. An unset or unapproved flag changes nothing.
+
 - `publish-gate` (vendor mirror): in `evaluateFieldRequirements`, a confirmed `not_applicable`
   verdict now outranks the template's static `requiredBy[category] === "required"`. Before, an
   LMT battery without a BMS could not pass the gate.
@@ -282,6 +323,7 @@ Digital Product Passports, plus operator and facility identifiers. No third-part
 dependencies.
 
 **Exports:**
+
 - `validateProductIdentifier(id, opts?)` — validates a `ProductIdentifier` discriminated
   union; `opts.category = "battery"` enforces the Art. 77(3) ISO/IEC 15459 restriction
 - `validateOperatorIdentifier(id)` — ISO 6523 (GLN/LEI/DUNS/generic), GLN, DID, DOI
@@ -322,6 +364,7 @@ null` to `glns: { facilityGln?, operatorGln? } | null`. The `gln` field on
 `operatorGln`.
 
 **Migration:**
+
 ```ts
 // Before
 buildCommissioningEvent(date, epc, passportId, "5012345678900");
@@ -337,6 +380,7 @@ or other location — GS1 AI 414 SGLN). If the GLN you previously passed identif
 pass `{ operatorGln: "5012345000000" }` and omit `facilityGln`.
 
 **New exports:**
+
 - `partyUri(gln)` — builds a GS1 AI 417 PGLN URI (`https://id.gs1.org/417/<gln>`) for
   the economic operator; returns `null` for invalid or absent GLN
 - `CBV_SOURCE_DEST_TYPE_URI` — object with `owning_party`, `possessing_party`, `location`
@@ -373,4 +417,4 @@ Minor: rules start and stop firing on some batteries, so consumers see different
 
 ---
 
-*See git tags for released versions.*
+_See git tags for released versions._

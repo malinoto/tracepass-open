@@ -36,6 +36,7 @@ import {
   SHARE_SUM_TOLERANCE,
   analyzeComposition,
 } from "./vendor/composition-detail.js";
+import { checkBatteryConsistency } from "./vendor/battery-consistency.js";
 import type { ComplianceFinding } from "./types.js";
 
 /**
@@ -710,6 +711,63 @@ const CE1: ConditionalRule = {
   },
 };
 
+// ── BAT-CONS · cross-field consistency (battery) ────────────────────
+// Values tied by physics or definition that contradict each other: energy vs
+// V × Ah, density, voltage order, temperature ranges, the Annex IV Part B(2)
+// power ratio, in-service values above the original, capacity fade, the
+// Art. 8(1) recycled split, impossible zeros, and GS1 identifiers naming
+// another unit. The checks live in `vendor/battery-consistency.ts` (a
+// byte-identical platform mirror); this rule only turns them into findings.
+// Always a warning: the person reviewing owns the value. The citation is the
+// target field's own `regulationRef`, so it moves with the template.
+
+/**
+ * The passport's own GS1 identifier: `identifier` when it is GS1, else the
+ * deprecated `gs1` block (the same precedence as `@tracepass/dpp-identifiers`).
+ * @param passport the passport
+ * @returns its GTIN and serial, or undefined for a non-GS1 identifier
+ */
+function ownGs1(passport: Passport): { gtin: string; serialNumber: string } | undefined {
+  const id = passport.identifier;
+  if (id !== undefined) {
+    return id.scheme === "gs1" ? { gtin: id.gtin, serialNumber: id.serialNumber } : undefined;
+  }
+  // The deprecated alias is read on purpose: a passport stored before
+  // `identifier` existed carries only `gs1`.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy passports carry only gs1
+  const gs1 = passport.gs1;
+  return gs1 === undefined ? undefined : { gtin: gs1.gtin, serialNumber: gs1.serialNumber };
+}
+
+const BAT_CONS: ConditionalRule = {
+  id: "BAT-CONS",
+  run(passport, template) {
+    const own = ownGs1(passport);
+    const issues = checkBatteryConsistency({
+      num: (key) => numberOf(passport, key),
+      str: (key) => {
+        const v = passport.fields[key]?.value;
+        return typeof v === "string" && v.trim() !== "" ? v.trim() : undefined;
+      },
+      label: (key) => fieldLabel(key, template),
+      ...(own === undefined ? {} : { ownGs1: own }),
+    });
+    return issues.map((issue) => {
+      const ref = template.fields.find((f) => f.key === issue.target)?.regulationRef;
+      return {
+        type: "inconsistent_values" as const,
+        severity: "warning" as const,
+        target: issue.target,
+        regulation: "(EU) 2023/1542",
+        article: ref?.provision ?? ref?.article ?? "Annex XIII",
+        ruleId: "BAT-CONS",
+        why: issue.why,
+        fix: issue.fix,
+      };
+    });
+  },
+};
+
 // ── IMP-1 · importer contact details (battery) ──────────────────────
 // Battery Regulation Art. 41(3): importers indicate on the battery their name,
 // registered trade name or registered trade mark, postal address with a single
@@ -759,7 +817,7 @@ const IMP1: ConditionalRule = {
  * is NOT listed per-category here.
  */
 export const CONDITIONAL_RULES: Record<string, ConditionalRule[]> = {
-  battery: [BAT1, BAT_APP, BAT_INSERVICE, BAT_VAL, CE1, IMP1],
+  battery: [BAT1, BAT_APP, BAT_INSERVICE, BAT_VAL, BAT_CONS, CE1, IMP1],
   construction: [CON1, CE1],
   electronics: [CE1, CHEM1_ELECTRONICS],
   furniture: [CHEM1_FURNITURE],

@@ -52,6 +52,11 @@
       "platformHash": "9ba17a3d2511e51e"
     },
     {
+      "open": "packages/dpp-validate/src/vendor/battery-consistency.ts",
+      "platform": "src/lib/compliance/battery-consistency.ts",
+      "platformHash": "22803b2b4d39533e"
+    },
+    {
       "open": "packages/dpp-validate/src/vendor/field-emptiness.ts",
       "platform": "src/lib/passports/field-emptiness.ts",
       "platformHash": "0d60b6c074e3211a"
