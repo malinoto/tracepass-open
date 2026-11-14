@@ -65,7 +65,7 @@ const TZ_OFFSET = /^[+-]\d{2}:\d{2}$/;
  * Source: GS1 CBV 2.0 Table 7-2 (bizStep). Updated when CBV ratifies
  * new bizSteps — rare; the list has been stable since CBV 2.0 (2022).
  */
-const CBV_BIZSTEP_TOKENS = new Set([
+export const CBV_BIZSTEP_TOKENS: ReadonlySet<string> = new Set([
   "accepting",
   "arriving",
   "assembling",
@@ -115,7 +115,7 @@ const CBV_BIZSTEP_TOKENS = new Set([
  *
  * Source: GS1 CBV 2.0 Table 7-3 (disposition).
  */
-const CBV_DISPOSITION_TOKENS = new Set([
+export const CBV_DISPOSITION_TOKENS: ReadonlySet<string> = new Set([
   "active",
   "available",
   "completeness_inferred",
@@ -160,7 +160,7 @@ const CBV_DISPOSITION_TOKENS = new Set([
  * @param tokens - the CBV short-form tokens accepted for this field
  * @returns whether the value is an accepted token or looks like a URI
  */
-function isCbvValueOrUri(value: unknown, tokens: Set<string>): boolean {
+function isCbvValueOrUri(value: unknown, tokens: ReadonlySet<string>): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
   if (tokens.has(value)) return true;
   // URI check — accept anything that looks like `scheme:path`.
