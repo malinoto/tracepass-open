@@ -79,6 +79,41 @@ The same principle governs the battery applicability gates: an unknown classifie
 the dependent field and warns. A mis-classified battery must never silently lose a
 legally-required field.
 
+## Battery values that contradict each other (BAT-CONS)
+
+Completeness is not quality: every field can be filled and still be impossible. For
+batteries, BAT-CONS compares values tied by physics or by the Regulation's definitions,
+and reports each contradiction as an `inconsistent_values` warning:
+- rated energy vs nominal voltage × rated capacity;
+- energy density vs energy ÷ weight;
+- minimum < nominal < maximum voltage;
+- each temperature range's minimum below its maximum;
+- the nominal power that the Annex IV Part B(2) ratio implies, vs the maximum allowed
+  power;
+- in-service capacity, energy and power vs their original values;
+- capacity fade vs remaining ÷ rated capacity;
+- the recycled share vs its pre- and post-consumer parts (Art. 8(1));
+- a physical quantity of exactly 0, such as a cell resistance;
+- a GS1 identifier inside the passport that names another unit.
+
+A Wh value entered as kWh gives one finding, not one per check built on it:
+
+```ts
+const passport = {
+  fields: {
+    nominalVoltage: { value: 355.2, status: "approved" },
+    ratedCapacity: { value: 170, status: "approved" },
+    batteryEnergyTotal: { value: 60380, status: "approved" }, // Wh entered as kWh
+  },
+};
+CONDITIONAL_RULES.battery.find((r) => r.id === "BAT-CONS")?.run(passport, batteryTemplate);
+// [{ type: "inconsistent_values", severity: "warning", target: "batteryEnergyTotal",
+//    why: "… is 60380 kWh, but nominal voltage × rated capacity gives 60.38 kWh …" }]
+```
+
+These are warnings, never blocks: a datasheet can be right where an approximate
+relation is not, and the person approving the value decides.
+
 ## Not legal advice
 
 A `compliant` verdict means *this passport satisfies the rules encoded here* — not *this
