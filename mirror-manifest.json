@@ -95,6 +95,11 @@
       "open": "packages/dpp-identifiers/src/operator.ts",
       "platform": "src/lib/identifiers/operator.ts",
       "platformHash": "91cfeb04de99565a"
+    },
+    {
+      "open": "tools/gs1-conformance-check.ts",
+      "platform": "scripts/gs1-conformance-check.ts",
+      "platformHash": "b2204c840a931b0f"
     }
   ]
 }

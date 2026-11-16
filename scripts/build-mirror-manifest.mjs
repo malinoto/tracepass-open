@@ -118,6 +118,11 @@ export const MIRRORS = [
   // normalise() collapses that one specifier pair, so they match like the rest.
   { open: "packages/dpp-identifiers/src/product.ts", platform: "src/lib/identifiers/product.ts" },
   { open: "packages/dpp-identifiers/src/operator.ts", platform: "src/lib/identifiers/operator.ts" },
+
+  // The GS1 resolver self-test — not a package, a tool anyone can run. The
+  // platform runs it on every resolver deploy and publishes the result, so a
+  // stale public copy would check less than the published run claims.
+  { open: "tools/gs1-conformance-check.ts", platform: "scripts/gs1-conformance-check.ts" },
 ];
 
 /**
@@ -129,7 +134,7 @@ export const MIRRORS = [
  */
 function stripMirrorNotice(source) {
   return source.replace(
-    / \*\n \* ⚠️ MIRRORED INTO THE PUBLIC npm PACKAGE[\s\S]*?commit `mirror-manifest\.json` with the code\.\n/g,
+    / \*\n \* ⚠️ MIRRORED INTO THE PUBLIC (?:npm PACKAGE|REPO)[\s\S]*?commit `mirror-manifest\.json` with the code\.\n/g,
     "",
   );
 }
