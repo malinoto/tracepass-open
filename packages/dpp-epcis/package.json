@@ -1,6 +1,6 @@
 {
   "name": "@tracepass/dpp-epcis",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "description": "Map Digital Product Passport data to GS1 EPCIS 2.0 events, with a CBV 2.0 vocabulary extended for steel production steps. Pure functions, no third-party runtime dependencies.",
   "keywords": [
     "epcis",
