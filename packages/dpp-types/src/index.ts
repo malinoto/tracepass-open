@@ -67,8 +67,9 @@ export type FieldDataType =
  * Who may read a field.
  *
  * - `public`    — anyone who scans the product's QR code
- * - `restricted`— holders of a granted access token (e.g. a recycler)
- * - `authority` — market-surveillance bodies
+ * - `restricted`— holders of an access grant whose role covers the field (e.g. a
+ *                 recycler); for batteries the role decides which Annex XIII points
+ * - `authority` — holders of an authority-role grant (e.g. market surveillance)
  */
 export type AccessLevel = "public" | "restricted" | "authority";
 
