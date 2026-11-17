@@ -99,7 +99,7 @@
     {
       "open": "tools/gs1-conformance-check.ts",
       "platform": "scripts/gs1-conformance-check.ts",
-      "platformHash": "b2204c840a931b0f"
+      "platformHash": "6fd7c8d5e9336a69"
     }
   ]
 }

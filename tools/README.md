@@ -32,12 +32,19 @@ the `Vary: Accept` header; and a 404 on an unknown serial. `--battery-subgroup e
 tells it the passport is an in-scope battery, whose plain JSON is the Commission
 publication document rather than JSON-LD.
 
-Two checks carry a `knownGap` reason: they mirror GS1 suite criteria that TracePass's
-resolver deliberately does not meet — a plain scan is served at the scanned URI instead
-of redirecting to the default link, and a batch-only URI (no serial) answers 404,
-because TracePass passports exist per serial. A failing known gap is printed with `~`
-and does not fail the run, so when you test another resolver, read those two lines
-yourself.
+One check carries a `knownGap` reason because it mirrors a GS1 suite criterion that
+TracePass's resolver deliberately does not meet: a plain scan is served at the scanned
+URI instead of redirecting to the default link.
+
+TracePass passports exist per serial, so a GTIN-only URI (and a batch URI, which is
+walked up to it) is the product's model page: public values shared by every unit,
+answered when the GTIN belongs to one product with published passports, and 404
+otherwise. Pass `--model-gtin <GTIN>` with such a GTIN to check it. Without it, the two
+model-page checks run on `--gtin` and a 404 there is reported as a known gap (the public
+demo's GTIN belongs to two sample products, so it is one).
+
+A failing known gap is printed with `~` and does not fail the run, so when you test
+another resolver, read those lines yourself.
 
 This file is the same script TracePass runs on every resolver deploy (a hand-copy
 gated by `npm run check:mirrors`), so the published run below is reproducible with it.

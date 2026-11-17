@@ -11,7 +11,8 @@
  *   npx tsx scripts/gs1-conformance-check.ts \
  *     --base https://id.tracepass.eu \
  *     --gtin 01234567890128 \
- *     --serial 6B27A0000001
+ *     --serial 6B27A0000001 \
+ *     [--battery-subgroup evb|lmt|ind] [--model-gtin <single-product GTIN>]
  *
  * Exit code:
  *   0 — all checks passed
@@ -73,6 +74,13 @@ function parseArgs(argv: string[]): {
    * shape (@context present).
    */
   batterySubgroup: "evb" | "lmt" | "ind" | undefined;
+  /**
+   * Optional GTIN for the model-page checks: one held by a single product with
+   * published passports. Without it those checks use `--gtin` and are reported as
+   * known gaps, because a GTIN shared by several products (the public demo's is) is
+   * a 404 by design.
+   */
+  modelGtin: string | undefined;
 } {
   const out: Record<string, string> = {};
   for (let i = 0; i < argv.length; i++) {
@@ -96,6 +104,7 @@ function parseArgs(argv: string[]): {
     gtin: out.gtin ?? "01234567890128",
     serial: out.serial ?? "SN-001",
     batterySubgroup,
+    modelGtin: out["model-gtin"],
   };
 }
 
@@ -121,7 +130,7 @@ async function check(
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { base, gtin, serial, batterySubgroup } = args;
+  const { base, gtin, serial, batterySubgroup, modelGtin } = args;
   const passportUrl = `${base}/01/${gtin}/21/${serial}`;
   const checks: CheckResult[] = [];
 
@@ -353,6 +362,35 @@ async function main() {
     }),
   );
 
+  // 7b. A GTIN-only URL is the product's model page when the GTIN belongs to one
+  // product with published passports, else a 404. A GTIN shared by several
+  // products (the public demo's is) is a 404 by design, so without --model-gtin
+  // the check runs on --gtin and a 404 is reported as a known gap.
+  const modelGtinGap = modelGtin
+    ? undefined
+    : "No --model-gtin given: the tested GTIN may belong to several products (the public demo's does), which is a 404 by design; pass a single-product GTIN to check the model page.";
+  checks.push(
+    await check(
+      "model.gtin-only-200",
+      "A GTIN-only URL with published passports is answered 200",
+      async () => {
+        const r = await fetch(`${base}/01/${modelGtin ?? gtin}`);
+        return { pass: r.status === 200, detail: `status=${String(r.status)}` };
+      },
+      modelGtinGap,
+    ),
+  );
+  checks.push(
+    await check(
+      "model.unknown-gtin-404",
+      "A GTIN-only URL with no published passport is 404",
+      async () => {
+        const r = await fetch(`${base}/01/00000000000000`);
+        return { pass: r.status === 404, detail: `status=${String(r.status)}` };
+      },
+    ),
+  );
+
   // 8. Plain JSON is negotiable (EN 18216:2026 cl. 5 makes JSON mandatory).
   //    Body shape: in-scope battery → Commission pub document (contentSpecificationIds
   //    present, @context absent). Other categories → JSON-LD-as-JSON (@context present).
@@ -559,10 +597,12 @@ async function main() {
       "suite.qualifier-unknown-value",
       "A batch qualifier with no serial is not a 404 (the suite's `basicWalkUp` probe)",
       async () => {
-        const r = await probe(`${base}/01/${gtin}/10/KL8G`);
+        // The batch qualifier is walked up to the GTIN, which is the product's model
+        // page while the GTIN belongs to one product with published passports.
+        const r = await probe(`${base}/01/${modelGtin ?? gtin}/10/KL8G`);
         return { pass: r.status !== 404, detail: `status=${String(r.status)}` };
       },
-      "TracePass holds passports at (GTIN, serial) level only; nothing exists at GTIN or batch level to resolve to, so the 404 is correct. Deliberate.",
+      modelGtinGap,
     ),
   );
 
