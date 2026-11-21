@@ -9,3 +9,6 @@ out/
 
 # Agent worktrees (Claude Code); never part of the repo
 .claude/worktrees/
+
+# Claude Code session worktrees (full copies of the repo)
+/.claude/worktrees/
